@@ -21,10 +21,10 @@ class AppLocalizationsKy extends AppLocalizations {
   String get language => 'Тил';
 
   @override
-  String get hello => 'Салам';
+  String get chooseLanguage => 'Тилди тандаңыз';
 
   @override
-  String get chooseLanguage => 'Тилди тандаңыз';
+  String get hello => 'Салам';
 
   @override
   String get math => 'Математика';

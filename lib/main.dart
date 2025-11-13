@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+//Firebase
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 // 🧩 Localization imports
 import 'gen_l10n/app_localizations.dart';
 import 'package:secom/l10n/l10n.dart';
@@ -15,7 +19,11 @@ import 'package:secom/pages/settings_page.dart';
 // 🧠 Locale provider
 import 'package:secom/provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is initialized
+  await Firebase.initializeApp( // Initializes Firebase
+    options: DefaultFirebaseOptions.currentPlatform, // Uses Firebase options for your platform
+  );
   runApp(
     ChangeNotifierProvider(
       create: (_) => LocaleProvider(),

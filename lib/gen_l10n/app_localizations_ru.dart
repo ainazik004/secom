@@ -21,10 +21,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get language => 'Язык';
 
   @override
-  String get hello => 'Привет';
+  String get chooseLanguage => 'Выберите язык';
 
   @override
-  String get chooseLanguage => 'Выберите язык';
+  String get hello => 'Привет';
 
   @override
   String get math => 'Математика';

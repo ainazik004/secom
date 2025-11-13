@@ -21,10 +21,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
-  String get hello => 'Hello';
+  String get chooseLanguage => 'Choose language';
 
   @override
-  String get chooseLanguage => 'Choose language';
+  String get hello => 'Hello';
 
   @override
   String get math => 'Mathematics';

@@ -124,17 +124,17 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get language;
 
-  /// No description provided for @hello.
-  ///
-  /// In en, this message translates to:
-  /// **'Hello'**
-  String get hello;
-
   /// No description provided for @chooseLanguage.
   ///
   /// In en, this message translates to:
   /// **'Choose language'**
   String get chooseLanguage;
+
+  /// No description provided for @hello.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello'**
+  String get hello;
 
   /// No description provided for @math.
   ///
