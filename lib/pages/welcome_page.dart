@@ -61,13 +61,12 @@ class WelcomePage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         elevation: 4,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const MainPage(),
-                          ),
+                          MaterialPageRoute(builder: (context) => const MainPage()),
                         );
                       },
                       child: const Text(
@@ -78,6 +77,7 @@ class WelcomePage extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.2,
                           fontFamily: 'ArialBlack',
+                          height: 1.0,
                         ),
                       ),
                     ),

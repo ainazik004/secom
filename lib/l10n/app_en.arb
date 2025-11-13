@@ -1,0 +1,13 @@
+{
+  "@@locale": "en",
+  "home": "Home",
+  "leaderboard": "Leaderboard",
+  "settings": "Settings",
+  "language": "Language",
+  "chooseLanguage": "Choose language",
+  "hello": "Hello",
+  "math": "Mathematics",
+  "analogy": "Analogy",
+  "reading": "Reading",
+  "grammar": "Grammar"
+}

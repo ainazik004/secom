@@ -6,12 +6,16 @@ import 'categories/mathematics_page.dart';
 import 'categories/analogy_page.dart';
 import 'categories/reading_page.dart';
 import 'categories/grammar_page.dart';
+import 'package:secom/gen_l10n/app_localizations.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Access localized strings
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -19,6 +23,7 @@ class HomePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🔹 Top bar (logo + icons)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -53,8 +58,8 @@ class HomePage extends StatelessWidget {
                         child: const CircleAvatar(
                           radius: 14,
                           backgroundColor: Color(0xFF2C015D),
-                          child:
-                          Icon(Icons.person, size: 16, color: Colors.white),
+                          child: Icon(Icons.person,
+                              size: 16, color: Colors.white),
                         ),
                       ),
                     ],
@@ -63,30 +68,33 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              const Text(
-                'Привет, Бекзат!',
-                style: TextStyle(
+              // 🔹 Localized greeting
+              Text(
+                // Example: "Hello, Bekzat!" (you can make this localized too)
+                '${loc.hello}, Бекзат!',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 24),
 
-              const CategoryButton(
-                title: 'МАТЕМАТИКА',
-                page: MathematicsPage(),
+              // 🔹 Localized category buttons (❌ remove const)
+              CategoryButton(
+                title: loc.math,
+                page: const MathematicsPage(),
               ),
-              const CategoryButton(
-                title: 'АНАЛОГИЯ И ДОПОЛНЕНИЕ',
-                page: AnalogyPage(),
+              CategoryButton(
+                title: loc.analogy,
+                page: const AnalogyPage(),
               ),
-              const CategoryButton(
-                title: 'ЧТЕНИЕ И ПОНИМАНИЕ',
-                page: ReadingPage(),
+              CategoryButton(
+                title: loc.reading,
+                page: const ReadingPage(),
               ),
-              const CategoryButton(
-                title: 'ПРАКТИЧЕСКАЯ ГРАММАТИКА РУССКОГО ЯЗЫКА',
-                page: GrammarPage(),
+              CategoryButton(
+                title: loc.grammar,
+                page: const GrammarPage(),
               ),
             ],
           ),

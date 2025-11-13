@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+
+// 🧩 Localization imports
+import 'gen_l10n/app_localizations.dart';
+import 'package:secom/l10n/l10n.dart';
+
+// 🧭 Pages
 import 'package:secom/pages/welcome_page.dart';
-import 'pages/home_page.dart';
-import 'pages/leaderboard_page.dart';
-import 'pages/settings_page.dart';
+import 'package:secom/pages/home_page.dart';
+import 'package:secom/pages/leaderboard_page.dart';
+import 'package:secom/pages/settings_page.dart';
+
+// 🧠 Locale provider
+import 'package:secom/provider/provider.dart';
 
 void main() {
-  runApp(const SecomApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => LocaleProvider(),
+      child: const SecomApp(),
+    ),
+  );
 }
 
 class SecomApp extends StatelessWidget {
@@ -13,9 +29,36 @@ class SecomApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<LocaleProvider>(context);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SECOM',
+
+      // 🌍 Localization setup
+      locale: provider.locale,
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ru'),
+        Locale('ky'),
+      ],
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      localeResolutionCallback: (locale, supportedLocales) {
+        if (locale == null) return supportedLocales.first;
+        for (final supportedLocale in supportedLocales) {
+          if (supportedLocale.languageCode == locale.languageCode) {
+            return supportedLocale;
+          }
+        }
+        return supportedLocales.first; // fallback
+      },
+
+      // 🎨 Theme setup
       theme: ThemeData(
         primaryColor: const Color(0xFF2C015D),
         scaffoldBackgroundColor: Colors.white,
@@ -29,6 +72,7 @@ class SecomApp extends StatelessWidget {
           ),
         ),
       ),
+
       home: const WelcomePage(),
     );
   }
@@ -44,16 +88,19 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomePage(),
-    const LeaderboardPage(),
-    const SettingsPage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
+    // ✅ create pages here, so they rebuild on locale change
+    final List<Widget> pages = [
+      HomePage(), // HomePage uses loc internally
+      const LeaderboardPage(),
+      const SettingsPage(),
+    ];
+
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFF2C015D),
         selectedItemColor: Colors.white,
@@ -61,18 +108,18 @@ class _MainPageState extends State<MainPage> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Главная',
+            icon: const Icon(Icons.home),
+            label: loc.home,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.leaderboard),
-            label: 'Рейтинг',
+            icon: const Icon(Icons.leaderboard),
+            label: loc.leaderboard,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Настройки',
+            icon: const Icon(Icons.settings),
+            label: loc.settings,
           ),
         ],
       ),
