@@ -2,28 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
-//Firebase
+// Firebase
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
-// 🧩 Localization imports
+// Localization
 import 'gen_l10n/app_localizations.dart';
 import 'package:secom/l10n/l10n.dart';
 
-// 🧭 Pages
+// Pages
 import 'package:secom/pages/welcome_page.dart';
 import 'package:secom/pages/home_page.dart';
 import 'package:secom/pages/leaderboard_page.dart';
 import 'package:secom/pages/settings_page.dart';
 
-// 🧠 Locale provider
+// Auth UI pages (you will add these pages to lib/pages/)
+import 'package:secom/pages/login_page.dart';
+import 'package:secom/pages/register_page.dart';
+
+// Locale provider
 import 'package:secom/provider/provider.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is initialized
-  await Firebase.initializeApp( // Initializes Firebase
-    options: DefaultFirebaseOptions.currentPlatform, // Uses Firebase options for your platform
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => LocaleProvider(),
@@ -43,7 +49,7 @@ class SecomApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SECOM',
 
-      // 🌍 Localization setup
+      // Localization setup
       locale: provider.locale,
       supportedLocales: const [
         Locale('en'),
@@ -66,7 +72,7 @@ class SecomApp extends StatelessWidget {
         return supportedLocales.first; // fallback
       },
 
-      // 🎨 Theme setup
+      // Theme setup (keeps your existing theme)
       theme: ThemeData(
         primaryColor: const Color(0xFF2C015D),
         scaffoldBackgroundColor: Colors.white,
@@ -81,11 +87,55 @@ class SecomApp extends StatelessWidget {
         ),
       ),
 
-      home: const WelcomePage(),
+      // Use Root to decide initial screen based on auth state.
+      home: const Root(),
+
+      // Named routes for convenient navigation from anywhere
+      routes: {
+        '/welcome': (_) => const WelcomePage(),
+        '/login': (_) => const LoginPage(),
+        '/register': (_) => const RegisterPage(),
+        '/main': (_) => const MainPage(),
+        '/home': (_) => HomePage(),
+        '/leaderboard': (_) => const LeaderboardPage(),
+        '/settings': (_) => const SettingsPage(),
+      },
     );
   }
 }
 
+/// Root widget listens to FirebaseAuth and routes to MainPage (signed in)
+/// or WelcomePage (signed out). Firebase Auth persists the user by default,
+/// so this handles "remember once logged in" behavior automatically.
+class Root extends StatelessWidget {
+  const Root({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // still initializing connection to Firebase Auth
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // If there's no user -> show Welcome flow (user will then go to Login/Register)
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const WelcomePage();
+        }
+
+        // If user is signed in -> show MainPage (bottom navigation)
+        // Optionally you could check snapshot.data!.emailVerified here and force verification.
+        return const MainPage();
+      },
+    );
+  }
+}
+
+/// Your existing MainPage with bottom navigation. Kept largely as-is.
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -100,9 +150,9 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
-    // ✅ create pages here, so they rebuild on locale change
+    // Pages rebuilt on locale change
     final List<Widget> pages = [
-      HomePage(), // HomePage uses loc internally
+      HomePage(), // HomePage uses localized strings internally
       const LeaderboardPage(),
       const SettingsPage(),
     ];
