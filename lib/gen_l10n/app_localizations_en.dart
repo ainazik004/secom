@@ -143,4 +143,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get welcomeDescription =>
       'A leader in preparation for ORT, holder of the record for the number of gold certificates, as well as the number of applicants scoring above 200 points.';
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get resetPassword => 'Reset Password';
+
+  @override
+  String get resetEmailSent => 'Password reset email sent';
+
+  @override
+  String get resetFailed => 'Failed to send reset email';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String get verifyPhone => 'Verify phone';
+
+  @override
+  String get smsCode => 'SMS code';
+
+  @override
+  String get phoneVerificationSent => 'Verification code sent';
+
+  @override
+  String get phoneVerified => 'Phone verified';
+
+  @override
+  String get phoneUpdated => 'Phone updated';
+
+  @override
+  String get photoUpdated => 'Photo updated';
 }

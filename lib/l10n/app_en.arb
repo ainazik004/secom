@@ -48,6 +48,16 @@
   "notifications": "Notifications",
   "noNotifications": "No notifications yet",
   "educationCenter": "Educational Center",
-  "welcomeDescription": "A leader in preparation for ORT, holder of the record for the number of gold certificates, as well as the number of applicants scoring above 200 points."
-
+  "welcomeDescription": "A leader in preparation for ORT, holder of the record for the number of gold certificates, as well as the number of applicants scoring above 200 points.",
+  "forgotPassword": "Forgot password?",
+  "resetPassword": "Reset Password",
+  "resetEmailSent": "Password reset email sent",
+  "resetFailed": "Failed to send reset email",
+  "send": "Send",
+  "verifyPhone": "Verify phone",
+  "smsCode": "SMS code",
+  "phoneVerificationSent": "Verification code sent",
+  "phoneVerified": "Phone verified",
+  "phoneUpdated": "Phone updated",
+  "photoUpdated": "Photo updated"
 }

@@ -369,6 +369,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A leader in preparation for ORT, holder of the record for the number of gold certificates, as well as the number of applicants scoring above 200 points.'**
   String get welcomeDescription;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @resetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get resetPassword;
+
+  /// No description provided for @resetEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent'**
+  String get resetEmailSent;
+
+  /// No description provided for @resetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send reset email'**
+  String get resetFailed;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @verifyPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify phone'**
+  String get verifyPhone;
+
+  /// No description provided for @smsCode.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS code'**
+  String get smsCode;
+
+  /// No description provided for @phoneVerificationSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code sent'**
+  String get phoneVerificationSent;
+
+  /// No description provided for @phoneVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone verified'**
+  String get phoneVerified;
+
+  /// No description provided for @phoneUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone updated'**
+  String get phoneUpdated;
+
+  /// No description provided for @photoUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo updated'**
+  String get photoUpdated;
 }
 
 class _AppLocalizationsDelegate

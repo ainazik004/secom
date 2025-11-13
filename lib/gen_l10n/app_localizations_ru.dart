@@ -143,4 +143,37 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get welcomeDescription =>
       'Лидер по подготовке к ОРТ, рекордсмен по количеству золотых сертификатов и по числу абитуриентов, набравших свыше 200 баллов.';
+
+  @override
+  String get forgotPassword => 'Забыли пароль?';
+
+  @override
+  String get resetPassword => 'Сброс пароля';
+
+  @override
+  String get resetEmailSent => 'Письмо для сброса пароля отправлено';
+
+  @override
+  String get resetFailed => 'Не удалось отправить письмо';
+
+  @override
+  String get send => 'Отправить';
+
+  @override
+  String get verifyPhone => 'Подтвердить телефон';
+
+  @override
+  String get smsCode => 'Код из СМС';
+
+  @override
+  String get phoneVerificationSent => 'Код отправлен';
+
+  @override
+  String get phoneVerified => 'Телефон подтверждён';
+
+  @override
+  String get phoneUpdated => 'Телефон обновлён';
+
+  @override
+  String get photoUpdated => 'Фото обновлено';
 }

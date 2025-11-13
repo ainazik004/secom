@@ -143,4 +143,37 @@ class AppLocalizationsKy extends AppLocalizations {
   @override
   String get welcomeDescription =>
       'ORTке даярдык боюнча лидер, алтын сертификаттардын саны боюнча рекордчу жана 200 баллдан жогору алган абитуриенттер боюнча алдыңкы орунда.';
+
+  @override
+  String get forgotPassword => 'Сырсөздү унуттуңузбу?';
+
+  @override
+  String get resetPassword => 'Сырсөздү калыбына келтирүү';
+
+  @override
+  String get resetEmailSent => 'Калыбына келтирүү кат жөнөтүлдү';
+
+  @override
+  String get resetFailed => 'Кат жөнөтүү мүмкүн болгон жок';
+
+  @override
+  String get send => 'Жөнөтүү';
+
+  @override
+  String get verifyPhone => 'Телефонду тастыктоо';
+
+  @override
+  String get smsCode => 'СМС коду';
+
+  @override
+  String get phoneVerificationSent => 'Код жөнөтүлдү';
+
+  @override
+  String get phoneVerified => 'Телефон тастыкталды';
+
+  @override
+  String get phoneUpdated => 'Номер жаңыртылды';
+
+  @override
+  String get photoUpdated => 'Сүрөт жаңыртылды';
 }

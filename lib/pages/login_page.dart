@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:secom/main.dart';
 import '../services/auth_service.dart';
 import 'register_page.dart';
 import 'verify_email_page.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:secom/gen_l10n/app_localizations.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -16,17 +19,23 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _auth = AuthService();
-
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _loading = false;
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // ---------------- Login ----------------
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
-
     final loc = AppLocalizations.of(context)!;
 
     try {
@@ -40,15 +49,11 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (_) => const MainPage()),
         );
       }
-
     } catch (e) {
       final message = e.toString();
 
-      if (message.contains('подтвердите')) {
-        Fluttertoast.showToast(
-          msg: loc.verificationRequired,
-          toastLength: Toast.LENGTH_LONG,
-        );
+      if (message.contains('подтвердите') || message.contains('verify')) {
+        Fluttertoast.showToast(msg: loc.verificationRequired);
 
         final user = _auth.currentUser;
         if (user != null) {
@@ -66,11 +71,58 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  // --------------- Forgot password ---------------
+  Future<void> _showForgotPasswordDialog(BuildContext rootContext) async {
+    final loc = AppLocalizations.of(rootContext)!;
+    final emailCtrl = TextEditingController();
+
+    await showDialog(
+      context: rootContext,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(loc.resetPassword),
+          content: TextField(
+            controller: emailCtrl,
+            decoration: InputDecoration(
+              labelText: loc.email,
+              hintText: loc.enterEmail,
+            ),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(loc.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = emailCtrl.text.trim();
+                if (email.isEmpty) {
+                  Fluttertoast.showToast(msg: loc.enterEmail);
+                  return;
+                }
+
+                try {
+                  await FirebaseAuth.instance
+                      .sendPasswordResetEmail(email: email);
+
+                  Navigator.of(dialogContext).pop();
+                  ScaffoldMessenger.of(rootContext).showSnackBar(
+                    SnackBar(content: Text(loc.resetEmailSent)),
+                  );
+                } catch (_) {
+                  Navigator.of(dialogContext).pop();
+                  ScaffoldMessenger.of(rootContext).showSnackBar(
+                    SnackBar(content: Text(loc.resetFailed)),
+                  );
+                }
+              },
+              child: Text(loc.send),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -83,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with logo
+            // Logo
             SizedBox(
               height: 200,
               child: Center(
@@ -91,6 +143,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
+            // White panel
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -99,107 +152,147 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
                   child: Column(
                     children: [
                       const SizedBox(height: 8),
-
                       Text(
                         loc.login,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
                           color: purple,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 24),
 
                       Form(
                         key: _formKey,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Email label
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                loc.email,
-                                style: TextStyle(color: Colors.grey[700]),
-                              ),
+                            // Email
+                            Text(
+                              loc.email,
+                              style: TextStyle(color: Colors.grey[700]),
                             ),
                             const SizedBox(height: 6),
-
                             TextFormField(
                               controller: _emailController,
                               decoration: InputDecoration(
                                 hintText: loc.enterEmail,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 14),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                               ),
-                              validator: (v) => v == null || v.isEmpty ? loc.enterEmail : null,
+                              validator: (v) =>
+                              v == null || v.isEmpty ? loc.enterEmail : null,
                               keyboardType: TextInputType.emailAddress,
                             ),
 
                             const SizedBox(height: 18),
 
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                loc.password,
-                                style: TextStyle(color: Colors.grey[700]),
-                              ),
+                            // Password
+                            Text(
+                              loc.password,
+                              style: TextStyle(color: Colors.grey[700]),
                             ),
                             const SizedBox(height: 6),
-
                             TextFormField(
                               controller: _passwordController,
                               decoration: InputDecoration(
                                 hintText: loc.enterPassword,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 14),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                               ),
                               obscureText: true,
-                              validator: (v) => v == null || v.isEmpty ? loc.enterPassword : null,
+                              validator: (v) => v == null || v.isEmpty
+                                  ? loc.enterPassword
+                                  : null,
                             ),
 
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 8),
 
-                            SizedBox(
-                              width: 180,
-                              height: 44,
-                              child: ElevatedButton(
-                                onPressed: _loading ? null : _login,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: purple,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(22),
+                            // Forgot password (center)
+                            Center(
+                              child: TextButton(
+                                onPressed: () =>
+                                    _showForgotPasswordDialog(context),
+                                child: Text(
+                                  loc.forgotPassword,
+                                  style: const TextStyle(
+                                    color: Colors.blue,
+                                    decoration: TextDecoration.underline,
                                   ),
-                                  elevation: 6,
-                                ),
-                                child: _loading
-                                    ? const CircularProgressIndicator(color: Colors.white)
-                                    : Text(
-                                  loc.loginButton,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
 
                             const SizedBox(height: 16),
 
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => const RegisterPage()),
-                                );
-                              },
-                              child: Text(
-                                loc.register,
-                                style: const TextStyle(decoration: TextDecoration.underline),
+                            // Login button (center)
+                            Center(
+                              child: SizedBox(
+                                width: 180,
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: _loading ? null : _login,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: purple,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    elevation: 6,
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(180, 48),
+                                  ),
+                                  child: _loading
+                                      ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                      : Text(
+                                    loc.loginButton,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            )
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Registration link (center)
+                            Center(
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterPage(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  loc.register,
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
