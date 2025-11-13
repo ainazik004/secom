@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:secom/main.dart';
 import '../services/auth_service.dart';
 import 'register_page.dart';
-import 'home_page.dart';
+import 'verify_email_page.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../main.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,29 +13,53 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+
   final _auth = AuthService();
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _loading = false;
 
-  void _login() async {
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _loading = true);
+
     try {
       final user = await _auth.signInWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      if (user != null) {
-        // if you require email verification, check here:
-        if (!user.emailVerified) {
-          Fluttertoast.showToast(msg: 'Please verify your email. Verification sent.');
+
+      // signInWithEmail already checks verification
+      if (user != null && user.emailVerified) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainPage()),
+        );
+      }
+
+    } catch (e) {
+      final message = e.toString();
+
+      if (message.contains('подтвердите ваш email')) {
+        // Unverified email
+        Fluttertoast.showToast(
+          msg: 'Пожалуйста, подтвердите email.',
+          toastLength: Toast.LENGTH_LONG,
+        );
+
+        final user = _auth.currentUser;
+        if (user != null) {
           await _auth.sendEmailVerification(user);
         }
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+        );
+      } else {
+        Fluttertoast.showToast(msg: 'Ошибка входа: $e');
       }
-    } catch (e) {
-      Fluttertoast.showToast(msg: 'Login error: ${e.toString()}');
     } finally {
       setState(() => _loading = false);
     }
@@ -51,18 +75,20 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final purple = const Color(0xFF2A1A57);
+
     return Scaffold(
       backgroundColor: purple,
       body: SafeArea(
         child: Column(
           children: [
-            // Header with logo area
+            // Header with logo
             SizedBox(
               height: 200,
               child: Center(
                 child: Image.asset('assets/secom_logo.png', height: 80),
               ),
             ),
+
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -75,8 +101,15 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     children: [
                       const SizedBox(height: 8),
-                      Text('Вход', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: purple, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Вход',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: purple,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 24),
+
                       Form(
                         key: _formKey,
                         child: Column(
@@ -93,10 +126,13 @@ class _LoginPageState extends State<LoginPage> {
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                               ),
-                              validator: (v) => (v == null || v.isEmpty) ? 'Введите email' : null,
+                              validator: (v) => v == null || v.isEmpty ? 'Введите email' : null,
                               keyboardType: TextInputType.emailAddress,
                             ),
+
                             const SizedBox(height: 18),
+
+                            // Password
                             Align(
                               alignment: Alignment.centerLeft,
                               child: Text('Пароль*', style: TextStyle(color: Colors.grey[700])),
@@ -109,11 +145,11 @@ class _LoginPageState extends State<LoginPage> {
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                               obscureText: true,
-                              validator: (v) => (v == null || v.isEmpty) ? 'Введите пароль' : null,
+                              validator: (v) => v == null || v.isEmpty ? 'Введите пароль' : null,
                             ),
+
                             const SizedBox(height: 24),
 
-                            // Login button
                             SizedBox(
                               width: 180,
                               height: 44,
@@ -121,24 +157,33 @@ class _LoginPageState extends State<LoginPage> {
                                 onPressed: _loading ? null : _login,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: purple,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
                                   elevation: 6,
                                 ),
-                                child: _loading ? const CircularProgressIndicator(color: Colors.white) : const Text('ВОЙТИ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                child: _loading
+                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    : const Text('ВОЙТИ', style: TextStyle(fontWeight: FontWeight.bold)),
                               ),
                             ),
 
                             const SizedBox(height: 16),
-                            // Register button
+
                             TextButton(
                               onPressed: () {
-                                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegisterPage()));
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const RegisterPage()),
+                                );
                               },
-                              child: const Text('Регистрация', style: TextStyle(decoration: TextDecoration.underline)),
+                              child: const Text(
+                                'Регистрация',
+                                style: TextStyle(decoration: TextDecoration.underline),
+                              ),
                             )
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),

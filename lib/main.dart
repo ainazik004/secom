@@ -17,9 +17,10 @@ import 'package:secom/pages/home_page.dart';
 import 'package:secom/pages/leaderboard_page.dart';
 import 'package:secom/pages/settings_page.dart';
 
-// Auth UI pages (you will add these pages to lib/pages/)
+// Auth pages
 import 'package:secom/pages/login_page.dart';
 import 'package:secom/pages/register_page.dart';
+import 'package:secom/pages/verify_email_page.dart';
 
 // Locale provider
 import 'package:secom/provider/provider.dart';
@@ -62,6 +63,7 @@ class SecomApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+
       localeResolutionCallback: (locale, supportedLocales) {
         if (locale == null) return supportedLocales.first;
         for (final supportedLocale in supportedLocales) {
@@ -69,10 +71,10 @@ class SecomApp extends StatelessWidget {
             return supportedLocale;
           }
         }
-        return supportedLocales.first; // fallback
+        return supportedLocales.first;
       },
 
-      // Theme setup (keeps your existing theme)
+      // App theme
       theme: ThemeData(
         primaryColor: const Color(0xFF2C015D),
         scaffoldBackgroundColor: Colors.white,
@@ -87,10 +89,8 @@ class SecomApp extends StatelessWidget {
         ),
       ),
 
-      // Use Root to decide initial screen based on auth state.
       home: const Root(),
 
-      // Named routes for convenient navigation from anywhere
       routes: {
         '/welcome': (_) => const WelcomePage(),
         '/login': (_) => const LoginPage(),
@@ -104,9 +104,11 @@ class SecomApp extends StatelessWidget {
   }
 }
 
-/// Root widget listens to FirebaseAuth and routes to MainPage (signed in)
-/// or WelcomePage (signed out). Firebase Auth persists the user by default,
-/// so this handles "remember once logged in" behavior automatically.
+//
+// ##############################################################
+// 🔥 ROOT LOGIC WITH EMAIL VERIFICATION ENFORCEMENT
+// ##############################################################
+//
 class Root extends StatelessWidget {
   const Root({super.key});
 
@@ -115,27 +117,37 @@ class Root extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // still initializing connection to Firebase Auth
+        // waiting for Firebase Auth
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // If there's no user -> show Welcome flow (user will then go to Login/Register)
-        if (!snapshot.hasData || snapshot.data == null) {
+        final user = snapshot.data;
+
+        // Not logged in → Welcome
+        if (user == null) {
           return const WelcomePage();
         }
 
-        // If user is signed in -> show MainPage (bottom navigation)
-        // Optionally you could check snapshot.data!.emailVerified here and force verification.
+        // Logged in but NOT verified → Verification page
+        if (!user.emailVerified) {
+          return const VerifyEmailPage();
+        }
+
+        // Logged in AND verified → MainPage
         return const MainPage();
       },
     );
   }
 }
 
-/// Your existing MainPage with bottom navigation. Kept largely as-is.
+//
+// ##############################################################
+// Main bottom-navigation container
+// ##############################################################
+//
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -150,9 +162,8 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
-    // Pages rebuilt on locale change
     final List<Widget> pages = [
-      HomePage(), // HomePage uses localized strings internally
+      HomePage(),
       const LeaderboardPage(),
       const SettingsPage(),
     ];
