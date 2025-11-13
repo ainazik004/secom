@@ -12,7 +12,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get home => 'Главная';
 
   @override
-  String get leaderboard => 'Рейтинг';
+  String get leaderboard => 'Таблица лидеров';
 
   @override
   String get settings => 'Настройки';
@@ -24,17 +24,123 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chooseLanguage => 'Выберите язык';
 
   @override
-  String get hello => 'Привет';
+  String get hello => 'Здравствуйте';
 
   @override
   String get math => 'Математика';
 
   @override
-  String get analogy => 'Аналогия и дополнение';
+  String get analogy => 'Аналогия';
 
   @override
-  String get reading => 'Чтение и понимание';
+  String get reading => 'Чтение';
 
   @override
-  String get grammar => 'Практическая грамматика русского языка';
+  String get grammar => 'Грамматика';
+
+  @override
+  String get login => 'Вход';
+
+  @override
+  String get register => 'Регистрация';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Пароль';
+
+  @override
+  String get enterEmail => 'Введите email';
+
+  @override
+  String get enterPassword => 'Введите пароль';
+
+  @override
+  String get enterName => 'Введите имя';
+
+  @override
+  String get enterPhone => 'Введите номер телефона';
+
+  @override
+  String get name => 'Имя';
+
+  @override
+  String get phone => 'Телефон';
+
+  @override
+  String get confirmEmail => 'Подтверждение Email';
+
+  @override
+  String get emailSent => 'Письмо с подтверждением отправлено.';
+
+  @override
+  String get resend => 'Отправить снова';
+
+  @override
+  String get iVerified => 'Я подтвердил';
+
+  @override
+  String get verificationRequired => 'Пожалуйста, подтвердите email.';
+
+  @override
+  String get loginButton => 'ВОЙТИ';
+
+  @override
+  String get registerButton => 'ЗАРЕГИСТРИРОВАТЬСЯ';
+
+  @override
+  String get registration => 'Регистрация';
+
+  @override
+  String get logout => 'Выйти из аккаунта';
+
+  @override
+  String get logoutQuestion => 'Вы действительно хотите выйти из аккаунта?';
+
+  @override
+  String get confirmation => 'Подтверждение';
+
+  @override
+  String get cancel => 'Отмена';
+
+  @override
+  String get logoutFailed => 'Ошибка выхода';
+
+  @override
+  String get profile => 'Профиль';
+
+  @override
+  String get profileInfo => 'Информация профиля';
+
+  @override
+  String get fullName => 'Полное имя';
+
+  @override
+  String get verified => 'Подтвержден';
+
+  @override
+  String get notVerified => 'Не подтвержден';
+
+  @override
+  String get createdAt => 'Аккаунт создан';
+
+  @override
+  String get editProfile => 'Редактировать профиль';
+
+  @override
+  String get changePassword => 'Сменить пароль';
+
+  @override
+  String get notifications => 'Уведомления';
+
+  @override
+  String get noNotifications => 'Пока уведомлений нет';
+
+  @override
+  String get educationCenter => 'образовательный центр';
+
+  @override
+  String get welcomeDescription =>
+      'Лидер по подготовке к ОРТ, рекордсмен по количеству золотых сертификатов и по числу абитуриентов, набравших свыше 200 баллов.';
 }

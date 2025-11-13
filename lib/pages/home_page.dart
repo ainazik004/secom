@@ -7,13 +7,26 @@ import 'categories/analogy_page.dart';
 import 'categories/reading_page.dart';
 import 'categories/grammar_page.dart';
 import 'package:secom/gen_l10n/app_localizations.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  Future<String> _loadUserName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return "";
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    return doc.data()?['fullName'] ?? "";
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ✅ Access localized strings
     final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -23,7 +36,7 @@ class HomePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔹 Top bar (logo + icons)
+              // 🔹 Top bar
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -68,18 +81,27 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // 🔹 Localized greeting
-              Text(
-                // Example: "Hello, Bekzat!" (you can make this localized too)
-                '${loc.hello}, Бекзат!',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
+              // 🔹 Localized dynamic greeting
+              FutureBuilder<String>(
+                future: _loadUserName(),
+                builder: (context, snapshot) {
+                  final name = snapshot.data ?? '';
+
+                  return Text(
+                    name.isNotEmpty
+                        ? "${loc.hello}, $name!"
+                        : loc.hello,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  );
+                },
               ),
+
               const SizedBox(height: 24),
 
-              // 🔹 Localized category buttons (❌ remove const)
+              // 🔹 Category buttons
               CategoryButton(
                 title: loc.math,
                 page: const MathematicsPage(),

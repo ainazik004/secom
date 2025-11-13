@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import '../main.dart';
 import 'login_page.dart';
+import 'package:secom/gen_l10n/app_localizations.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFF2C015D),
       body: SafeArea(
@@ -26,9 +28,9 @@ class WelcomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  const Text(
-                    'образовательный центр',
-                    style: TextStyle(
+                  Text(
+                    loc.educationCenter,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -37,12 +39,10 @@ class WelcomePage extends StatelessWidget {
 
                   const SizedBox(height: 40),
 
-                  const Text(
-                    'Лидер по подготовке к ОРТ, рекордсмен по количеству '
-                        'золотых сертификатов, а также по количеству абитуриентов, '
-                        'набравших свыше 200 баллов.',
+                  Text(
+                    loc.welcomeDescription,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 13,
                       height: 1.5,
@@ -51,7 +51,7 @@ class WelcomePage extends StatelessWidget {
 
                   const SizedBox(height: 80),
 
-                  // "ВХОД" button
+                  // LOGIN button
                   SizedBox(
                     width: double.infinity,
                     height: 60,
@@ -70,9 +70,9 @@ class WelcomePage extends StatelessWidget {
                           MaterialPageRoute(builder: (context) => const LoginPage()),
                         );
                       },
-                      child: const Text(
-                        'ВХОД',
-                        style: TextStyle(
+                      child: Text(
+                        loc.loginButton,
+                        style: const TextStyle(
                           color: Color(0xFF2C015D),
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -83,6 +83,7 @@ class WelcomePage extends StatelessWidget {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 100),
                 ],
               ),

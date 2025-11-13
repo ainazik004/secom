@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'verify_email_page.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:secom/gen_l10n/app_localizations.dart';
+
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
+
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
@@ -24,6 +27,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final loc = AppLocalizations.of(context)!;
     setState(() => _loading = true);
 
     try {
@@ -35,16 +39,15 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (user != null) {
-        Fluttertoast.showToast(msg: 'Письмо подтверждения отправлено.');
+        Fluttertoast.showToast(msg: loc.emailSent);
 
-        // 🔹 Redirect to the email verification screen (IMPORTANT)
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
         );
       }
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Ошибка: ${e.toString()}',
+        msg: e.toString(),
         toastLength: Toast.LENGTH_LONG,
       );
     } finally {
@@ -63,12 +66,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final purple = const Color(0xFF2A1A57);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: purple,
-        title: const Text('Регистрация'),
+        title: Text(loc.registration),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -80,31 +84,31 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   TextFormField(
                     controller: _nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Имя'),
-                    validator: (v) => v!.isEmpty ? 'Введите имя' : null,
+                    decoration: InputDecoration(labelText: loc.name),
+                    validator: (v) => v!.isEmpty ? loc.enterName : null,
                   ),
                   const SizedBox(height: 12),
 
                   TextFormField(
                     controller: _emailCtrl,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    validator: (v) => v!.isEmpty ? 'Введите email' : null,
+                    decoration: InputDecoration(labelText: loc.email),
+                    validator: (v) => v!.isEmpty ? loc.enterEmail : null,
                   ),
                   const SizedBox(height: 12),
 
                   TextFormField(
                     controller: _phoneCtrl,
-                    decoration: const InputDecoration(labelText: 'Телефон'),
-                    validator: (v) => v!.isEmpty ? 'Введите телефон' : null,
+                    decoration: InputDecoration(labelText: loc.phone),
+                    validator: (v) => v!.isEmpty ? loc.enterPhone : null,
                   ),
                   const SizedBox(height: 12),
 
                   TextFormField(
                     controller: _pwdCtrl,
-                    decoration: const InputDecoration(labelText: 'Пароль'),
+                    decoration: InputDecoration(labelText: loc.password),
                     obscureText: true,
                     validator: (v) =>
-                    v!.length < 6 ? 'Минимум 6 символов' : null,
+                    v!.length < 6 ? loc.enterPassword : null,
                   ),
                   const SizedBox(height: 20),
 
@@ -121,7 +125,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       child: _loading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Зарегистрироваться'),
+                          : Text(loc.registerButton),
                     ),
                   ),
                 ],

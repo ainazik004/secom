@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:secom/main.dart';
 import '../services/auth_service.dart';
+import 'package:secom/gen_l10n/app_localizations.dart';
 
 class VerifyEmailPage extends StatefulWidget {
   const VerifyEmailPage({super.key});
@@ -20,10 +21,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   void initState() {
     super.initState();
 
-    // Initial verification check
-    _checkEmailVerified();
+    _checkEmailVerified(); // immediate check
 
-    // Poll every 3 seconds
     _timer = Timer.periodic(
       const Duration(seconds: 3),
           (_) => _checkEmailVerified(),
@@ -49,12 +48,10 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     if (refreshed.emailVerified) {
       _timer?.cancel();
 
-      // Update Firestore
       try {
         await _auth.updateVerifiedStatus();
       } catch (_) {}
 
-      // Navigate to MainPage (not HomePage)
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -71,6 +68,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    final loc = AppLocalizations.of(context)!;
+
     setState(() => _isSending = true);
 
     try {
@@ -78,7 +77,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Письмо с подтверждением отправлено!')),
+          SnackBar(content: Text(loc.emailSent)),
         );
       }
     } finally {
@@ -88,14 +87,15 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final purple = const Color(0xFF2A1A57);
 
     return WillPopScope(
-      onWillPop: () async => false, // 🚫 forbid back navigation
+      onWillPop: () async => false,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: purple,
-          title: const Text('Подтверждение Email'),
+          title: Text(loc.confirmEmail),
           automaticallyImplyLeading: false,
         ),
         body: Center(
@@ -104,10 +104,10 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Письмо с подтверждением отправлено.\n'
-                      'Пожалуйста, проверьте свою почту.',
+                Text(
+                  loc.emailSent,
                   textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
                 ),
 
                 const SizedBox(height: 24),
@@ -119,14 +119,14 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                   ),
                   child: _isSending
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Отправить снова'),
+                      : Text(loc.resend),
                 ),
 
                 const SizedBox(height: 16),
 
                 TextButton(
                   onPressed: _checkEmailVerified,
-                  child: const Text('Я подтвердил'),
+                  child: Text(loc.iVerified),
                 ),
               ],
             ),

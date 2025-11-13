@@ -12,6 +12,8 @@ class SettingsPage extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     final navigator = Navigator.of(context);
+    final loc = AppLocalizations.of(context)!;
+
     try {
       await FirebaseAuth.instance.signOut();
       navigator.pushAndRemoveUntil(
@@ -20,7 +22,7 @@ class SettingsPage extends StatelessWidget {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logout failed: ${e.toString()}')),
+        SnackBar(content: Text('${loc.logoutFailed}: ${e.toString()}')),
       );
     }
   }
@@ -47,29 +49,28 @@ class SettingsPage extends StatelessWidget {
             onTap: () {
               showDialog(
                 context: context,
-                builder: (context) =>
-                    AlertDialog(
-                      title: Text(loc.language),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: L10n.all.map((locale) {
-                          final languageName = L10n.getLanguageName(
-                              locale.languageCode);
-                          final isSelected = locale == currentLocale;
+                builder: (context) => AlertDialog(
+                  title: Text(loc.language),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: L10n.all.map((locale) {
+                      final languageName =
+                      L10n.getLanguageName(locale.languageCode);
+                      final isSelected = locale == currentLocale;
 
-                          return ListTile(
-                            title: Text(languageName),
-                            trailing: isSelected
-                                ? const Icon(Icons.check, color: Colors.pink)
-                                : null,
-                            onTap: () {
-                              provider.setLocale(locale);
-                              Navigator.pop(context);
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
+                      return ListTile(
+                        title: Text(languageName),
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: Colors.pink)
+                            : null,
+                        onTap: () {
+                          provider.setLocale(locale);
+                          Navigator.pop(context);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
               );
             },
           ),
@@ -80,35 +81,35 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.redAccent),
             title: Text(
-              'Выйти из аккаунта',
+              loc.logout,
               style: const TextStyle(
-                  color: Colors.redAccent, fontWeight: FontWeight.bold),
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             onTap: () {
               showDialog(
                 context: context,
-                builder: (_) =>
-                    AlertDialog(
-                      title: const Text('Подтверждение'),
-                      content: const Text(
-                          'Вы действительно хотите выйти из аккаунта?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Отмена'),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                          ),
-                          onPressed: () async {
-                            Navigator.pop(context); // close dialog
-                            await _logout(context);
-                          },
-                          child: const Text('Выйти'),
-                        ),
-                      ],
+                builder: (_) => AlertDialog(
+                  title: Text(loc.confirmation),
+                  content: Text(loc.logoutQuestion),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(loc.cancel),
                     ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                      ),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await _logout(context);
+                      },
+                      child: Text(loc.logout),
+                    ),
+                  ],
+                ),
               );
             },
           ),

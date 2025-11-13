@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import 'register_page.dart';
 import 'verify_email_page.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:secom/gen_l10n/app_localizations.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,13 +27,14 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _loading = true);
 
+    final loc = AppLocalizations.of(context)!;
+
     try {
       final user = await _auth.signInWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // signInWithEmail already checks verification
       if (user != null && user.emailVerified) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainPage()),
@@ -42,10 +44,9 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       final message = e.toString();
 
-      if (message.contains('подтвердите ваш email')) {
-        // Unverified email
+      if (message.contains('подтвердите')) {
         Fluttertoast.showToast(
-          msg: 'Пожалуйста, подтвердите email.',
+          msg: loc.verificationRequired,
           toastLength: Toast.LENGTH_LONG,
         );
 
@@ -58,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
         );
       } else {
-        Fluttertoast.showToast(msg: 'Ошибка входа: $e');
+        Fluttertoast.showToast(msg: message);
       }
     } finally {
       setState(() => _loading = false);
@@ -74,6 +75,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final purple = const Color(0xFF2A1A57);
 
     return Scaffold(
@@ -101,51 +103,62 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     children: [
                       const SizedBox(height: 8),
+
                       Text(
-                        'Вход',
+                        loc.login,
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           color: purple,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+
                       const SizedBox(height: 24),
 
                       Form(
                         key: _formKey,
                         child: Column(
                           children: [
-                            // Email
+                            // Email label
                             Align(
                               alignment: Alignment.centerLeft,
-                              child: Text('Логин*', style: TextStyle(color: Colors.grey[700])),
+                              child: Text(
+                                loc.email,
+                                style: TextStyle(color: Colors.grey[700]),
+                              ),
                             ),
                             const SizedBox(height: 6),
+
                             TextFormField(
                               controller: _emailController,
                               decoration: InputDecoration(
+                                hintText: loc.enterEmail,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                               ),
-                              validator: (v) => v == null || v.isEmpty ? 'Введите email' : null,
+                              validator: (v) => v == null || v.isEmpty ? loc.enterEmail : null,
                               keyboardType: TextInputType.emailAddress,
                             ),
 
                             const SizedBox(height: 18),
 
-                            // Password
                             Align(
                               alignment: Alignment.centerLeft,
-                              child: Text('Пароль*', style: TextStyle(color: Colors.grey[700])),
+                              child: Text(
+                                loc.password,
+                                style: TextStyle(color: Colors.grey[700]),
+                              ),
                             ),
                             const SizedBox(height: 6),
+
                             TextFormField(
                               controller: _passwordController,
                               decoration: InputDecoration(
+                                hintText: loc.enterPassword,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                               obscureText: true,
-                              validator: (v) => v == null || v.isEmpty ? 'Введите пароль' : null,
+                              validator: (v) => v == null || v.isEmpty ? loc.enterPassword : null,
                             ),
 
                             const SizedBox(height: 24),
@@ -164,7 +177,10 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 child: _loading
                                     ? const CircularProgressIndicator(color: Colors.white)
-                                    : const Text('ВОЙТИ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    : Text(
+                                  loc.loginButton,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ),
 
@@ -176,14 +192,14 @@ class _LoginPageState extends State<LoginPage> {
                                   MaterialPageRoute(builder: (_) => const RegisterPage()),
                                 );
                               },
-                              child: const Text(
-                                'Регистрация',
-                                style: TextStyle(decoration: TextDecoration.underline),
+                              child: Text(
+                                loc.register,
+                                style: const TextStyle(decoration: TextDecoration.underline),
                               ),
                             )
                           ],
                         ),
-                      ),
+                      )
                     ],
                   ),
                 ),

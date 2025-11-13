@@ -1,5 +1,6 @@
 {
   "@@locale": "en",
+
   "home": "Home",
   "leaderboard": "Leaderboard",
   "settings": "Settings",
@@ -9,5 +10,44 @@
   "math": "Mathematics",
   "analogy": "Analogy",
   "reading": "Reading",
-  "grammar": "Grammar"
+  "grammar": "Grammar",
+
+  "login": "Login",
+  "register": "Register",
+  "email": "Email",
+  "password": "Password",
+  "enterEmail": "Enter email",
+  "enterPassword": "Enter password",
+  "enterName": "Enter name",
+  "enterPhone": "Enter phone number",
+  "name": "Name",
+  "phone": "Phone",
+  "confirmEmail": "Email confirmation",
+  "emailSent": "A confirmation email has been sent.",
+  "resend": "Resend",
+  "iVerified": "I have verified",
+  "verificationRequired": "Please verify your email.",
+  "loginButton": "LOGIN",
+  "registerButton": "REGISTER",
+  "registration": "Registration",
+
+  "logout": "Log out",
+  "logoutQuestion": "Are you sure you want to log out?",
+  "confirmation": "Confirmation",
+  "cancel": "Cancel",
+  "logoutFailed": "Logout failed",
+
+  "profile": "Profile",
+  "profileInfo": "Profile information",
+  "fullName": "Full name",
+  "verified": "Verified",
+  "notVerified": "Not verified",
+  "createdAt": "Account created",
+  "editProfile": "Edit profile",
+  "changePassword": "Change password",
+  "notifications": "Notifications",
+  "noNotifications": "No notifications yet",
+  "educationCenter": "Educational Center",
+  "welcomeDescription": "A leader in preparation for ORT, holder of the record for the number of gold certificates, as well as the number of applicants scoring above 200 points."
+
 }
