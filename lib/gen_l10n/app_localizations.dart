@@ -436,6 +436,12 @@ abstract class AppLocalizations {
   /// **'Photo updated'**
   String get photoUpdated;
 
+  /// No description provided for @homeCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice Categories'**
+  String get homeCategories;
+
   /// No description provided for @invalidCode.
   ///
   /// In en, this message translates to:

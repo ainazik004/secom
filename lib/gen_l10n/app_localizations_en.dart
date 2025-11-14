@@ -178,5 +178,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoUpdated => 'Photo updated';
 
   @override
+  String get homeCategories => 'Practice Categories';
+
+  @override
   String get invalidCode => 'Invalid code, please try again.';
 }
