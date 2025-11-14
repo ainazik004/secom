@@ -59,6 +59,26 @@
   "phoneUpdated": "Телефон обновлён",
   "photoUpdated": "Фото обновлено",
   "homeCategories": "Категории для практики",
-  "invalidCode": "Неверный код, попробуйте снова."
+  "invalidCode": "Неверный код, попробуйте снова.",
+  "statistics": "Статистика",
+  "statsTitle": "Статистика",
+  "statsSubtitle": "Отслеживайте свой прогресс",
+  "statsCompleted": "Выполненные задания",
+  "statsAccuracy": "Точность",
+  "statsTimeSpent": "Время обучения",
+
+  "leaderboardTitle": "Топ студентов",
+  "noUsers": "Пользователи не найдены",
+
+  "trophies": "Трофеи",
+
+  "welcomeTitle": "Добро пожаловать в SECOM Prep",
+  "welcomeSubtitle": "Учитесь умно, наслаждайтесь процессом, достигайте целей.",
+  "welcomeToSecom": "Добро пожаловать в SECOM Prep",
+  "prepSmart": "Учитесь умно, наслаждайтесь процессом и достигайте целей.",
+  "over500questions": "500+ вопросов",
+  "sharpenReasoning": "Развивайте логическое мышление",
+  "over400passages": "400+ текстов для чтения",
+  "over2000questions": "2000+ вопросов"
 
 }

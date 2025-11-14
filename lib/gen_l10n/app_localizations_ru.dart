@@ -182,4 +182,57 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get invalidCode => 'Неверный код, попробуйте снова.';
+
+  @override
+  String get statistics => 'Статистика';
+
+  @override
+  String get statsTitle => 'Статистика';
+
+  @override
+  String get statsSubtitle => 'Отслеживайте свой прогресс';
+
+  @override
+  String get statsCompleted => 'Выполненные задания';
+
+  @override
+  String get statsAccuracy => 'Точность';
+
+  @override
+  String get statsTimeSpent => 'Время обучения';
+
+  @override
+  String get leaderboardTitle => 'Топ студентов';
+
+  @override
+  String get noUsers => 'Пользователи не найдены';
+
+  @override
+  String get trophies => 'Трофеи';
+
+  @override
+  String get welcomeTitle => 'Добро пожаловать в SECOM Prep';
+
+  @override
+  String get welcomeSubtitle =>
+      'Учитесь умно, наслаждайтесь процессом, достигайте целей.';
+
+  @override
+  String get welcomeToSecom => 'Добро пожаловать в SECOM Prep';
+
+  @override
+  String get prepSmart =>
+      'Учитесь умно, наслаждайтесь процессом и достигайте целей.';
+
+  @override
+  String get over500questions => '500+ вопросов';
+
+  @override
+  String get sharpenReasoning => 'Развивайте логическое мышление';
+
+  @override
+  String get over400passages => '400+ текстов для чтения';
+
+  @override
+  String get over2000questions => '2000+ вопросов';
 }

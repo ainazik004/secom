@@ -182,4 +182,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidCode => 'Invalid code, please try again.';
+
+  @override
+  String get statistics => 'Statistics';
+
+  @override
+  String get statsTitle => 'Statistics';
+
+  @override
+  String get statsSubtitle => 'Track your progress';
+
+  @override
+  String get statsCompleted => 'Completed tasks';
+
+  @override
+  String get statsAccuracy => 'Accuracy';
+
+  @override
+  String get statsTimeSpent => 'Study time';
+
+  @override
+  String get leaderboardTitle => 'Top Students';
+
+  @override
+  String get noUsers => 'No users found';
+
+  @override
+  String get trophies => 'Trophies';
+
+  @override
+  String get welcomeTitle => 'Welcome to SECOM Prep';
+
+  @override
+  String get welcomeSubtitle => 'Prep smart, enjoy learning, reach your goals.';
+
+  @override
+  String get welcomeToSecom => 'Welcome to SECOM Prep';
+
+  @override
+  String get prepSmart => 'Prep smart, enjoy learning, reach your goals.';
+
+  @override
+  String get over500questions => '500+ Questions';
+
+  @override
+  String get sharpenReasoning => 'Sharpen reasoning skills';
+
+  @override
+  String get over400passages => '400+ Passages';
+
+  @override
+  String get over2000questions => '2000+ Questions';
 }

@@ -59,6 +59,25 @@
   "phoneUpdated": "Номер жаңыртылды",
   "photoUpdated": "Сүрөт жаңыртылды",
   "homeCategories": "Практика категориялары",
-  "invalidCode": "Туура эмес код, кайра аракет кылыңыз."
+  "invalidCode": "Туура эмес код, кайра аракет кылыңыз.",
+  "statistics": "Статистика",
+  "statsTitle": "Статистика",
+  "statsSubtitle": "Прогрессиңизди көзөмөлдөңүз",
+  "statsCompleted": "Аткарылган тапшырмалар",
+  "statsAccuracy": "Тактык",
+  "statsTimeSpent": "Окуу убактысы",
 
+  "leaderboardTitle": "Мыкты студенттер",
+  "noUsers": "Колдонуучулар табылган жок",
+
+  "trophies": "Трофейлер",
+
+  "welcomeTitle": "SECOM Prep'ке кош келиңиз",
+  "welcomeSubtitle": "Акылдуу даярданыңыз, окуудан ырахат алыңыз, максатыңызга жетиңиз.",
+  "welcomeToSecom": "SECOM Prep'ке кош келиңиз",
+  "prepSmart": "Акылдуу даярданып, окуудан ырахат алыңыз, максатыңызга жетиңиз.",
+  "over500questions": "500+ суроо",
+  "sharpenReasoning": "Логикалык ой жүгүртүүнү жакшыртыңыз",
+  "over400passages": "400+ окуу тексти",
+  "over2000questions": "2000+ суроо"
 }

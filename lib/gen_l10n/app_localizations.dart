@@ -447,6 +447,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid code, please try again.'**
   String get invalidCode;
+
+  /// No description provided for @statistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statistics;
+
+  /// No description provided for @statsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statsTitle;
+
+  /// No description provided for @statsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your progress'**
+  String get statsSubtitle;
+
+  /// No description provided for @statsCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed tasks'**
+  String get statsCompleted;
+
+  /// No description provided for @statsAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy'**
+  String get statsAccuracy;
+
+  /// No description provided for @statsTimeSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Study time'**
+  String get statsTimeSpent;
+
+  /// No description provided for @leaderboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top Students'**
+  String get leaderboardTitle;
+
+  /// No description provided for @noUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get noUsers;
+
+  /// No description provided for @trophies.
+  ///
+  /// In en, this message translates to:
+  /// **'Trophies'**
+  String get trophies;
+
+  /// No description provided for @welcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to SECOM Prep'**
+  String get welcomeTitle;
+
+  /// No description provided for @welcomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prep smart, enjoy learning, reach your goals.'**
+  String get welcomeSubtitle;
+
+  /// No description provided for @welcomeToSecom.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to SECOM Prep'**
+  String get welcomeToSecom;
+
+  /// No description provided for @prepSmart.
+  ///
+  /// In en, this message translates to:
+  /// **'Prep smart, enjoy learning, reach your goals.'**
+  String get prepSmart;
+
+  /// No description provided for @over500questions.
+  ///
+  /// In en, this message translates to:
+  /// **'500+ Questions'**
+  String get over500questions;
+
+  /// No description provided for @sharpenReasoning.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharpen reasoning skills'**
+  String get sharpenReasoning;
+
+  /// No description provided for @over400passages.
+  ///
+  /// In en, this message translates to:
+  /// **'400+ Passages'**
+  String get over400passages;
+
+  /// No description provided for @over2000questions.
+  ///
+  /// In en, this message translates to:
+  /// **'2000+ Questions'**
+  String get over2000questions;
 }
 
 class _AppLocalizationsDelegate

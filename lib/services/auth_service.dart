@@ -35,9 +35,13 @@ class AuthService {
         'fullName': fullName,
         'email': email,
         'phone': phoneNumber,
+        'phoneVerified': false,
         'emailVerified': false,
+        'photoUrl': "",          // <--- IMPORTANT
+        'trophies': 0,           // <--- MANDATORY TO PREVENT CRASH
         'createdAt': FieldValue.serverTimestamp(),
       });
+
 
       // Send verification email
       await user.sendEmailVerification();

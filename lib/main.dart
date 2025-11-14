@@ -17,6 +17,7 @@ import 'package:secom/pages/welcome_page.dart';
 import 'package:secom/pages/home_page.dart';
 import 'package:secom/pages/leaderboard_page.dart';
 import 'package:secom/pages/settings_page.dart';
+import 'package:secom/pages/statistics_page.dart';
 
 // Auth pages
 import 'package:secom/pages/login_page.dart';
@@ -26,7 +27,7 @@ import 'package:secom/pages/verify_email_page.dart';
 // Locale provider
 import 'package:secom/provider/provider.dart';
 
-//other
+// Other
 import 'package:secom/pages/notifications_page.dart';
 import 'package:secom/pages/profile_page.dart';
 import 'package:secom/widgets/main_app_header.dart';
@@ -70,29 +71,17 @@ class SecomApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
 
-      localeResolutionCallback: (locale, supportedLocales) {
-        if (locale == null) return supportedLocales.first;
-        for (final supportedLocale in supportedLocales) {
-          if (supportedLocale.languageCode == locale.languageCode) {
-            return supportedLocale;
-          }
+      localeResolutionCallback: (locale, supported) {
+        if (locale == null) return supported.first;
+        for (final s in supported) {
+          if (s.languageCode == locale.languageCode) return s;
         }
-        return supportedLocales.first;
+        return supported.first;
       },
 
-      // App theme
       theme: ThemeData(
         primaryColor: const Color(0xFF2C015D),
         scaffoldBackgroundColor: Colors.white,
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFF3D7F),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 20),
-          ),
-        ),
       ),
 
       home: const Root(),
@@ -102,7 +91,7 @@ class SecomApp extends StatelessWidget {
         '/login': (_) => const LoginPage(),
         '/register': (_) => const RegisterPage(),
         '/main': (_) => const MainPage(),
-        '/home': (_) => HomePage(),
+        '/home': (_) => const HomePage(),
         '/leaderboard': (_) => const LeaderboardPage(),
         '/settings': (_) => const SettingsPage(),
       },
@@ -111,9 +100,7 @@ class SecomApp extends StatelessWidget {
 }
 
 //
-// ##############################################################
-// 🔥 ROOT LOGIC WITH EMAIL VERIFICATION ENFORCEMENT
-// ##############################################################
+// ######################## ROOT ########################
 //
 class Root extends StatelessWidget {
   const Root({super.key});
@@ -122,27 +109,18 @@ class Root extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // waiting for Firebase Auth
-        if (snapshot.connectionState == ConnectionState.waiting) {
+      builder: (context, s) {
+        if (s.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        final user = snapshot.data;
+        final user = s.data;
 
-        // Not logged in → Welcome
-        if (user == null) {
-          return const WelcomePage();
-        }
+        if (user == null) return const WelcomePage();
+        if (!user.emailVerified) return const VerifyEmailPage();
 
-        // Logged in but NOT verified → Verification page
-        if (!user.emailVerified) {
-          return const VerifyEmailPage();
-        }
-
-        // Logged in AND verified → MainPage
         return const MainPage();
       },
     );
@@ -150,9 +128,7 @@ class Root extends StatelessWidget {
 }
 
 //
-// ##############################################################
-// Main bottom-navigation container
-// ##############################################################
+// ######################## MAIN PAGE ########################
 //
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -175,12 +151,12 @@ class _MainPageState extends State<MainPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return {};
 
-    final snapshot = await FirebaseFirestore.instance
+    final snap = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get();
 
-    return snapshot.data() ?? {};
+    return snap.data() ?? {};
   }
 
   @override
@@ -189,38 +165,34 @@ class _MainPageState extends State<MainPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F4FF),
+
       body: SafeArea(
         child: FutureBuilder<Map<String, dynamic>>(
           future: _userFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+          builder: (context, s) {
+            if (s.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (snapshot.hasError) {
-              return Center(
-                child: Text('Error: ${snapshot.error}'),
-              );
-            }
+            final data = s.data ?? {};
 
-            final data = snapshot.data ?? {};
-            final int trophies = (data['trophies'] ?? 0) is int
-                ? data['trophies']
-                : int.tryParse('${data['trophies']}') ?? 0;
-            final dynamic photoData = data['photoUrl'];
-            final String? photoUrl = photoData is String ? photoData : null;
+            // Trophies safe parsing
+            final dynamic t = data['trophies'];
+            final int trophies = t is int ? t : int.tryParse("$t") ?? 0;
+
+            final photoUrl =
+            data['photoUrl'] is String ? data['photoUrl'] : null;
+
             final pages = [
-              HomePage(
-                embedded: true,
-                userData: data,
-              ),
-              const LeaderboardPage(embedded: true),
-              const SettingsPage(embedded: true),
+              const HomePage(),
+              const LeaderboardPage(),
+              const StatisticsPage(),
+              const SettingsPage(),
             ];
 
             return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // TOP HEADER
                 MainAppHeader(
                   trophyCount: trophies,
                   photoUrl: photoUrl,
@@ -231,9 +203,7 @@ class _MainPageState extends State<MainPage> {
                         builder: (_) => const NotificationsPage(),
                       ),
                     ).then((_) {
-                      setState(() {
-                        _userFuture = _loadUserData();
-                      });
+                      setState(() => _userFuture = _loadUserData());
                     });
                   },
                   onTapProfile: () {
@@ -243,12 +213,11 @@ class _MainPageState extends State<MainPage> {
                         builder: (_) => const ProfilePage(),
                       ),
                     ).then((_) {
-                      setState(() {
-                        _userFuture = _loadUserData();
-                      });
+                      setState(() => _userFuture = _loadUserData());
                     });
                   },
                 ),
+
                 Expanded(
                   child: IndexedStack(
                     index: _currentIndex,
@@ -260,31 +229,28 @@ class _MainPageState extends State<MainPage> {
           },
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x162C015D),
-              blurRadius: 20,
-              offset: Offset(0, -4),
-            ),
-          ],
+
+      // BOTTOM NAVIGATION
+      bottomNavigationBar: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(28),
-            topRight: Radius.circular(28),
-          ),
+        child: Container(
+          padding: const EdgeInsets.only(top: 8, bottom: 12), // makes it taller safely
+          color: const Color(0xFF2C015D),
           child: BottomNavigationBar(
-            backgroundColor: const Color(0xFF2C015D),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
             selectedItemColor: Colors.white,
             unselectedItemColor: Colors.white70,
-            showUnselectedLabels: true,
+            iconSize: 30,
             selectedFontSize: 13,
             unselectedFontSize: 12,
-            currentIndex: _currentIndex,
-            onTap: (index) => setState(() => _currentIndex = index),
+            showUnselectedLabels: true,
             type: BottomNavigationBarType.fixed,
+            currentIndex: _currentIndex,
+            onTap: (i) => setState(() => _currentIndex = i),
             items: [
               BottomNavigationBarItem(
                 icon: const Icon(Icons.home_rounded),
@@ -293,6 +259,10 @@ class _MainPageState extends State<MainPage> {
               BottomNavigationBarItem(
                 icon: const Icon(Icons.leaderboard_rounded),
                 label: loc.leaderboard,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.show_chart_rounded),
+                label: loc.statistics,
               ),
               BottomNavigationBarItem(
                 icon: const Icon(Icons.settings_rounded),

@@ -182,4 +182,57 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get invalidCode => 'Туура эмес код, кайра аракет кылыңыз.';
+
+  @override
+  String get statistics => 'Статистика';
+
+  @override
+  String get statsTitle => 'Статистика';
+
+  @override
+  String get statsSubtitle => 'Прогрессиңизди көзөмөлдөңүз';
+
+  @override
+  String get statsCompleted => 'Аткарылган тапшырмалар';
+
+  @override
+  String get statsAccuracy => 'Тактык';
+
+  @override
+  String get statsTimeSpent => 'Окуу убактысы';
+
+  @override
+  String get leaderboardTitle => 'Мыкты студенттер';
+
+  @override
+  String get noUsers => 'Колдонуучулар табылган жок';
+
+  @override
+  String get trophies => 'Трофейлер';
+
+  @override
+  String get welcomeTitle => 'SECOM Prep\'ке кош келиңиз';
+
+  @override
+  String get welcomeSubtitle =>
+      'Акылдуу даярданыңыз, окуудан ырахат алыңыз, максатыңызга жетиңиз.';
+
+  @override
+  String get welcomeToSecom => 'SECOM Prep\'ке кош келиңиз';
+
+  @override
+  String get prepSmart =>
+      'Акылдуу даярданып, окуудан ырахат алыңыз, максатыңызга жетиңиз.';
+
+  @override
+  String get over500questions => '500+ суроо';
+
+  @override
+  String get sharpenReasoning => 'Логикалык ой жүгүртүүнү жакшыртыңыз';
+
+  @override
+  String get over400passages => '400+ окуу тексти';
+
+  @override
+  String get over2000questions => '2000+ суроо';
 }

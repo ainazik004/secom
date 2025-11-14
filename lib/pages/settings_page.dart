@@ -31,22 +31,15 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final body = _buildBody(context);
-
+    // If embedded inside MainPage → return body only
     if (embedded) {
-      return body;
+      return SafeArea(child: _buildBody(context));
     }
 
-    final loc = AppLocalizations.of(context)!;
-
+    // Stand-alone version → NO header
     return Scaffold(
       backgroundColor: const Color(0xFFF6F4FF),
-      appBar: AppBar(
-        title: Text(loc.settings),
-        backgroundColor: const Color(0xFF2C015D),
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(child: body),
+      body: SafeArea(child: _buildBody(context)),
     );
   }
 
@@ -58,15 +51,9 @@ class SettingsPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
-        Text(
-          loc.settings,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF2C015D),
-          ),
-        ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 12), // spacing after header
+
+        // ---------- Language ----------
         _SettingCard(
           onTap: () {
             showDialog(
@@ -77,7 +64,7 @@ class SettingsPage extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: L10n.all.map((locale) {
                     final languageName =
-                        L10n.getLanguageName(locale.languageCode);
+                    L10n.getLanguageName(locale.languageCode);
                     final isSelected = locale == currentLocale;
 
                     return ListTile(
@@ -100,6 +87,8 @@ class SettingsPage extends StatelessWidget {
           title: loc.language,
           subtitle: loc.chooseLanguage,
         ),
+
+        // ---------- Logout ----------
         _SettingCard(
           onTap: () {
             showDialog(
@@ -132,6 +121,8 @@ class SettingsPage extends StatelessWidget {
           title: loc.logout,
           titleColor: Colors.redAccent,
         ),
+
+        const SizedBox(height: 30),
       ],
     );
   }
@@ -193,7 +184,6 @@ class _SettingCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
