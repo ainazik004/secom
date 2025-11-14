@@ -13,21 +13,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  Future<String> _loadUserName() async {
+  Future<Map<String, dynamic>> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return "";
+    if (user == null) return {};
 
     final doc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get();
 
-    return doc.data()?['fullName'] ?? "";
+    return doc.data() ?? {};
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    const purple = Color(0xFF2C015D);
 
     return Scaffold(
       body: SafeArea(
@@ -36,61 +37,119 @@ class HomePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔹 Top bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Image.asset(
-                    'assets/secom_logo.png',
-                    height: 40,
-                  ),
-                  Row(
+              // 🔹 Top bar with trophy icon
+              FutureBuilder<Map<String, dynamic>>(
+                future: _loadUserData(),
+                builder: (context, snapshot) {
+                  final data = snapshot.data ?? {};
+                  final photoUrl = data["photoUrl"];
+                  final trophies = data["trophies"] ?? 0;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.notifications_none,
-                            color: Color(0xFF2C015D)),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NotificationsPage(),
-                            ),
-                          );
-                        },
+                      // Logo
+                      Image.asset(
+                        'assets/secom_logo.png',
+                        height: 40,
                       ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ProfilePage(),
+
+                      Row(
+                        children: [
+                          // Notifications
+                          IconButton(
+                            icon: const Icon(
+                              Icons.notifications_none,
+                              color: Color(0xFF2C015D),
                             ),
-                          );
-                        },
-                        child: const CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Color(0xFF2C015D),
-                          child: Icon(Icons.person,
-                              size: 16, color: Colors.white),
-                        ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const NotificationsPage(),
+                                ),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          // 🔥 TROPHY ICON + DYNAMIC NUMBER
+                          FutureBuilder<Map<String, dynamic>>(
+                            future: _loadUserData(),
+                            builder: (context, snapshot) {
+                              final data = snapshot.data ?? {};
+                              final trophies = data["trophies"] ?? 0;
+
+                              return Row(
+                                children: [
+                                  Icon(
+                                    Icons.emoji_events,
+                                    color: Colors.amber[600],
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    trophies.toString(),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF2C015D),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                ],
+                              );
+                            },
+                          ),
+
+                          // 🔥 PROFILE PICTURE (or default icon)
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ProfilePage(),
+                                ),
+                              );
+                            },
+                            child: FutureBuilder<Map<String, dynamic>>(
+                              future: _loadUserData(),
+                              builder: (context, snapshot) {
+                                final data = snapshot.data ?? {};
+                                final photoUrl = data["photoUrl"];
+
+                                return photoUrl == null
+                                    ? const CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Color(0xFF2C015D),
+                                  child: Icon(Icons.person, size: 18, color: Colors.white),
+                                )
+                                    : CircleAvatar(
+                                  radius: 16,
+                                  backgroundImage: NetworkImage(photoUrl),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
+                  );
+                },
               ),
+
               const SizedBox(height: 24),
 
-              // 🔹 Localized dynamic greeting
-              FutureBuilder<String>(
-                future: _loadUserName(),
+              // 🔹 Greeting text
+              FutureBuilder<Map<String, dynamic>>(
+                future: _loadUserData(),
                 builder: (context, snapshot) {
-                  final name = snapshot.data ?? '';
+                  final data = snapshot.data ?? {};
+                  final name = data["fullName"] ?? "";
 
                   return Text(
-                    name.isNotEmpty
-                        ? "${loc.hello}, $name!"
-                        : loc.hello,
+                    name.isNotEmpty ? "${loc.hello}, $name!" : loc.hello,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -98,26 +157,13 @@ class HomePage extends StatelessWidget {
                   );
                 },
               ),
-
               const SizedBox(height: 24),
 
               // 🔹 Category buttons
-              CategoryButton(
-                title: loc.math,
-                page: const MathematicsPage(),
-              ),
-              CategoryButton(
-                title: loc.analogy,
-                page: const AnalogyPage(),
-              ),
-              CategoryButton(
-                title: loc.reading,
-                page: const ReadingPage(),
-              ),
-              CategoryButton(
-                title: loc.grammar,
-                page: const GrammarPage(),
-              ),
+              CategoryButton(title: loc.math, page: const MathematicsPage()),
+              CategoryButton(title: loc.analogy, page: const AnalogyPage()),
+              CategoryButton(title: loc.reading, page: const ReadingPage()),
+              CategoryButton(title: loc.grammar, page: const GrammarPage()),
             ],
           ),
         ),

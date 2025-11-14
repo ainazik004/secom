@@ -176,4 +176,7 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get photoUpdated => 'Сүрөт жаңыртылды';
+
+  @override
+  String get invalidCode => 'Туура эмес код, кайра аракет кылыңыз.';
 }

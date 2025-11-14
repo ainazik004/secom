@@ -176,4 +176,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get photoUpdated => 'Фото обновлено';
+
+  @override
+  String get invalidCode => 'Неверный код, попробуйте снова.';
 }

@@ -25,6 +25,11 @@ import 'package:secom/pages/verify_email_page.dart';
 // Locale provider
 import 'package:secom/provider/provider.dart';
 
+//other
+import 'package:secom/pages/notifications_page.dart';
+import 'package:secom/pages/profile_page.dart';
+import 'package:secom/widgets/main_app_header.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(

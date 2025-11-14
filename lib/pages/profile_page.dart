@@ -18,10 +18,9 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool _uploading = false;
-  bool _savingPhone = false;
   bool _sendingCode = false;
 
-  final _phoneCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
 
   Future<Map<String, dynamic>?> _loadUser() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -50,12 +49,10 @@ class _ProfilePageState extends State<ProfilePage> {
     Uint8List bytes = await file.readAsBytes();
     setState(() => _uploading = true);
 
-    // FIXED STORAGE PATH
+    // Correct storage path
     final ref = FirebaseStorage.instance
         .ref()
-        .child("users")
-        .child(user.uid)
-        .child("profile.jpg");
+        .child("users/${user.uid}/profile.jpg");
 
     await ref.putData(bytes);
 
@@ -73,17 +70,19 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // ----------------------------------------------------------
-  // Save Phone Number (Firestore)
+  // Auto-Save phone when edited
   // ----------------------------------------------------------
-  Future<void> _savePhone() async {
+  Future<void> _autoSavePhone(String value, bool phoneVerified) async {
     final loc = AppLocalizations.of(context)!;
-    final phone = _phoneCtrl.text.trim();
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (phone.isEmpty) return;
+    final phone = value.trim();
 
-    setState(() => _savingPhone = true);
+    if (phone.isEmpty || phone.length < 6) return;
+
+    // If verified → do nothing (field is disabled anyway)
+    if (phoneVerified) return;
 
     await FirebaseFirestore.instance
         .collection('users')
@@ -92,8 +91,6 @@ class _ProfilePageState extends State<ProfilePage> {
       "phone": phone,
       "phoneVerified": false,
     });
-
-    setState(() => _savingPhone = false);
 
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(loc.phoneUpdated)));
@@ -149,6 +146,9 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {});
   }
 
+  // ----------------------------------------------------------
+  // Enter SMS Code Dialog
+  // ----------------------------------------------------------
   void _showSmsDialog(String verificationId) {
     final loc = AppLocalizations.of(context)!;
     final smsCtrl = TextEditingController();
@@ -179,13 +179,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     .updatePhoneNumber(cred);
 
                 Navigator.pop(context);
+
                 ScaffoldMessenger.of(context)
                     .showSnackBar(SnackBar(content: Text(loc.phoneVerified)));
 
                 _markPhoneVerified();
               } catch (e) {
                 ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text("Invalid code.")));
+                    .showSnackBar(SnackBar(content: Text(loc.invalidCode)));
               }
             },
             child: const Text("OK"),
@@ -211,7 +212,11 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Text(loc.cancel),
             onPressed: () => Navigator.pop(context),
           ),
-          ElevatedButton(
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.red),
+              foregroundColor: Colors.red,
+            ),
             onPressed: () async {
               Navigator.pop(context);
               await FirebaseAuth.instance.signOut();
@@ -222,7 +227,7 @@ class _ProfilePageState extends State<ProfilePage> {
               );
             },
             child: Text(loc.logout),
-          )
+          ),
         ],
       ),
     );
@@ -234,7 +239,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final purple = const Color(0xFF2C015D);
+    const purple = Color(0xFF2C015D);
 
     return Scaffold(
       appBar: AppBar(
@@ -252,7 +257,7 @@ class _ProfilePageState extends State<ProfilePage> {
           final data = snap.data!;
           final user = FirebaseAuth.instance.currentUser;
 
-          final fullName = data["fullName"] ?? '';
+          final fullName = data["fullName"];
           final email = data["email"] ?? user!.email!;
           final phone = data["phone"] ?? "";
           final phoneVerified = data["phoneVerified"] == true;
@@ -265,9 +270,7 @@ class _ProfilePageState extends State<ProfilePage> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                // --------------------------------------------------
-                // Profile Photo + Pencil Icon
-                // --------------------------------------------------
+                // Avatar + Pencil
                 Stack(
                   children: [
                     CircleAvatar(
@@ -307,9 +310,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Text(email, style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 20),
 
-                // --------------------------------------------------
-                // Info Card
-                // --------------------------------------------------
+                // Card
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -329,36 +330,30 @@ class _ProfilePageState extends State<ProfilePage> {
                       _info(loc.email, email),
                       const Divider(),
 
-                      // PHONE FIELD
+                      // Phone field
                       TextField(
                         controller: _phoneCtrl,
                         enabled: !phoneVerified,
                         keyboardType: TextInputType.phone,
+                        onChanged: (value) =>
+                            _autoSavePhone(value, phoneVerified),
                         decoration: InputDecoration(
                           labelText: loc.phone,
-                          suffixIcon: !phoneVerified
-                              ? IconButton(
-                            icon: _savingPhone
-                                ? const CircularProgressIndicator()
-                                : const Icon(Icons.save),
-                            onPressed: _savePhone,
-                          )
-                              : null,
                         ),
                       ),
 
                       const SizedBox(height: 12),
 
-                      // VERIFY BUTTON
+                      // Verify button
                       if (!phoneVerified)
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _sendingCode
                                 ? null
-                                : () => _verifyPhoneNumber(_phoneCtrl.text.trim()),
+                                : () => _verifyPhoneNumber(_phoneCtrl.text),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal,
+                              backgroundColor: purple,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                             child: _sendingCode
@@ -397,7 +392,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
+                      backgroundColor: purple,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(loc.changePassword),
@@ -406,13 +401,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 12),
 
-                // LOGOUT
+                // Logout (Red Outline)
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: OutlinedButton(
                     onPressed: () => _logout(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red, width: 2),
+                      foregroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(loc.logout),

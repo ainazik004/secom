@@ -59,5 +59,7 @@
   "phoneVerificationSent": "Verification code sent",
   "phoneVerified": "Phone verified",
   "phoneUpdated": "Phone updated",
-  "photoUpdated": "Photo updated"
+  "photoUpdated": "Photo updated",
+  "invalidCode": "Invalid code, please try again."
+
 }

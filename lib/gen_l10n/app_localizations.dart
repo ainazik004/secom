@@ -435,6 +435,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Photo updated'**
   String get photoUpdated;
+
+  /// No description provided for @invalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid code, please try again.'**
+  String get invalidCode;
 }
 
 class _AppLocalizationsDelegate

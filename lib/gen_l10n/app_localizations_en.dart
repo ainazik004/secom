@@ -176,4 +176,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get photoUpdated => 'Photo updated';
+
+  @override
+  String get invalidCode => 'Invalid code, please try again.';
 }

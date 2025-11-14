@@ -57,6 +57,7 @@
   "phoneVerificationSent": "Код отправлен",
   "phoneVerified": "Телефон подтверждён",
   "phoneUpdated": "Телефон обновлён",
-  "photoUpdated": "Фото обновлено"
+  "photoUpdated": "Фото обновлено",
+  "invalidCode": "Неверный код, попробуйте снова."
 
 }
