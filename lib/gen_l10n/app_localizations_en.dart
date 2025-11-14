@@ -233,4 +233,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get over2000questions => '2000+ Questions';
+
+  @override
+  String get answered => 'answered';
+
+  @override
+  String get correct => 'correct';
 }

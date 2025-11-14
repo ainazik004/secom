@@ -81,6 +81,9 @@
   "over500questions": "500+ Questions",
   "sharpenReasoning": "Sharpen reasoning skills",
   "over400passages": "400+ Passages",
-  "over2000questions": "2000+ Questions"
+  "over2000questions": "2000+ Questions",
+
+  "answered": "answered",
+  "correct": "correct"
 
 }

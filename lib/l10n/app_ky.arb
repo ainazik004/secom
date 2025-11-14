@@ -79,5 +79,8 @@
   "over500questions": "500+ суроо",
   "sharpenReasoning": "Логикалык ой жүгүртүүнү жакшыртыңыз",
   "over400passages": "400+ окуу тексти",
-  "over2000questions": "2000+ суроо"
+  "over2000questions": "2000+ суроо",
+
+  "answered": "жооп берилди",
+  "correct": "туура"
 }

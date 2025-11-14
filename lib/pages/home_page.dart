@@ -1,9 +1,11 @@
+// ---------------- HOME PAGE ----------------
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:secom/gen_l10n/app_localizations.dart';
+import 'package:shimmer/shimmer.dart';
 
-import '../widgets/main_app_header.dart';
 import 'categories/mathematics_page.dart';
 import 'categories/analogy_page.dart';
 import 'categories/reading_page.dart';
@@ -16,10 +18,8 @@ class HomePage extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return {};
 
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    final snapshot =
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
     return snapshot.data() ?? {};
   }
@@ -29,12 +29,8 @@ class HomePage extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>>(
       future: _loadUserData(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final user = snapshot.data!;
-        return _HomeContent(data: user);
+        if (!snapshot.hasData) return const _HomeShimmer();
+        return _HomeContent(data: snapshot.data!);
       },
     );
   }
@@ -50,7 +46,8 @@ class _HomeContent extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
 
     final fullName = (data['fullName'] ?? '') as String? ?? '';
-    final greeting = fullName.isNotEmpty ? "${loc.hello}, $fullName!" : loc.hello;
+    final greeting =
+    fullName.isNotEmpty ? "${loc.hello}, $fullName!" : loc.hello;
 
     final categories = [
       _CategoryData(
@@ -87,7 +84,7 @@ class _HomeContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ------- HERO -------
+          // HERO BANNER
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             child: Container(
@@ -127,8 +124,11 @@ class _HomeContent extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Greeting
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(24),
@@ -136,7 +136,8 @@ class _HomeContent extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.waving_hand_rounded, color: Colors.white),
+                        const Icon(Icons.waving_hand_rounded,
+                            color: Colors.white),
                         const SizedBox(width: 10),
                         Text(
                           greeting,
@@ -153,7 +154,7 @@ class _HomeContent extends StatelessWidget {
             ),
           ),
 
-          // ------ SECTION TITLE ------
+          // TITLE
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
@@ -168,7 +169,7 @@ class _HomeContent extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ------- CATEGORIES -------
+          // CATEGORY GRID
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: LayoutBuilder(
@@ -178,12 +179,12 @@ class _HomeContent extends StatelessWidget {
                 return Wrap(
                   spacing: 16,
                   runSpacing: 16,
-                  children: categories.map((c) {
-                    return SizedBox(
-                      width: width,
-                      child: _CategoryCard(data: c),
-                    );
-                  }).toList(),
+                  children: categories
+                      .map((c) => SizedBox(
+                    width: width,
+                    child: _CategoryCard(data: c),
+                  ))
+                      .toList(),
                 );
               },
             ),
@@ -205,67 +206,62 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 170,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => data.page),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => data.page)),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x142C015D),
+                blurRadius: 16,
+                offset: Offset(0, 10),
+              ),
+            ],
           ),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x142C015D),
-                  blurRadius: 16,
-                  offset: Offset(0, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Icon bubble
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: data.accentColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: data.accentColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Icon(
-                    data.icon,
-                    size: 28,
-                    color: data.accentColor,
-                  ),
+                child: Icon(data.icon, size: 28, color: data.accentColor),
+              ),
+              const SizedBox(height: 12),
+
+              Text(
+                data.title,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2C015D),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  data.title,
+              ),
+
+              const SizedBox(height: 4),
+
+              Expanded(
+                child: Text(
+                  data.subtitle,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF2C015D),
+                  style: TextStyle(
+                    color: Colors.black.withOpacity(0.55),
+                    fontSize: 13,
+                    height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Expanded(
-                  child: Text(
-                    data.subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.black.withOpacity(0.55),
-                      fontSize: 13,
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -287,4 +283,76 @@ class _CategoryData {
     required this.accentColor,
     required this.page,
   });
+}
+
+//
+// ─────────────────────────────────────────────
+//                SHIMMER PLACEHOLDERS
+// ─────────────────────────────────────────────
+//
+
+class _HomeShimmer extends StatelessWidget {
+  const _HomeShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // HERO shimmer
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Categories shimmer
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: List.generate(
+                  4, (_) => const _CategoryShimmerCard()).toList(),
+            ),
+          ),
+
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryShimmerCard extends StatelessWidget {
+  const _CategoryShimmerCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final width = (MediaQuery.of(context).size.width - 56) / 2;
+
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Container(
+        width: width,
+        height: 170,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+      ),
+    );
+  }
 }

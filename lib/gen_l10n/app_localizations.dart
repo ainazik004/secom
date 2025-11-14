@@ -549,6 +549,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'2000+ Questions'**
   String get over2000questions;
+
+  /// No description provided for @answered.
+  ///
+  /// In en, this message translates to:
+  /// **'answered'**
+  String get answered;
+
+  /// No description provided for @correct.
+  ///
+  /// In en, this message translates to:
+  /// **'correct'**
+  String get correct;
 }
 
 class _AppLocalizationsDelegate

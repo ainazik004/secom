@@ -79,6 +79,9 @@
   "over500questions": "500+ вопросов",
   "sharpenReasoning": "Развивайте логическое мышление",
   "over400passages": "400+ текстов для чтения",
-  "over2000questions": "2000+ вопросов"
+  "over2000questions": "2000+ вопросов",
+
+  "answered": "отвечено",
+  "correct": "верно"
 
 }

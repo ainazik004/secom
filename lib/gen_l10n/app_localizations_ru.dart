@@ -235,4 +235,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get over2000questions => '2000+ вопросов';
+
+  @override
+  String get answered => 'отвечено';
+
+  @override
+  String get correct => 'верно';
 }

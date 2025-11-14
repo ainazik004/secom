@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-
-// Firebase
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:secom/pages/verify_email_page.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -13,24 +12,22 @@ import 'gen_l10n/app_localizations.dart';
 import 'package:secom/l10n/l10n.dart';
 
 // Pages
-import 'package:secom/pages/welcome_page.dart';
-import 'package:secom/pages/home_page.dart';
-import 'package:secom/pages/leaderboard_page.dart';
-import 'package:secom/pages/settings_page.dart';
-import 'package:secom/pages/statistics_page.dart';
+import 'pages/welcome_page.dart';
+import 'pages/home_page.dart';
+import 'pages/leaderboard_page.dart';
+import 'pages/settings_page.dart';
+import 'pages/statistics_page.dart';
+import 'pages/notifications_page.dart';
+import 'pages/profile_page.dart';
 
-// Auth pages
-import 'package:secom/pages/login_page.dart';
-import 'package:secom/pages/register_page.dart';
-import 'package:secom/pages/verify_email_page.dart';
+// Provider
+import 'provider/provider.dart';
 
-// Locale provider
-import 'package:secom/provider/provider.dart';
+// Header
+import 'widgets/main_app_header.dart';
 
-// Other
-import 'package:secom/pages/notifications_page.dart';
-import 'package:secom/pages/profile_page.dart';
-import 'package:secom/widgets/main_app_header.dart';
+// Shimmer
+import 'package:shimmer/shimmer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,7 +54,6 @@ class SecomApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SECOM',
 
-      // Localization setup
       locale: provider.locale,
       supportedLocales: const [
         Locale('en'),
@@ -71,12 +67,12 @@ class SecomApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
 
-      localeResolutionCallback: (locale, supported) {
-        if (locale == null) return supported.first;
-        for (final s in supported) {
+      localeResolutionCallback: (locale, supportedLocales) {
+        if (locale == null) return supportedLocales.first;
+        for (final s in supportedLocales) {
           if (s.languageCode == locale.languageCode) return s;
         }
-        return supported.first;
+        return supportedLocales.first;
       },
 
       theme: ThemeData(
@@ -85,22 +81,14 @@ class SecomApp extends StatelessWidget {
       ),
 
       home: const Root(),
-
-      routes: {
-        '/welcome': (_) => const WelcomePage(),
-        '/login': (_) => const LoginPage(),
-        '/register': (_) => const RegisterPage(),
-        '/main': (_) => const MainPage(),
-        '/home': (_) => const HomePage(),
-        '/leaderboard': (_) => const LeaderboardPage(),
-        '/settings': (_) => const SettingsPage(),
-      },
     );
   }
 }
 
 //
-// ######################## ROOT ########################
+// ────────────────────────────────────────────────────────────
+//                           ROOT REDIRECT
+// ────────────────────────────────────────────────────────────
 //
 class Root extends StatelessWidget {
   const Root({super.key});
@@ -128,7 +116,9 @@ class Root extends StatelessWidget {
 }
 
 //
-// ######################## MAIN PAGE ########################
+// ────────────────────────────────────────────────────────────
+//                           MAIN PAGE
+// ────────────────────────────────────────────────────────────
 //
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -137,24 +127,23 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
-  int _currentIndex = 0;
+class _MainPageState extends State<MainPage>
+    with SingleTickerProviderStateMixin {
+  int _index = 0;
   late Future<Map<String, dynamic>> _userFuture;
 
   @override
   void initState() {
     super.initState();
-    _userFuture = _loadUserData();
+    _userFuture = _loadUser();
   }
 
-  Future<Map<String, dynamic>> _loadUserData() async {
+  Future<Map<String, dynamic>> _loadUser() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return {};
 
-    final snap = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    final snap =
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
     return snap.data() ?? {};
   }
@@ -162,6 +151,13 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+
+    final pages = [
+      const HomePage(),
+      const LeaderboardPage(),
+      const StatisticsPage(),
+      const SettingsPage(),
+    ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F4FF),
@@ -171,28 +167,19 @@ class _MainPageState extends State<MainPage> {
           future: _userFuture,
           builder: (context, s) {
             if (s.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const _HeaderShimmer();
             }
 
             final data = s.data ?? {};
-
-            // Trophies safe parsing
             final dynamic t = data['trophies'];
-            final int trophies = t is int ? t : int.tryParse("$t") ?? 0;
+            final int trophies =
+            t is int ? t : int.tryParse("$t") ?? 0;
 
             final photoUrl =
             data['photoUrl'] is String ? data['photoUrl'] : null;
 
-            final pages = [
-              const HomePage(),
-              const LeaderboardPage(),
-              const StatisticsPage(),
-              const SettingsPage(),
-            ];
-
             return Column(
               children: [
-                // TOP HEADER
                 MainAppHeader(
                   trophyCount: trophies,
                   photoUrl: photoUrl,
@@ -203,7 +190,7 @@ class _MainPageState extends State<MainPage> {
                         builder: (_) => const NotificationsPage(),
                       ),
                     ).then((_) {
-                      setState(() => _userFuture = _loadUserData());
+                      setState(() => _userFuture = _loadUser());
                     });
                   },
                   onTapProfile: () {
@@ -213,14 +200,14 @@ class _MainPageState extends State<MainPage> {
                         builder: (_) => const ProfilePage(),
                       ),
                     ).then((_) {
-                      setState(() => _userFuture = _loadUserData());
+                      setState(() => _userFuture = _loadUser());
                     });
                   },
                 ),
 
                 Expanded(
                   child: IndexedStack(
-                    index: _currentIndex,
+                    index: _index,
                     children: pages,
                   ),
                 ),
@@ -230,48 +217,136 @@ class _MainPageState extends State<MainPage> {
         ),
       ),
 
-      // BOTTOM NAVIGATION
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
+      bottomNavigationBar: _BottomNavBar(
+        index: _index,
+        onTap: (i) => setState(() => _index = i),
+        labels: [
+          loc.home,
+          loc.leaderboard,
+          loc.statistics,
+          loc.settings,
+        ],
+        icons: const [
+          Icons.home_rounded,
+          Icons.leaderboard_rounded,
+          Icons.show_chart_rounded,
+          Icons.settings_rounded,
+        ],
+      ),
+    );
+  }
+}
+
+//
+// ────────────────────────────────────────────────────────────
+//                     CUSTOM BOTTOM NAV BAR  (Style B)
+// ────────────────────────────────────────────────────────────
+//
+class _BottomNavBar extends StatelessWidget {
+  final int index;
+  final List<String> labels;
+  final List<IconData> icons;
+  final ValueChanged<int> onTap;
+
+  const _BottomNavBar({
+    required this.index,
+    required this.labels,
+    required this.icons,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const purple = Color(0xFF2C015D);      // unselected
+    const selectedColor = Color(0xFFFF3D7F); // selected
+    const background = Color(0xFFF6F4FF);  // light lavender
+
+    return Container(
+      height: 78,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: const BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(26),
+          topRight: Radius.circular(26),
         ),
-        child: Container(
-          padding: const EdgeInsets.only(top: 8, bottom: 12), // makes it taller safely
-          color: const Color(0xFF2C015D),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            selectedItemColor: Colors.white,
-            unselectedItemColor: Colors.white70,
-            iconSize: 30,
-            selectedFontSize: 13,
-            unselectedFontSize: 12,
-            showUnselectedLabels: true,
-            type: BottomNavigationBarType.fixed,
-            currentIndex: _currentIndex,
-            onTap: (i) => setState(() => _currentIndex = i),
-            items: [
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.home_rounded),
-                label: loc.home,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 20,
+            offset: Offset(0, -6),
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(labels.length, (i) {
+          final selected = i == index;
+
+          return GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => onTap(i),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutBack,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedScale(
+                    scale: selected ? 1.25 : 1.0,
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutBack,
+                    child: Icon(
+                      icons[i],
+                      size: 28,
+                      color: selected ? selectedColor : purple,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    labels[i],
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      color: selected ? selectedColor : purple.withOpacity(0.8),
+                    ),
+                  ),
+                ],
               ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.leaderboard_rounded),
-                label: loc.leaderboard,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.show_chart_rounded),
-                label: loc.statistics,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.settings_rounded),
-                label: loc.settings,
-              ),
-            ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+//
+// ────────────────────────────────────────────────────────────
+//                   SHIMMER FOR HEADER LOADING
+// ────────────────────────────────────────────────────────────
+//
+class _HeaderShimmer extends StatelessWidget {
+  const _HeaderShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            height: 76,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
