@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:secom/pages/verify_email_page.dart';
-import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'firebase_options.dart';
 
 // Localization
 import 'gen_l10n/app_localizations.dart';
@@ -19,6 +20,7 @@ import 'pages/settings_page.dart';
 import 'pages/statistics_page.dart';
 import 'pages/notifications_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/verify_email_page.dart';
 
 // Provider
 import 'provider/provider.dart';
@@ -54,6 +56,7 @@ class SecomApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SECOM',
 
+      // locale / i18n
       locale: provider.locale,
       supportedLocales: const [
         Locale('en'),
@@ -66,13 +69,12 @@ class SecomApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
-      localeResolutionCallback: (locale, supportedLocales) {
-        if (locale == null) return supportedLocales.first;
-        for (final s in supportedLocales) {
+      localeResolutionCallback: (locale, supported) {
+        if (locale == null) return supported.first;
+        for (final s in supported) {
           if (s.languageCode == locale.languageCode) return s;
         }
-        return supportedLocales.first;
+        return supported.first;
       },
 
       theme: ThemeData(
@@ -87,9 +89,10 @@ class SecomApp extends StatelessWidget {
 
 //
 // ────────────────────────────────────────────────────────────
-//                           ROOT REDIRECT
+//                           ROOT
 // ────────────────────────────────────────────────────────────
 //
+
 class Root extends StatelessWidget {
   const Root({super.key});
 
@@ -120,6 +123,7 @@ class Root extends StatelessWidget {
 //                           MAIN PAGE
 // ────────────────────────────────────────────────────────────
 //
+
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -127,10 +131,12 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage>
-    with SingleTickerProviderStateMixin {
+class _MainPageState extends State<MainPage> {
   int _index = 0;
   late Future<Map<String, dynamic>> _userFuture;
+
+  // lazy-loaded pages, kept alive once created
+  final List<Widget?> _pages = List<Widget?>.filled(4, null, growable: false);
 
   @override
   void initState() {
@@ -144,20 +150,26 @@ class _MainPageState extends State<MainPage>
 
     final snap =
     await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-
     return snap.data() ?? {};
+  }
+
+  Widget _buildPage(int i) {
+    switch (i) {
+      case 0:
+        return const HomePage();
+      case 1:
+        return const LeaderboardPage();
+      case 2:
+        return const StatisticsPage();
+      case 3:
+      default:
+        return const SettingsPage();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-
-    final pages = [
-      const HomePage(),
-      const LeaderboardPage(),
-      const StatisticsPage(),
-      const SettingsPage(),
-    ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F4FF),
@@ -167,16 +179,31 @@ class _MainPageState extends State<MainPage>
           future: _userFuture,
           builder: (context, s) {
             if (s.connectionState == ConnectionState.waiting) {
-              return const _HeaderShimmer();
+              // Header + body shimmer together
+              return const _MainShimmer();
+            }
+
+            if (s.hasError) {
+              return Center(
+                child: Text(
+                  'Error: ${s.error}',
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              );
             }
 
             final data = s.data ?? {};
+
             final dynamic t = data['trophies'];
             final int trophies =
-            t is int ? t : int.tryParse("$t") ?? 0;
+            t is int ? t : int.tryParse('$t') ?? 0;
 
             final photoUrl =
-            data['photoUrl'] is String ? data['photoUrl'] : null;
+            data['photoUrl'] is String ? data['photoUrl'] as String : null;
+
+            // ensure current page is built once lazily
+            _pages[_index] ??= _buildPage(_index);
 
             return Column(
               children: [
@@ -208,7 +235,17 @@ class _MainPageState extends State<MainPage>
                 Expanded(
                   child: IndexedStack(
                     index: _index,
-                    children: pages,
+                    children: List.generate(_pages.length, (i) {
+                      final page = _pages[i];
+                      if (page != null) return page;
+
+                      // not visited yet → keep a light placeholder
+                      if (i == 0) {
+                        // home tab shown after shimmer ends
+                        return const HomePage();
+                      }
+                      return const SizedBox.shrink();
+                    }),
                   ),
                 ),
               ],
@@ -219,7 +256,12 @@ class _MainPageState extends State<MainPage>
 
       bottomNavigationBar: _BottomNavBar(
         index: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: (i) {
+          setState(() {
+            _index = i;
+            _pages[i] ??= _buildPage(i);
+          });
+        },
         labels: [
           loc.home,
           loc.leaderboard,
@@ -239,9 +281,10 @@ class _MainPageState extends State<MainPage>
 
 //
 // ────────────────────────────────────────────────────────────
-//                     CUSTOM BOTTOM NAV BAR  (Style B)
+//                     CUSTOM BOTTOM NAV BAR
 // ────────────────────────────────────────────────────────────
 //
+
 class _BottomNavBar extends StatelessWidget {
   final int index;
   final List<String> labels;
@@ -257,12 +300,12 @@ class _BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF2C015D);      // unselected
-    const selectedColor = Color(0xFFFF3D7F); // selected
-    const background = Color(0xFFF6F4FF);  // light lavender
+    const purple = Color(0xFF2C015D);        // unselected color
+    const selectedColor = Color(0xFFFF3D7F); // selected color
+    const background = Color(0xFFF6F4FF);    // bar background
 
     return Container(
-      height: 78,
+      height: 82, // slightly taller so long Kyrgyz labels fit
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: const BoxDecoration(
         color: background,
@@ -275,7 +318,7 @@ class _BottomNavBar extends StatelessWidget {
             color: Color(0x22000000),
             blurRadius: 20,
             offset: Offset(0, -6),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -289,7 +332,8 @@ class _BottomNavBar extends StatelessWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeOutBack,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -304,12 +348,21 @@ class _BottomNavBar extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    labels[i],
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      color: selected ? selectedColor : purple.withOpacity(0.8),
+                  SizedBox(
+                    width: 72, // constrain to prevent overflow
+                    child: Text(
+                      labels[i],
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight:
+                        selected ? FontWeight.w700 : FontWeight.w500,
+                        color:
+                        selected ? selectedColor : purple.withOpacity(0.8),
+                      ),
                     ),
                   ),
                 ],
@@ -324,16 +377,18 @@ class _BottomNavBar extends StatelessWidget {
 
 //
 // ────────────────────────────────────────────────────────────
-//                   SHIMMER FOR HEADER LOADING
+//                   FULL-PAGE SHIMMER (HEADER + BODY)
 // ────────────────────────────────────────────────────────────
 //
-class _HeaderShimmer extends StatelessWidget {
-  const _HeaderShimmer();
+
+class _MainShimmer extends StatelessWidget {
+  const _MainShimmer();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // header skeleton
         Shimmer.fromColors(
           baseColor: Colors.grey.shade300,
           highlightColor: Colors.grey.shade100,
@@ -343,6 +398,52 @@ class _HeaderShimmer extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
+            ),
+          ),
+        ),
+
+        // body skeleton (roughly matches Home layout)
+        Expanded(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // hero card
+                    Container(
+                      height: 150,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    // category grid placeholders
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: List.generate(4, (_) {
+                        final width =
+                            (MediaQuery.of(context).size.width - 56) / 2;
+                        return Container(
+                          width: width,
+                          height: 170,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

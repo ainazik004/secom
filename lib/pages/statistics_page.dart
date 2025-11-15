@@ -1,7 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
-import 'package:flutter/physics.dart';
-
 import 'package:flutter/material.dart';
 import 'package:secom/gen_l10n/app_localizations.dart';
 
@@ -15,34 +12,26 @@ class StatisticsPage extends StatefulWidget {
 class _StatisticsPageState extends State<StatisticsPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  late final Animation<double> _progress;
 
   @override
   void initState() {
     super.initState();
 
-    // Spring-based animation 0 → 1 with a nice overshoot/bounce.
-    _controller = AnimationController.unbounded(
+    _controller = AnimationController(
       vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
 
-    // Start from 0.
-    _controller.value = 0.0;
-
-    // Spring simulation to 1.0
-    // (mass, stiffness, damping can be tweaked if you want stronger/weaker bounce)
-    final spring = SpringSimulation(
-      const SpringDescription(
-        mass: 1,
-        stiffness: 120,
-        damping: 14,
-      ),
-      0.0, // start
-      1.0, // end
-      0.0, // initial velocity
+    _progress = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutBack,
     );
 
-    // Run once, no looping.
-    _controller.animateWith(spring);
+    // Trigger animation after page is shown
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.forward(from: 0);
+    });
   }
 
   @override
@@ -54,10 +43,8 @@ class _StatisticsPageState extends State<StatisticsPage>
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    const purple = Color(0xFF2C015D);
 
-    // Example current stats (will be replaced later with real data)
-    final stats = <String, int>{
+    final stats = {
       'overall': 84,
       'math': 100,
       'reading': 72,
@@ -71,108 +58,29 @@ class _StatisticsPageState extends State<StatisticsPage>
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // ─────────────────────────────────────────────
-              // TOP GRADIENT HEADER  (same style as Home hero)
-              // ─────────────────────────────────────────────
-            Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 28),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  loc.statistics,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
+              // -----------------------------------
+              // Header section
+              // -----------------------------------
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  loc.statsSubtitle,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 13,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-
-                // ─────────────────────────────────────────
-                //       RADAR AREA (with blur glow)
-                // ─────────────────────────────────────────
-                SizedBox(
-                  height: 260,
-                  child: AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, _) {
-                      final progress = _controller.value.clamp(0.0, 1.0).toDouble();
-
-                      if (progress < 0.05) {
-                        final opacity = 0.3 + progress * 4 * 0.4;
-                        return Center(
-                          child: Container(
-                            width: 140,
-                            height: 140,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(opacity),
-                            ),
-                          ),
-                        );
-                      }
-
-                      return Center(
-                        child: ClipRect(
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(
-                              sigmaX: 10,
-                              sigmaY: 10,
-                            ),
-                            child: CustomPaint(
-                              size: const Size(260, 260),
-                              painter: _PentagonRadarPainter(
-                                stats: stats,
-                                context: context,
-                                progress: progress,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(32),
                   ),
                 ),
-              ],
-            ),
-          ),
-
-            const SizedBox(height: 28),
-
-              // ─────────────────────────────────────────────
-              // PROGRESS DETAIL
-              // ─────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      loc.statsTitle,
+                      loc.statistics,
                       style: const TextStyle(
-                        color: purple,
-                        fontSize: 20,
+                        color: Colors.white,
+                        fontSize: 24,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -180,16 +88,64 @@ class _StatisticsPageState extends State<StatisticsPage>
                     Text(
                       loc.statsSubtitle,
                       style: TextStyle(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.white.withOpacity(0.9),
                         fontSize: 13,
                       ),
+                    ),
+                    const SizedBox(height: 35),
+
+                    // -----------------------------------
+                    // Radar chart with no clipping
+                    // -----------------------------------
+                    AnimatedBuilder(
+                      animation: _progress,
+                      builder: (_, __) {
+                        final p = _progress.value.clamp(0.0, 1.0);
+
+                        return SizedBox(
+                          height: 330,
+                          width: double.infinity,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Soft radial glow (NO RECTANGLE EDGES)
+                              Container(
+                                width: 260,
+                                height: 260,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      Colors.white.withOpacity(0.23 * p),
+                                      Colors.transparent,
+                                    ],
+                                    radius: 0.75,
+                                  ),
+                                ),
+                              ),
+
+                              CustomPaint(
+                                size: const Size(260, 260),
+                                painter: _PentagonRadarPainter(
+                                  stats: stats,
+                                  progress: p,
+                                  context: context,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
+              // -----------------------------------
+              // Skill cards grid
+              // -----------------------------------
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Wrap(
@@ -197,29 +153,29 @@ class _StatisticsPageState extends State<StatisticsPage>
                   runSpacing: 16,
                   children: [
                     _SkillCard(
-                      icon: Icons.calculate_rounded,
                       title: loc.math,
+                      icon: Icons.calculate_rounded,
                       answered: 0,
                       total: 500,
                       percent: 0,
                     ),
                     _SkillCard(
-                      icon: Icons.compare_arrows_rounded,
                       title: loc.analogy,
+                      icon: Icons.compare_arrows_rounded,
                       answered: 0,
                       total: 300,
                       percent: 0,
                     ),
                     _SkillCard(
-                      icon: Icons.menu_book_rounded,
                       title: loc.reading,
+                      icon: Icons.menu_book_rounded,
                       answered: 9,
                       total: 489,
                       percent: 1,
                     ),
                     _SkillCard(
-                      icon: Icons.spellcheck_rounded,
                       title: loc.grammar,
+                      icon: Icons.spellcheck_rounded,
                       answered: 0,
                       total: 600,
                       percent: 0,
@@ -228,7 +184,7 @@ class _StatisticsPageState extends State<StatisticsPage>
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -237,23 +193,18 @@ class _StatisticsPageState extends State<StatisticsPage>
   }
 }
 
-//
-// ██████████████████████████████████████████████████████
-//   CUSTOM PENTAGON RADAR PAINTER
-//   - spring-driven progress (0 → 1)
-//   - blur glow (via BackdropFilter in the widget)
-//   - category-colored vertices
-// ██████████████████████████████████████████████████████
-//
+// ---------------------------------------------------------
+// Radar painter — text NEVER clipped
+// ---------------------------------------------------------
 class _PentagonRadarPainter extends CustomPainter {
   final Map<String, int> stats;
+  final double progress;
   final BuildContext context;
-  final double progress; // 0 → 1
 
   _PentagonRadarPainter({
     required this.stats,
-    required this.context,
     required this.progress,
+    required this.context,
   });
 
   @override
@@ -261,10 +212,9 @@ class _PentagonRadarPainter extends CustomPainter {
     final loc = AppLocalizations.of(context)!;
 
     final center = Offset(size.width / 2, size.height / 2);
-    final baseRadius = 95.0 * progress; // scale entire radar with progress
+    final baseRadius = 70 * progress;
 
-    // Label order and localized names
-    final labels = <String>[
+    final labels = [
       loc.statistics,
       loc.math,
       loc.reading,
@@ -272,173 +222,132 @@ class _PentagonRadarPainter extends CustomPainter {
       loc.grammar,
     ];
 
-    // Values in the same order
-    final values = <double>[
-      stats['overall']?.toDouble() ?? 0,
-      stats['math']?.toDouble() ?? 0,
-      stats['reading']?.toDouble() ?? 0,
-      stats['analogy']?.toDouble() ?? 0,
-      stats['grammar']?.toDouble() ?? 0,
+    final values = [
+      stats['overall']!.toDouble(),
+      stats['math']!.toDouble(),
+      stats['reading']!.toDouble(),
+      stats['analogy']!.toDouble(),
+      stats['grammar']!.toDouble(),
     ];
 
-    // Category colors (for vertices and maybe future legends)
-    final colors = <Color>[
-      const Color(0xFFFFC107), // overall  - amber
-      const Color(0xFF42A5F5), // math     - blue
-      const Color(0xFF66BB6A), // reading  - green
-      const Color(0xFFAB47BC), // analogy  - purple
-      const Color(0xFFFF7043), // grammar  - deep orange
+    final colors = [
+      const Color(0xFFFFC107),
+      const Color(0xFF42A5F5),
+      const Color(0xFF66BB6A),
+      const Color(0xFFAB47BC),
+      const Color(0xFFFF7043),
     ];
 
-    const int pointCount = 5;
-    const double angleStep = 2 * pi / pointCount;
+    const pointCount = 5;
+    const angleStep = 2 * pi / pointCount;
 
-    // Grid lines
+    // Grid
     final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.4 * progress)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+      ..color = Colors.white.withOpacity(0.35)
+      ..style = PaintingStyle.stroke;
 
-    // Radar fill
+    // Fill
     final fillPaint = Paint()
-      ..color = Colors.amber.withOpacity(0.2 + 0.15 * progress)
+      ..color = Colors.amber.withOpacity(0.22)
       ..style = PaintingStyle.fill;
 
-    // Radar outline
+    // Outline
     final outlinePaint = Paint()
-      ..color = Colors.amber.withOpacity(0.8)
+      ..color = Colors.amber
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
-    // Glow (slightly larger shape, tinted)
-    final glowPaint = Paint()
-      ..color = Colors.amber.withOpacity(0.15 * progress)
-      ..style = PaintingStyle.fill;
-
-    // ──────────────────────
-    // Pentagon background rings
-    // ──────────────────────
-    const int rings = 5;
-    for (int layer = 1; layer <= rings; layer++) {
-      final radius = baseRadius * (layer / rings);
+    // Draw rings
+    for (int layer = 1; layer <= 5; layer++) {
+      final r = baseRadius * (layer / 5);
       final path = Path();
       for (int i = 0; i < pointCount; i++) {
         final ang = angleStep * i - pi / 2;
-        final x = center.dx + radius * cos(ang);
-        final y = center.dy + radius * sin(ang);
-        if (i == 0) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
+        final x = center.dx + r * cos(ang);
+        final y = center.dy + r * sin(ang);
+        i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
       }
       path.close();
       canvas.drawPath(path, gridPaint);
     }
 
-    // ──────────────────────
-    // Radar + Glow paths
-    // ──────────────────────
-    final radarPath = Path();
-    final glowPath = Path();
-
-    final vertexPositions = <Offset>[];
+    // Radar path
+    final radar = Path();
+    final points = <Offset>[];
 
     for (int i = 0; i < pointCount; i++) {
-      final percent = (values[i] / 100).clamp(0.0, 1.0);
-      final r = baseRadius * percent;
-
+      final r = baseRadius * (values[i] / 100);
       final ang = angleStep * i - pi / 2;
-      final x = center.dx + r * cos(ang);
-      final y = center.dy + r * sin(ang);
+      final pt = Offset(
+        center.dx + r * cos(ang),
+        center.dy + r * sin(ang),
+      );
 
-      // Slightly larger radius for glow
-      final gx = center.dx + r * 1.05 * cos(ang);
-      final gy = center.dy + r * 1.05 * sin(ang);
-
-      vertexPositions.add(Offset(x, y));
-
-      if (i == 0) {
-        radarPath.moveTo(x, y);
-        glowPath.moveTo(gx, gy);
-      } else {
-        radarPath.lineTo(x, y);
-        glowPath.lineTo(gx, gy);
-      }
+      points.add(pt);
+      i == 0 ? radar.moveTo(pt.dx, pt.dy) : radar.lineTo(pt.dx, pt.dy);
     }
 
-    radarPath.close();
-    glowPath.close();
+    radar.close();
 
-    // Draw glow first (under the radar)
-    if (progress > 0.2) {
-      canvas.drawPath(glowPath, glowPaint);
-    }
+    canvas.drawPath(radar, fillPaint);
+    canvas.drawPath(radar, outlinePaint);
 
-    // Draw radar fill + outline
-    canvas.drawPath(radarPath, fillPaint);
-    canvas.drawPath(radarPath, outlinePaint);
-
-    // ──────────────────────
-    // Category-colored dots at vertices
-    // ──────────────────────
-    final vertexPaint = Paint()..style = PaintingStyle.fill;
+    // Dots
+    final dot = Paint()..style = PaintingStyle.fill;
     for (int i = 0; i < pointCount; i++) {
-      vertexPaint.color = colors[i].withOpacity(0.95);
-      canvas.drawCircle(vertexPositions[i], 4.5, vertexPaint);
+      dot.color = colors[i];
+      canvas.drawCircle(points[i], 5, dot);
     }
 
-    // ──────────────────────
-    // Labels around the shape
-    // ──────────────────────
-    final textPainter = TextPainter(
+    // Labels (farther from edges)
+    final tp = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
     );
 
     for (int i = 0; i < pointCount; i++) {
       final ang = angleStep * i - pi / 2;
-      final labelRadius = baseRadius + 26;
+      final labelRadius = baseRadius + 44; // *** Further away ***
+
       final lx = center.dx + labelRadius * cos(ang);
       final ly = center.dy + labelRadius * sin(ang);
 
-      textPainter.text = TextSpan(
-        text: "${labels[i]}\n${values[i].round()}%",
+      tp.text = TextSpan(
+        text: "${labels[i]}\n${values[i]}%",
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
       );
 
-      textPainter.layout(maxWidth: 90);
-      final offset =
-      Offset(lx - textPainter.width / 2, ly - textPainter.height / 2);
-      textPainter.paint(canvas, offset);
+      tp.layout(maxWidth: 130);
+      tp.paint(
+        canvas,
+        Offset(lx - tp.width / 2, ly - tp.height / 2),
+      );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _PentagonRadarPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.stats != stats;
-  }
+  bool shouldRepaint(covariant _PentagonRadarPainter oldDelegate) =>
+      oldDelegate.progress != progress ||
+          oldDelegate.stats != stats;
 }
 
-//
-// ██████████████████████████████████████
-// SKILL CARD (unchanged logic, localized)
-// ██████████████████████████████████████
-//
+// ---------------------------------------------------------
+// Skill Card
+// ---------------------------------------------------------
 class _SkillCard extends StatelessWidget {
-  final IconData icon;
   final String title;
+  final IconData icon;
   final int answered;
   final int total;
   final int percent;
 
   const _SkillCard({
-    required this.icon,
     required this.title,
+    required this.icon,
     required this.answered,
     required this.total,
     required this.percent,
@@ -448,7 +357,7 @@ class _SkillCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
-    final width = (MediaQuery.of(context).size.width - 40 - 16) / 2;
+    final width = (MediaQuery.of(context).size.width - 56) / 2;
 
     return SizedBox(
       width: width,
@@ -474,26 +383,30 @@ class _SkillCard extends StatelessWidget {
                 color: const Color(0xFFF4ECFF),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: Icon(icon, size: 26, color: const Color(0xFF2C015D)),
+              child: Icon(icon, color: const Color(0xFF2C015D)),
             ),
             const SizedBox(height: 12),
+
             Text(
               title,
               style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
                 color: Color(0xFF2C015D),
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
               ),
             ),
             const SizedBox(height: 8),
+
             Text(
               "$answered / $total ${loc.answered}",
               style: TextStyle(
-                fontSize: 12,
                 color: Colors.black.withOpacity(0.6),
+                fontSize: 12,
               ),
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 6),
+
             Row(
               children: [
                 Text(
