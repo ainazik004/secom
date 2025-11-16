@@ -18,7 +18,6 @@ import 'pages/home_page.dart';
 import 'pages/leaderboard_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/statistics_page.dart';
-import 'pages/notifications_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/verify_email_page.dart';
 
@@ -56,7 +55,6 @@ class SecomApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SECOM',
 
-      // locale / i18n
       locale: provider.locale,
       supportedLocales: const [
         Locale('en'),
@@ -88,9 +86,9 @@ class SecomApp extends StatelessWidget {
 }
 
 //
-// ────────────────────────────────────────────────────────────
-//                           ROOT
-// ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+//                   ROOT
+// ─────────────────────────────────────────
 //
 
 class Root extends StatelessWidget {
@@ -119,9 +117,9 @@ class Root extends StatelessWidget {
 }
 
 //
-// ────────────────────────────────────────────────────────────
-//                           MAIN PAGE
-// ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+//               MAIN PAGE
+// ─────────────────────────────────────────
 //
 
 class MainPage extends StatefulWidget {
@@ -135,7 +133,6 @@ class _MainPageState extends State<MainPage> {
   int _index = 0;
   late Future<Map<String, dynamic>> _userFuture;
 
-  // lazy-loaded pages, kept alive once created
   final List<Widget?> _pages = List<Widget?>.filled(4, null, growable: false);
 
   @override
@@ -179,7 +176,6 @@ class _MainPageState extends State<MainPage> {
           future: _userFuture,
           builder: (context, s) {
             if (s.connectionState == ConnectionState.waiting) {
-              // Header + body shimmer together
               return const _MainShimmer();
             }
 
@@ -196,30 +192,21 @@ class _MainPageState extends State<MainPage> {
             final data = s.data ?? {};
 
             final dynamic t = data['trophies'];
-            final int trophies =
-            t is int ? t : int.tryParse('$t') ?? 0;
+            final int trophies = t is int ? t : int.tryParse('$t') ?? 0;
 
             final photoUrl =
             data['photoUrl'] is String ? data['photoUrl'] as String : null;
 
-            // ensure current page is built once lazily
             _pages[_index] ??= _buildPage(_index);
 
             return Column(
               children: [
+                //
+                // ───────── UPDATED SHORTER HEADER ─────────
+                //
                 MainAppHeader(
                   trophyCount: trophies,
                   photoUrl: photoUrl,
-                  onTapNotifications: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const NotificationsPage(),
-                      ),
-                    ).then((_) {
-                      setState(() => _userFuture = _loadUser());
-                    });
-                  },
                   onTapProfile: () {
                     Navigator.push(
                       context,
@@ -230,6 +217,10 @@ class _MainPageState extends State<MainPage> {
                       setState(() => _userFuture = _loadUser());
                     });
                   },
+                  onTapTrophy: () {
+                    // optional behaviour
+                    setState(() => _index = 1); // leaderboard
+                  },
                 ),
 
                 Expanded(
@@ -239,9 +230,7 @@ class _MainPageState extends State<MainPage> {
                       final page = _pages[i];
                       if (page != null) return page;
 
-                      // not visited yet → keep a light placeholder
                       if (i == 0) {
-                        // home tab shown after shimmer ends
                         return const HomePage();
                       }
                       return const SizedBox.shrink();
@@ -280,9 +269,9 @@ class _MainPageState extends State<MainPage> {
 }
 
 //
-// ────────────────────────────────────────────────────────────
-//                     CUSTOM BOTTOM NAV BAR
-// ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+//         CUSTOM BOTTOM NAV BAR
+// ─────────────────────────────────────────
 //
 
 class _BottomNavBar extends StatelessWidget {
@@ -300,13 +289,13 @@ class _BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF2C015D);        // unselected color
-    const selectedColor = Color(0xFFFF3D7F); // selected color
-    const background = Color(0xFFF6F4FF);    // bar background
+    const purple = Color(0xFF2C015D);
+    const selectedColor = Color(0xFFFF3D7F);
+    const background = Color(0xFFF6F4FF);
 
     return Container(
-      height: 82, // slightly taller so long Kyrgyz labels fit
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: 86,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: const BoxDecoration(
         color: background,
         borderRadius: BorderRadius.only(
@@ -321,51 +310,58 @@ class _BottomNavBar extends StatelessWidget {
           ),
         ],
       ),
+
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: List.generate(labels.length, (i) {
           final selected = i == index;
 
-          return GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: () => onTap(i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutBack,
-              padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AnimatedScale(
-                    scale: selected ? 1.25 : 1.0,
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOutBack,
-                    child: Icon(
-                      icons[i],
-                      size: 28,
-                      color: selected ? selectedColor : purple,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 72, // constrain to prevent overflow
-                    child: Text(
-                      labels[i],
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight:
-                        selected ? FontWeight.w700 : FontWeight.w500,
-                        color:
-                        selected ? selectedColor : purple.withOpacity(0.8),
+          return Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () => onTap(i),
+
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // ---- ICON ----
+                    AnimatedScale(
+                      scale: selected ? 1.20 : 1.0,
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutBack,
+                      child: Icon(
+                        icons[i],
+                        size: 28,
+                        color: selected ? selectedColor : purple,
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 2),
+
+                    // ---- LABEL ----
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: FittedBox(
+                        child: Text(
+                          labels[i],
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.fade,
+                          style: TextStyle(
+                            fontSize: 12.8,
+                            fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500,
+                            color: selected
+                                ? selectedColor
+                                : purple.withOpacity(0.85),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -376,9 +372,9 @@ class _BottomNavBar extends StatelessWidget {
 }
 
 //
-// ────────────────────────────────────────────────────────────
-//                   FULL-PAGE SHIMMER (HEADER + BODY)
-// ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────
+//           FULL-PAGE SHIMMER (FIXED)
+// ─────────────────────────────────────────
 //
 
 class _MainShimmer extends StatelessWidget {
@@ -388,13 +384,18 @@ class _MainShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // header skeleton
+        //
+        // ───────── FIXED SHORT HEADER SHIMMER ─────────
+        //
         Shimmer.fromColors(
           baseColor: Colors.grey.shade300,
           highlightColor: Colors.grey.shade100,
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            height: 76,
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+
+            // EXACT height matching new header:
+            height: 58,
+
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
@@ -402,7 +403,9 @@ class _MainShimmer extends StatelessWidget {
           ),
         ),
 
-        // body skeleton (roughly matches Home layout)
+        //
+        // ───────── BODY SHIMMER ─────────
+        //
         Expanded(
           child: SingleChildScrollView(
             child: Padding(
@@ -414,7 +417,9 @@ class _MainShimmer extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // hero card
+                    //
+                    // Hero card placeholder
+                    //
                     Container(
                       height: 150,
                       margin: const EdgeInsets.only(bottom: 24),
@@ -423,13 +428,17 @@ class _MainShimmer extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    // category grid placeholders
+
+                    //
+                    // Category grid shimmer (4 items)
+                    //
                     Wrap(
                       spacing: 16,
                       runSpacing: 16,
                       children: List.generate(4, (_) {
                         final width =
                             (MediaQuery.of(context).size.width - 56) / 2;
+
                         return Container(
                           width: width,
                           height: 170,
@@ -440,6 +449,7 @@ class _MainShimmer extends StatelessWidget {
                         );
                       }),
                     ),
+
                     const SizedBox(height: 30),
                   ],
                 ),

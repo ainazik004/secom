@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class MainAppHeader extends StatelessWidget {
-  final VoidCallback onTapNotifications;
   final VoidCallback? onTapTrophy;
   final VoidCallback onTapProfile;
   final int trophyCount;
@@ -9,7 +8,6 @@ class MainAppHeader extends StatelessWidget {
 
   const MainAppHeader({
     super.key,
-    required this.onTapNotifications,
     this.onTapTrophy,
     required this.onTapProfile,
     this.trophyCount = 0,
@@ -21,67 +19,62 @@ class MainAppHeader extends StatelessWidget {
     const purple = Color(0xFF2C015D);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: const [
             BoxShadow(
               color: Color(0x182C015D),
-              blurRadius: 20,
-              offset: Offset(0, 10),
+              blurRadius: 15,
+              offset: Offset(0, 8),
             ),
           ],
         ),
         child: Row(
           children: [
-            // LOGO (unchanged)
+            // -------- LOGO (unchanged) --------
             Image.asset(
               'assets/secom_logo.png',
-              height: 44,
+              height: 38, // slightly shorter
             ),
 
             const Spacer(),
 
-            // RIGHT SIDE
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 🔔 Notifications (slightly smaller)
-                _HeaderIconButton(
-                  icon: Icons.notifications_outlined,
-                  onTap: onTapNotifications,
-                  size: 22,
-                ),
-
-                const SizedBox(width: 12),
-
-                // 🏆 Trophy Pill (slightly smaller)
-                _TrophyPill(
-                  count: trophyCount,
-                  onTap: onTapTrophy,
-                ),
-
-                const SizedBox(width: 12),
-
-                // 👤 Profile (reduced from 22 → 20)
-                GestureDetector(
-                  onTap: onTapProfile,
-                  child: CircleAvatar(
-                    radius: 20, // was 22
-                    backgroundColor: purple,
-                    backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
-                        ? NetworkImage(photoUrl!)
-                        : null,
-                    child: (photoUrl == null || photoUrl!.isEmpty)
-                        ? const Icon(Icons.person, color: Colors.white, size: 20)
-                        : null,
+            // -------- Trophy + Avatar Row (fully adaptive) --------
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 🏆 Trophy Pill
+                  _AdaptiveTrophyPill(
+                    count: trophyCount,
+                    onTap: onTapTrophy,
                   ),
-                ),
-              ],
-            )
+
+                  const SizedBox(width: 10),
+
+                  // 👤 Profile
+                  GestureDetector(
+                    onTap: onTapProfile,
+                    child: CircleAvatar(
+                      radius: 18, // smaller for a shorter header
+                      backgroundColor: purple,
+                      backgroundImage: (photoUrl != null &&
+                          photoUrl!.isNotEmpty)
+                          ? NetworkImage(photoUrl!)
+                          : null,
+                      child: (photoUrl == null || photoUrl!.isEmpty)
+                          ? const Icon(Icons.person,
+                          color: Colors.white, size: 18)
+                          : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -89,45 +82,11 @@ class MainAppHeader extends StatelessWidget {
   }
 }
 
-class _HeaderIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final double size;
-
-  const _HeaderIconButton({
-    required this.icon,
-    required this.onTap,
-    this.size = 22,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFF4ECFF),
-      shape: const CircleBorder(),
-      elevation: 3,
-      shadowColor: const Color(0x332C015D),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(10), // reduced from 12
-          child: Icon(
-            icon,
-            size: size, // reduced from 26 → 22
-            color: const Color(0xFF2C015D),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TrophyPill extends StatelessWidget {
+class _AdaptiveTrophyPill extends StatelessWidget {
   final int count;
   final VoidCallback? onTap;
 
-  const _TrophyPill({
+  const _AdaptiveTrophyPill({
     required this.count,
     this.onTap,
   });
@@ -143,14 +102,14 @@ class _TrophyPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pill = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8), // smaller
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4E0),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(
             color: Color(0x1A000000),
-            blurRadius: 6,
+            blurRadius: 5,
             offset: Offset(0, 3),
           ),
         ],
@@ -158,14 +117,22 @@ class _TrophyPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.emoji_events, size: 18, color: Colors.amber[700]), // smaller
-          const SizedBox(width: 6),
-          Text(
-            _shorten(count),
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF2C015D),
-              fontSize: 15, // smaller
+          Icon(Icons.emoji_events, size: 16, color: Colors.amber[700]),
+          const SizedBox(width: 5),
+
+          // ★ Auto-scaling number ★
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                _shorten(count),
+                maxLines: 1,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2C015D),
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
         ],
@@ -176,7 +143,7 @@ class _TrophyPill extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       child: pill,
     );
   }
