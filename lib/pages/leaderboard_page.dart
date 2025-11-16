@@ -162,6 +162,7 @@ class _LeaderboardTile extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutBack,
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6), // ★ NEW
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: tileColor,
