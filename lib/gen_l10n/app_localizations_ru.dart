@@ -51,7 +51,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get enterEmail => 'Введите email';
 
   @override
-  String get invalidEmail => 'Введите корректный email';
+  String get invalidEmail => 'Неверный email';
+
+  @override
+  String get invalidPassword => 'Неверный пароль';
+
+  @override
+  String get invalidEmailOrPassword => 'Неверные email или пароль';
 
   @override
   String get password => 'Пароль';

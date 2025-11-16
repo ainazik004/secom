@@ -51,7 +51,13 @@ class AppLocalizationsKy extends AppLocalizations {
   String get enterEmail => 'Email киргизиңиз';
 
   @override
-  String get invalidEmail => 'Туура email киргизиңиз';
+  String get invalidEmail => 'Туура эмес email';
+
+  @override
+  String get invalidPassword => 'Туура эмес сыр сөз';
+
+  @override
+  String get invalidEmailOrPassword => 'Туура эмес email же сыр сөз';
 
   @override
   String get password => 'Сырсөз';

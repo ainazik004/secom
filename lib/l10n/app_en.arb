@@ -17,7 +17,9 @@
 
   "email": "Email",
   "enterEmail": "Enter email",
-  "invalidEmail": "Enter a valid email address",
+  "invalidEmail": "Invalid email",
+  "invalidPassword": "Incorrect password",
+  "invalidEmailOrPassword": "Incorrect email or password",
 
   "password": "Password",
   "enterPassword": "Enter password",
@@ -101,4 +103,5 @@
   "resetEmailRequired": "Please enter your email",
   "invalidPhone": "Enter a valid phone number",
   "fieldRequired": "This field is required"
+
 }

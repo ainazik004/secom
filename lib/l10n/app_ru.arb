@@ -17,7 +17,9 @@
 
   "email": "Email",
   "enterEmail": "Введите email",
-  "invalidEmail": "Введите корректный email",
+  "invalidEmail": "Неверный email",
+  "invalidPassword": "Неверный пароль",
+  "invalidEmailOrPassword": "Неверные email или пароль",
 
   "password": "Пароль",
   "enterPassword": "Введите пароль",

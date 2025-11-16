@@ -17,7 +17,10 @@
 
   "email": "Email",
   "enterEmail": "Email киргизиңиз",
-  "invalidEmail": "Туура email киргизиңиз",
+  "invalidEmail": "Туура эмес email",
+  "invalidPassword": "Туура эмес сыр сөз",
+  "invalidEmailOrPassword": "Туура эмес email же сыр сөз",
+
 
   "password": "Сырсөз",
   "enterPassword": "Сырсөздү киргизиңиз",

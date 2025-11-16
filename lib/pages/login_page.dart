@@ -24,9 +24,10 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _loading = false;
 
-  // Validation error flags
   bool _emailError = false;
   bool _passwordError = false;
+
+  bool _passwordVisible = false;
 
   @override
   void dispose() {
@@ -57,34 +58,32 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MainPage()),
         );
-      }
-    } catch (e) {
-      final msg = e.toString();
-
-      // Detect “wrong password”
-      if (msg.contains("wrong-password")) {
-        setState(() => _passwordError = true);
+        return;
       }
 
-      // Detect invalid email
-      if (msg.contains("invalid-email") || msg.contains("user-not-found")) {
-        setState(() => _emailError = true);
-      }
+      // If email exists but not verified
+      Fluttertoast.showToast(msg: loc.verificationRequired);
+      final u = _auth.currentUser;
+      if (u != null) await _auth.sendEmailVerification(u);
 
-      // Email not verified
-      if (msg.contains('verify')) {
-        Fluttertoast.showToast(msg: loc.verificationRequired);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+      );
+    }
 
-        final user = _auth.currentUser;
-        if (user != null) await _auth.sendEmailVerification(user);
+    catch (_) {
+      // Simple non-specific error: mark both fields red
+      setState(() {
+        _emailError = true;
+        _passwordError = true;
+      });
 
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
-        );
-      } else {
-        Fluttertoast.showToast(msg: msg);
-      }
-    } finally {
+      Fluttertoast.showToast(
+        msg: loc.invalidEmailOrPassword,
+      );
+    }
+
+    finally {
       setState(() => _loading = false);
     }
   }
@@ -153,9 +152,9 @@ class _LoginPageState extends State<LoginPage> {
       borderSide: BorderSide(color: Colors.grey.shade400),
     );
 
-    OutlineInputBorder errorBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: Colors.red, width: 2),
+    OutlineInputBorder errorBorder = const OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(16)),
+      borderSide: BorderSide(color: Colors.red, width: 2),
     );
 
     return Scaffold(
@@ -178,8 +177,10 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                 ),
                 child: SingleChildScrollView(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 36,
+                  ),
                   child: Column(
                     children: [
                       Text(
@@ -199,21 +200,37 @@ class _LoginPageState extends State<LoginPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Email
-                            Text(loc.email,
-                                style: TextStyle(color: Colors.grey[700])),
+                            // ---------------- Email ----------------
+                            Text(
+                              loc.email,
+                              style: TextStyle(color: Colors.grey[700]),
+                            ),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _emailController,
+                              onChanged: (_) {
+                                if (_emailError || _passwordError) {
+                                  setState(() {
+                                    _emailError = false;
+                                    _passwordError = false;
+                                  });
+                                }
+                              },
                               decoration: InputDecoration(
                                 hintText: loc.enterEmail,
                                 contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 14),
+                                  horizontal: 12,
+                                  vertical: 14,
+                                ),
                                 border: normalBorder,
-                                enabledBorder:
-                                _emailError ? errorBorder : normalBorder,
-                                focusedBorder:
-                                _emailError ? errorBorder : normalBorder,
+                                enabledBorder: _emailError
+                                    ? errorBorder
+                                    : normalBorder,
+                                focusedBorder: _emailError
+                                    ? errorBorder
+                                    : normalBorder,
+                                errorText:
+                                _emailError ? loc.invalidEmailOrPassword : null,
                               ),
                               validator: (v) => v == null || v.isEmpty
                                   ? loc.enterEmail
@@ -222,22 +239,50 @@ class _LoginPageState extends State<LoginPage> {
 
                             const SizedBox(height: 18),
 
-                            // Password
-                            Text(loc.password,
-                                style: TextStyle(color: Colors.grey[700])),
+                            // ---------------- Password + Eye ----------------
+                            Text(
+                              loc.password,
+                              style: TextStyle(color: Colors.grey[700]),
+                            ),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _passwordController,
-                              obscureText: true,
+                              obscureText: !_passwordVisible,
+                              onChanged: (_) {
+                                if (_passwordError || _emailError) {
+                                  setState(() {
+                                    _emailError = false;
+                                    _passwordError = false;
+                                  });
+                                }
+                              },
                               decoration: InputDecoration(
                                 hintText: loc.enterPassword,
                                 contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 14),
+                                  horizontal: 12,
+                                  vertical: 14,
+                                ),
                                 border: normalBorder,
-                                enabledBorder:
-                                _passwordError ? errorBorder : normalBorder,
-                                focusedBorder:
-                                _passwordError ? errorBorder : normalBorder,
+                                enabledBorder: _passwordError
+                                    ? errorBorder
+                                    : normalBorder,
+                                focusedBorder: _passwordError
+                                    ? errorBorder
+                                    : normalBorder,
+                                errorText:
+                                _passwordError ? loc.invalidEmailOrPassword : null,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _passwordVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.grey[700],
+                                  ),
+                                  onPressed: () {
+                                    setState(() =>
+                                    _passwordVisible = !_passwordVisible);
+                                  },
+                                ),
                               ),
                               validator: (v) => v == null || v.isEmpty
                                   ? loc.enterPassword
