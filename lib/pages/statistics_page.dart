@@ -28,7 +28,6 @@ class _StatisticsPageState extends State<StatisticsPage>
       curve: Curves.easeOutBack,
     );
 
-    // Trigger animation after page is shown
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _controller.forward(from: 0);
     });
@@ -94,9 +93,6 @@ class _StatisticsPageState extends State<StatisticsPage>
                     ),
                     const SizedBox(height: 35),
 
-                    // -----------------------------------
-                    // Radar chart with no clipping
-                    // -----------------------------------
                     AnimatedBuilder(
                       animation: _progress,
                       builder: (_, __) {
@@ -108,7 +104,6 @@ class _StatisticsPageState extends State<StatisticsPage>
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              // Soft radial glow (NO RECTANGLE EDGES)
                               Container(
                                 width: 260,
                                 height: 260,
@@ -123,7 +118,6 @@ class _StatisticsPageState extends State<StatisticsPage>
                                   ),
                                 ),
                               ),
-
                               CustomPaint(
                                 size: const Size(260, 260),
                                 painter: _PentagonRadarPainter(
@@ -144,7 +138,7 @@ class _StatisticsPageState extends State<StatisticsPage>
               const SizedBox(height: 24),
 
               // -----------------------------------
-              // Skill cards grid
+              // Skill Cards
               // -----------------------------------
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -157,28 +151,24 @@ class _StatisticsPageState extends State<StatisticsPage>
                       icon: Icons.calculate_rounded,
                       answered: 0,
                       total: 500,
-                      percent: 0,
                     ),
                     _SkillCard(
                       title: loc.analogy,
                       icon: Icons.compare_arrows_rounded,
                       answered: 0,
                       total: 300,
-                      percent: 0,
                     ),
                     _SkillCard(
                       title: loc.reading,
                       icon: Icons.menu_book_rounded,
                       answered: 9,
                       total: 489,
-                      percent: 1,
                     ),
                     _SkillCard(
                       title: loc.grammar,
                       icon: Icons.spellcheck_rounded,
                       answered: 0,
                       total: 600,
-                      percent: 0,
                     ),
                   ],
                 ),
@@ -194,7 +184,7 @@ class _StatisticsPageState extends State<StatisticsPage>
 }
 
 // ---------------------------------------------------------
-// Radar painter — text NEVER clipped
+// Radar Painter (unchanged)
 // ---------------------------------------------------------
 class _PentagonRadarPainter extends CustomPainter {
   final Map<String, int> stats;
@@ -241,23 +231,19 @@ class _PentagonRadarPainter extends CustomPainter {
     const pointCount = 5;
     const angleStep = 2 * pi / pointCount;
 
-    // Grid
     final gridPaint = Paint()
       ..color = Colors.white.withOpacity(0.35)
       ..style = PaintingStyle.stroke;
 
-    // Fill
     final fillPaint = Paint()
       ..color = Colors.amber.withOpacity(0.22)
       ..style = PaintingStyle.fill;
 
-    // Outline
     final outlinePaint = Paint()
       ..color = Colors.amber
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
-    // Draw rings
     for (int layer = 1; layer <= 5; layer++) {
       final r = baseRadius * (layer / 5);
       final path = Path();
@@ -271,7 +257,6 @@ class _PentagonRadarPainter extends CustomPainter {
       canvas.drawPath(path, gridPaint);
     }
 
-    // Radar path
     final radar = Path();
     final points = <Offset>[];
 
@@ -288,18 +273,15 @@ class _PentagonRadarPainter extends CustomPainter {
     }
 
     radar.close();
-
     canvas.drawPath(radar, fillPaint);
     canvas.drawPath(radar, outlinePaint);
 
-    // Dots
     final dot = Paint()..style = PaintingStyle.fill;
     for (int i = 0; i < pointCount; i++) {
       dot.color = colors[i];
       canvas.drawCircle(points[i], 5, dot);
     }
 
-    // Labels (farther from edges)
     final tp = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
@@ -307,7 +289,7 @@ class _PentagonRadarPainter extends CustomPainter {
 
     for (int i = 0; i < pointCount; i++) {
       final ang = angleStep * i - pi / 2;
-      final labelRadius = baseRadius + 44; // *** Further away ***
+      final labelRadius = baseRadius + 44;
 
       final lx = center.dx + labelRadius * cos(ang);
       final ly = center.dy + labelRadius * sin(ang);
@@ -322,10 +304,7 @@ class _PentagonRadarPainter extends CustomPainter {
       );
 
       tp.layout(maxWidth: 130);
-      tp.paint(
-        canvas,
-        Offset(lx - tp.width / 2, ly - tp.height / 2),
-      );
+      tp.paint(canvas, Offset(lx - tp.width / 2, ly - tp.height / 2));
     }
   }
 
@@ -336,26 +315,25 @@ class _PentagonRadarPainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------
-// Skill Card
+//  Skill Card WITH circular percent bar
 // ---------------------------------------------------------
 class _SkillCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final int answered;
   final int total;
-  final int percent;
 
   const _SkillCard({
     required this.title,
     required this.icon,
     required this.answered,
     required this.total,
-    required this.percent,
   });
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+    final percent =
+    total == 0 ? 0.0 : (answered / total).clamp(0.0, 1.0).toDouble();
 
     final width = (MediaQuery.of(context).size.width - 56) / 2;
 
@@ -374,57 +352,74 @@ class _SkillCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4ECFF),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(icon, color: const Color(0xFF2C015D)),
-            ),
-            const SizedBox(height: 12),
-
-            Text(
-              title,
-              style: const TextStyle(
-                color: Color(0xFF2C015D),
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            Text(
-              "$answered / $total ${loc.answered}",
-              style: TextStyle(
-                color: Colors.black.withOpacity(0.6),
-                fontSize: 12,
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            Row(
+            // ---- Main content ----
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 4), // spacing since indicator is inside
+
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4ECFF),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(icon, color: const Color(0xFF2C015D)),
+                ),
+                const SizedBox(height: 12),
+
                 Text(
-                  "$percent%",
+                  title,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    color: Color(0xFF2C015D),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(height: 8),
+
                 Text(
-                  loc.correct,
+                  "$answered / $total answered",
                   style: TextStyle(
-                    fontSize: 11,
                     color: Colors.black.withOpacity(0.6),
+                    fontSize: 12,
                   ),
                 ),
               ],
+            ),
+
+            // ---- Circular progress INSIDE card ----
+            Positioned(
+              top: 0,
+              right: 0,
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: percent,
+                      strokeWidth: 4,
+                      backgroundColor: Colors.grey.shade300,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFF7F4BFF),
+                      ),
+                    ),
+                    Text(
+                      "${(percent * 100).round()}%",
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF2C015D),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
