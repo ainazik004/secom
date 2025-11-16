@@ -48,13 +48,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get email => 'Email';
 
   @override
-  String get password => 'Password';
-
-  @override
   String get enterEmail => 'Enter email';
 
   @override
+  String get invalidEmail => 'Enter a valid email address';
+
+  @override
+  String get password => 'Password';
+
+  @override
   String get enterPassword => 'Enter password';
+
+  @override
+  String get passwordShort => 'Password must be at least 6 characters';
 
   @override
   String get enterName => 'Enter name';
@@ -239,4 +245,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get correct => 'correct';
+
+  @override
+  String get resetEmailRequired => 'Please enter your email';
+
+  @override
+  String get invalidPhone => 'Enter a valid phone number';
+
+  @override
+  String get fieldRequired => 'This field is required';
 }

@@ -14,7 +14,7 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
-android {
+android {1
     namespace = "com.example.secom"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -36,6 +36,7 @@ android {
         versionName = flutter.versionName
     }
 
+    // 🔥 FIX: SIGNING CONFIG MUST BE DECLARED BEFORE buildTypes
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String?
@@ -46,8 +47,9 @@ android {
     }
 
     buildTypes {
+        // 🔥 ENSURE RELEASE USES CORRECT SIGNING CONFIG
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")  // ✔ uses your upload keystore
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
         }

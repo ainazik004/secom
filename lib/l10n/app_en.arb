@@ -14,14 +14,20 @@
 
   "login": "Login",
   "register": "Register",
+
   "email": "Email",
-  "password": "Password",
   "enterEmail": "Enter email",
+  "invalidEmail": "Enter a valid email address",
+
+  "password": "Password",
   "enterPassword": "Enter password",
+  "passwordShort": "Password must be at least 6 characters",
+
   "enterName": "Enter name",
   "enterPhone": "Enter phone number",
   "name": "Name",
   "phone": "Phone",
+
   "confirmEmail": "Email confirmation",
   "emailSent": "A confirmation email has been sent.",
   "resend": "Resend",
@@ -45,23 +51,29 @@
   "createdAt": "Account created",
   "editProfile": "Edit profile",
   "changePassword": "Change password",
+
   "notifications": "Notifications",
   "noNotifications": "No notifications yet",
+
   "educationCenter": "Educational Center",
   "welcomeDescription": "A leader in preparation for ORT, holder of the record for the number of gold certificates, as well as the number of applicants scoring above 200 points.",
+
   "forgotPassword": "Forgot password?",
   "resetPassword": "Reset Password",
   "resetEmailSent": "Password reset email sent",
   "resetFailed": "Failed to send reset email",
   "send": "Send",
+
   "verifyPhone": "Verify phone",
   "smsCode": "SMS code",
   "phoneVerificationSent": "Verification code sent",
   "phoneVerified": "Phone verified",
   "phoneUpdated": "Phone updated",
   "photoUpdated": "Photo updated",
+
   "homeCategories": "Practice Categories",
   "invalidCode": "Invalid code, please try again.",
+
   "statistics": "Statistics",
   "statsTitle": "Statistics",
   "statsSubtitle": "Track your progress",
@@ -84,6 +96,9 @@
   "over2000questions": "2000+ Questions",
 
   "answered": "answered",
-  "correct": "correct"
+  "correct": "correct",
 
+  "resetEmailRequired": "Please enter your email",
+  "invalidPhone": "Enter a valid phone number",
+  "fieldRequired": "This field is required"
 }

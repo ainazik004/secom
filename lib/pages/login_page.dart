@@ -24,6 +24,10 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _loading = false;
 
+  // Validation error flags
+  bool _emailError = false;
+  bool _passwordError = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -35,7 +39,12 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _emailError = false;
+      _passwordError = false;
+    });
+
     final loc = AppLocalizations.of(context)!;
 
     try {
@@ -50,28 +59,37 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
-      final message = e.toString();
+      final msg = e.toString();
 
-      if (message.contains('подтвердите') || message.contains('verify')) {
+      // Detect “wrong password”
+      if (msg.contains("wrong-password")) {
+        setState(() => _passwordError = true);
+      }
+
+      // Detect invalid email
+      if (msg.contains("invalid-email") || msg.contains("user-not-found")) {
+        setState(() => _emailError = true);
+      }
+
+      // Email not verified
+      if (msg.contains('verify')) {
         Fluttertoast.showToast(msg: loc.verificationRequired);
 
         final user = _auth.currentUser;
-        if (user != null) {
-          await _auth.sendEmailVerification(user);
-        }
+        if (user != null) await _auth.sendEmailVerification(user);
 
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
         );
       } else {
-        Fluttertoast.showToast(msg: message);
+        Fluttertoast.showToast(msg: msg);
       }
     } finally {
       setState(() => _loading = false);
     }
   }
 
-  // --------------- Forgot password ---------------
+  // --------------- Forgot Password ---------------
   Future<void> _showForgotPasswordDialog(BuildContext rootContext) async {
     final loc = AppLocalizations.of(rootContext)!;
     final emailCtrl = TextEditingController();
@@ -130,12 +148,21 @@ class _LoginPageState extends State<LoginPage> {
     final loc = AppLocalizations.of(context)!;
     final purple = const Color(0xFF2A1A57);
 
+    OutlineInputBorder normalBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: Colors.grey.shade400),
+    );
+
+    OutlineInputBorder errorBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: Colors.red, width: 2),
+    );
+
     return Scaffold(
       backgroundColor: purple,
       body: SafeArea(
         child: Column(
           children: [
-            // Logo
             SizedBox(
               height: 200,
               child: Center(
@@ -143,7 +170,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
-            // White panel
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -156,7 +182,6 @@ class _LoginPageState extends State<LoginPage> {
                   const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
                   child: Column(
                     children: [
-                      const SizedBox(height: 8),
                       Text(
                         loc.login,
                         style: Theme.of(context)
@@ -175,10 +200,8 @@ class _LoginPageState extends State<LoginPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Email
-                            Text(
-                              loc.email,
-                              style: TextStyle(color: Colors.grey[700]),
-                            ),
+                            Text(loc.email,
+                                style: TextStyle(color: Colors.grey[700])),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _emailController,
@@ -186,34 +209,36 @@ class _LoginPageState extends State<LoginPage> {
                                 hintText: loc.enterEmail,
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 14),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
+                                border: normalBorder,
+                                enabledBorder:
+                                _emailError ? errorBorder : normalBorder,
+                                focusedBorder:
+                                _emailError ? errorBorder : normalBorder,
                               ),
-                              validator: (v) =>
-                              v == null || v.isEmpty ? loc.enterEmail : null,
-                              keyboardType: TextInputType.emailAddress,
+                              validator: (v) => v == null || v.isEmpty
+                                  ? loc.enterEmail
+                                  : null,
                             ),
 
                             const SizedBox(height: 18),
 
                             // Password
-                            Text(
-                              loc.password,
-                              style: TextStyle(color: Colors.grey[700]),
-                            ),
+                            Text(loc.password,
+                                style: TextStyle(color: Colors.grey[700])),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _passwordController,
+                              obscureText: true,
                               decoration: InputDecoration(
                                 hintText: loc.enterPassword,
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 14),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
+                                border: normalBorder,
+                                enabledBorder:
+                                _passwordError ? errorBorder : normalBorder,
+                                focusedBorder:
+                                _passwordError ? errorBorder : normalBorder,
                               ),
-                              obscureText: true,
                               validator: (v) => v == null || v.isEmpty
                                   ? loc.enterPassword
                                   : null,
@@ -221,7 +246,6 @@ class _LoginPageState extends State<LoginPage> {
 
                             const SizedBox(height: 8),
 
-                            // Forgot password (center)
                             Center(
                               child: TextButton(
                                 onPressed: () =>
@@ -238,33 +262,28 @@ class _LoginPageState extends State<LoginPage> {
 
                             const SizedBox(height: 16),
 
-                            // Login button (center)
                             Center(
-                              child: SizedBox(
-                                width: 180,
-                                height: 48,
-                                child: ElevatedButton(
-                                  onPressed: _loading ? null : _login,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: purple,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(22),
-                                    ),
-                                    elevation: 6,
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: const Size(180, 48),
+                              child: ElevatedButton(
+                                onPressed: _loading ? null : _login,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: purple,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(22),
                                   ),
-                                  child: _loading
-                                      ? const CircularProgressIndicator(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 40, vertical: 14),
+                                  elevation: 6,
+                                ),
+                                child: _loading
+                                    ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                                    : Text(
+                                  loc.loginButton,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
                                     color: Colors.white,
-                                  )
-                                      : Text(
-                                    loc.loginButton,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
+                                    fontSize: 16,
                                   ),
                                 ),
                               ),
@@ -272,7 +291,6 @@ class _LoginPageState extends State<LoginPage> {
 
                             const SizedBox(height: 16),
 
-                            // Registration link (center)
                             Center(
                               child: TextButton(
                                 onPressed: () {

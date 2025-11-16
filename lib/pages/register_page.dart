@@ -4,7 +4,6 @@ import 'verify_email_page.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:secom/gen_l10n/app_localizations.dart';
 
-
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -41,7 +40,8 @@ class _RegisterPageState extends State<RegisterPage> {
       if (user != null) {
         Fluttertoast.showToast(msg: loc.emailSent);
 
-        Navigator.of(context).pushReplacement(
+        Navigator.pushReplacement(
+          context,
           MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
         );
       }
@@ -70,68 +70,136 @@ class _RegisterPageState extends State<RegisterPage> {
     final purple = const Color(0xFF2A1A57);
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: purple,
-        title: Text(loc.registration),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _nameCtrl,
-                    decoration: InputDecoration(labelText: loc.name),
-                    validator: (v) => v!.isEmpty ? loc.enterName : null,
-                  ),
-                  const SizedBox(height: 12),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ===== PAGE TITLE =====
+              Text(
+                loc.registration,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2A1A57),
+                ),
+              ),
+              const SizedBox(height: 24),
 
-                  TextFormField(
-                    controller: _emailCtrl,
-                    decoration: InputDecoration(labelText: loc.email),
-                    validator: (v) => v!.isEmpty ? loc.enterEmail : null,
-                  ),
-                  const SizedBox(height: 12),
+              // ===== FORM CARD =====
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
 
-                  TextFormField(
-                    controller: _phoneCtrl,
-                    decoration: InputDecoration(labelText: loc.phone),
-                    validator: (v) => v!.isEmpty ? loc.enterPhone : null,
-                  ),
-                  const SizedBox(height: 12),
+                      _inputField(
+                        controller: _nameCtrl,
+                        label: loc.name,
+                        validator: (v) => v!.isEmpty ? loc.enterName : null,
+                      ),
+                      const SizedBox(height: 16),
 
-                  TextFormField(
-                    controller: _pwdCtrl,
-                    decoration: InputDecoration(labelText: loc.password),
-                    obscureText: true,
-                    validator: (v) =>
-                    v!.length < 6 ? loc.enterPassword : null,
-                  ),
-                  const SizedBox(height: 20),
+                      _inputField(
+                        controller: _emailCtrl,
+                        label: loc.email,
+                        validator: (v) => v!.isEmpty ? loc.enterEmail : null,
+                      ),
+                      const SizedBox(height: 16),
 
-                  SizedBox(
-                    width: 170,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: purple,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
+                      _inputField(
+                        controller: _phoneCtrl,
+                        label: loc.phone,
+                        validator: (v) => v!.isEmpty ? loc.enterPhone : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      _inputField(
+                        controller: _pwdCtrl,
+                        label: loc.password,
+                        obscure: true,
+                        validator: (v) =>
+                        v!.length < 6 ? loc.enterPassword : null,
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // ===== DYNAMIC BUTTON =====
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _loading ? null : _register,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: purple,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: _loading
+                              ? const CircularProgressIndicator(
+                            color: Colors.white,
+                          )
+                              : FittedBox(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12),
+                              child: Text(
+                                loc.registerButton,
+                                style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      child: _loading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(loc.registerButton),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Modern rounded input field builder
+  Widget _inputField({
+    required TextEditingController controller,
+    required String label,
+    required String? Function(String?) validator,
+    bool obscure = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: const Color(0xFFF5F5F7),
+        contentPadding:
+        const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
         ),
       ),
     );

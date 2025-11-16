@@ -2,7 +2,7 @@
   "@@locale": "ru",
 
   "home": "Главная",
-  "leaderboard": "Таблица лидеров",
+  "leaderboard": "Рейтинг",
   "settings": "Настройки",
   "language": "Язык",
   "chooseLanguage": "Выберите язык",
@@ -14,52 +14,66 @@
 
   "login": "Вход",
   "register": "Регистрация",
+
   "email": "Email",
-  "password": "Пароль",
   "enterEmail": "Введите email",
+  "invalidEmail": "Введите корректный email",
+
+  "password": "Пароль",
   "enterPassword": "Введите пароль",
+  "passwordShort": "Пароль должен быть не менее 6 символов",
+
   "enterName": "Введите имя",
   "enterPhone": "Введите номер телефона",
   "name": "Имя",
   "phone": "Телефон",
-  "confirmEmail": "Подтверждение Email",
-  "emailSent": "Письмо с подтверждением отправлено.",
+
+  "confirmEmail": "Подтверждение email",
+  "emailSent": "Письмо для подтверждения отправлено.",
   "resend": "Отправить снова",
   "iVerified": "Я подтвердил",
   "verificationRequired": "Пожалуйста, подтвердите email.",
   "loginButton": "ВОЙТИ",
   "registerButton": "ЗАРЕГИСТРИРОВАТЬСЯ",
   "registration": "Регистрация",
-  "logout": "Выйти из аккаунта",
-  "logoutQuestion": "Вы действительно хотите выйти из аккаунта?",
+
+  "logout": "Выйти",
+  "logoutQuestion": "Вы действительно хотите выйти?",
   "confirmation": "Подтверждение",
   "cancel": "Отмена",
   "logoutFailed": "Ошибка выхода",
+
   "profile": "Профиль",
   "profileInfo": "Информация профиля",
   "fullName": "Полное имя",
-  "verified": "Подтвержден",
-  "notVerified": "Не подтвержден",
-  "createdAt": "Аккаунт создан",
+  "verified": "Подтверждён",
+  "notVerified": "Не подтверждён",
+  "createdAt": "Дата создания",
   "editProfile": "Редактировать профиль",
-  "changePassword": "Сменить пароль",
+  "changePassword": "Изменить пароль",
+
   "notifications": "Уведомления",
-  "noNotifications": "Пока уведомлений нет",
-  "educationCenter": "образовательный центр",
-  "welcomeDescription": "Лидер по подготовке к ОРТ, рекордсмен по количеству золотых сертификатов и по числу абитуриентов, набравших свыше 200 баллов.",
+  "noNotifications": "Уведомлений пока нет",
+
+  "educationCenter": "Образовательный центр",
+  "welcomeDescription": "Лидер по подготовке к ОРТ, рекордсмен по количеству золотых сертификатов и абитуриентов, набравших более 200 баллов.",
+
   "forgotPassword": "Забыли пароль?",
   "resetPassword": "Сброс пароля",
-  "resetEmailSent": "Письмо для сброса пароля отправлено",
+  "resetEmailSent": "Письмо для восстановления отправлено",
   "resetFailed": "Не удалось отправить письмо",
   "send": "Отправить",
-  "verifyPhone": "Подтвердить телефон",
-  "smsCode": "Код из СМС",
+
+  "verifyPhone": "Подтверждение телефона",
+  "smsCode": "SMS-код",
   "phoneVerificationSent": "Код отправлен",
   "phoneVerified": "Телефон подтверждён",
   "phoneUpdated": "Телефон обновлён",
   "photoUpdated": "Фото обновлено",
-  "homeCategories": "Категории для практики",
+
+  "homeCategories": "Категории практики",
   "invalidCode": "Неверный код, попробуйте снова.",
+
   "statistics": "Статистика",
   "statsTitle": "Статистика",
   "statsSubtitle": "Отслеживайте свой прогресс",
@@ -67,21 +81,24 @@
   "statsAccuracy": "Точность",
   "statsTimeSpent": "Время обучения",
 
-  "leaderboardTitle": "Топ студентов",
+  "leaderboardTitle": "Лучшие студенты",
   "noUsers": "Пользователи не найдены",
 
   "trophies": "Трофеи",
 
   "welcomeTitle": "Добро пожаловать в SECOM Prep",
-  "welcomeSubtitle": "Учитесь умно, наслаждайтесь процессом, достигайте целей.",
+  "welcomeSubtitle": "Учитесь умно, занимайтесь с удовольствием, достигайте целей.",
   "welcomeToSecom": "Добро пожаловать в SECOM Prep",
-  "prepSmart": "Учитесь умно, наслаждайтесь процессом и достигайте целей.",
+  "prepSmart": "Учитесь умно, занимайтесь с удовольствием, достигайте целей.",
   "over500questions": "500+ вопросов",
   "sharpenReasoning": "Развивайте логическое мышление",
-  "over400passages": "400+ текстов для чтения",
+  "over400passages": "400+ текстов",
   "over2000questions": "2000+ вопросов",
 
   "answered": "отвечено",
-  "correct": "верно"
+  "correct": "правильно",
 
+  "resetEmailRequired": "Введите email",
+  "invalidPhone": "Введите корректный номер телефона",
+  "fieldRequired": "Поле обязательно"
 }
