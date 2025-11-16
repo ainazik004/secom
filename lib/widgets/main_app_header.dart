@@ -21,7 +21,10 @@ class MainAppHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16, // ← was 18 (reduced by 2px)
+          vertical: 10,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
@@ -35,20 +38,17 @@ class MainAppHeader extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // -------- LOGO (unchanged) --------
             Image.asset(
               'assets/secom_logo.png',
-              height: 38, // slightly shorter
+              height: 38,
             ),
 
             const Spacer(),
 
-            // -------- Trophy + Avatar Row (fully adaptive) --------
-            Flexible(
+            Expanded(
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  // 🏆 Trophy Pill
                   _AdaptiveTrophyPill(
                     count: trophyCount,
                     onTap: onTapTrophy,
@@ -56,11 +56,10 @@ class MainAppHeader extends StatelessWidget {
 
                   const SizedBox(width: 10),
 
-                  // 👤 Profile
                   GestureDetector(
                     onTap: onTapProfile,
                     child: CircleAvatar(
-                      radius: 18, // smaller for a shorter header
+                      radius: 18,
                       backgroundColor: purple,
                       backgroundImage: (photoUrl != null &&
                           photoUrl!.isNotEmpty)
@@ -102,7 +101,10 @@ class _AdaptiveTrophyPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pill = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10, // ← was 12 (reduced by 2px)
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4E0),
         borderRadius: BorderRadius.circular(20),
@@ -120,7 +122,6 @@ class _AdaptiveTrophyPill extends StatelessWidget {
           Icon(Icons.emoji_events, size: 16, color: Colors.amber[700]),
           const SizedBox(width: 5),
 
-          // ★ Auto-scaling number ★
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
