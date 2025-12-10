@@ -25,10 +25,13 @@
   "password": "Сырсөз",
   "enterPassword": "Сырсөздү киргизиңиз",
   "passwordShort": "Сырсөз кеминде 6 белгиден турушу керек",
+  "confirmPassword": "Сырсөздү тастыктаңыз",
+  "passwordNotMatching": "Сырсөздөр дал келген жок",
 
   "enterName": "Атыңызды киргизиңиз",
   "enterPhone": "Телефон номерин киргизиңиз",
   "name": "Аты",
+  "surname" : "Фамилиясы",
   "phone": "Телефон",
 
   "confirmEmail": "Email тастыктоо",
@@ -89,9 +92,9 @@
 
   "trophies": "Трофейлер",
 
-  "welcomeTitle": "SECOM Prepке кош келиңиз",
+  "welcomeTitle": "ZHALBYRAK'ка кош келиңиз",
   "welcomeSubtitle": "Акылдуу даярданып, жеңил окуп, максатыңызга жетиңиз.",
-  "welcomeToSecom": "SECOM Prepке кош келиңиз",
+  "welcomeToSecom": "ZHALBYRAK'ка кош келиңиз",
   "prepSmart": "Акылдуу даярданып, жеңил окуп, максатыңызга жетиңиз.",
   "over500questions": "500+ Суроо",
   "sharpenReasoning": "Логикалык ой жүгүртүүнү өнүктүрүңүз",

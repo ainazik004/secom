@@ -14,6 +14,15 @@ class _StatisticsPageState extends State<StatisticsPage>
   late final AnimationController _controller;
   late final Animation<double> _progress;
 
+  /// Stats are now stored in state so they can be "reloaded".
+  Map<String, int> _stats = {
+    'overall': 84,
+    'math': 100,
+    'reading': 72,
+    'analogy': 70,
+    'grammar': 78,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -39,143 +48,151 @@ class _StatisticsPageState extends State<StatisticsPage>
     super.dispose();
   }
 
+  /// Pull-to-refresh handler.
+  /// Here it simply restarts the animation and could later be extended
+  /// to fetch fresh data from Firestore/your backend.
+  Future<void> _onRefresh() async {
+    // Example: if you later load from backend, do it here and call setState.
+    // For now we just restart the animation and keep the same stats.
+    _controller.forward(from: 0);
+
+    // Optional small delay to show the refresh indicator.
+    await Future.delayed(const Duration(milliseconds: 600));
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
-    final stats = {
-      'overall': 84,
-      'math': 100,
-      'reading': 72,
-      'analogy': 70,
-      'grammar': 78,
-    };
-
     return Scaffold(
       backgroundColor: const Color(0xFFF6F4FF),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // -----------------------------------
-              // Header section
-              // -----------------------------------
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(32),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      loc.statistics,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                      ),
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                // -----------------------------------
+                // Header section
+                // -----------------------------------
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      loc.statsSubtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 13,
-                      ),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(32),
                     ),
-                    const SizedBox(height: 35),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        loc.statistics,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        loc.statsSubtitle,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 35),
 
-                    AnimatedBuilder(
-                      animation: _progress,
-                      builder: (_, __) {
-                        final p = _progress.value.clamp(0.0, 1.0);
+                      AnimatedBuilder(
+                        animation: _progress,
+                        builder: (_, __) {
+                          final p = _progress.value.clamp(0.0, 1.0);
 
-                        return SizedBox(
-                          height: 330,
-                          width: double.infinity,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 260,
-                                height: 260,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: RadialGradient(
-                                    colors: [
-                                      Colors.white.withOpacity(0.23 * p),
-                                      Colors.transparent,
-                                    ],
-                                    radius: 0.75,
+                          return SizedBox(
+                            height: 330,
+                            width: double.infinity,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 260,
+                                  height: 260,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        Colors.white.withOpacity(0.23 * p),
+                                        Colors.transparent,
+                                      ],
+                                      radius: 0.75,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              CustomPaint(
-                                size: const Size(260, 260),
-                                painter: _PentagonRadarPainter(
-                                  stats: stats,
-                                  progress: p,
-                                  context: context,
+                                CustomPaint(
+                                  size: const Size(260, 260),
+                                  painter: _PentagonRadarPainter(
+                                    stats: _stats,
+                                    progress: p,
+                                    context: context,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // -----------------------------------
-              // Skill Cards
-              // -----------------------------------
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    _SkillCard(
-                      title: loc.math,
-                      icon: Icons.calculate_rounded,
-                      answered: 0,
-                      total: 500,
-                    ),
-                    _SkillCard(
-                      title: loc.analogy,
-                      icon: Icons.compare_arrows_rounded,
-                      answered: 0,
-                      total: 300,
-                    ),
-                    _SkillCard(
-                      title: loc.reading,
-                      icon: Icons.menu_book_rounded,
-                      answered: 9,
-                      total: 489,
-                    ),
-                    _SkillCard(
-                      title: loc.grammar,
-                      icon: Icons.spellcheck_rounded,
-                      answered: 0,
-                      total: 600,
-                    ),
-                  ],
+                // -----------------------------------
+                // Skill Cards
+                // -----------------------------------
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      _SkillCard(
+                        title: loc.math,
+                        icon: Icons.calculate_rounded,
+                        answered: 0,
+                        total: 500,
+                      ),
+                      _SkillCard(
+                        title: loc.analogy,
+                        icon: Icons.compare_arrows_rounded,
+                        answered: 0,
+                        total: 300,
+                      ),
+                      _SkillCard(
+                        title: loc.reading,
+                        icon: Icons.menu_book_rounded,
+                        answered: 9,
+                        total: 489,
+                      ),
+                      _SkillCard(
+                        title: loc.grammar,
+                        icon: Icons.spellcheck_rounded,
+                        answered: 0,
+                        total: 600,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 40),
-            ],
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
@@ -184,7 +201,7 @@ class _StatisticsPageState extends State<StatisticsPage>
 }
 
 // ---------------------------------------------------------
-// Radar Painter (unchanged)
+// Radar Painter
 // ---------------------------------------------------------
 class _PentagonRadarPainter extends CustomPainter {
   final Map<String, int> stats;
@@ -244,6 +261,7 @@ class _PentagonRadarPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
+    // Grid
     for (int layer = 1; layer <= 5; layer++) {
       final r = baseRadius * (layer / 5);
       final path = Path();
@@ -251,12 +269,17 @@ class _PentagonRadarPainter extends CustomPainter {
         final ang = angleStep * i - pi / 2;
         final x = center.dx + r * cos(ang);
         final y = center.dy + r * sin(ang);
-        i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
       }
       path.close();
       canvas.drawPath(path, gridPaint);
     }
 
+    // Radar polygon
     final radar = Path();
     final points = <Offset>[];
 
@@ -269,19 +292,25 @@ class _PentagonRadarPainter extends CustomPainter {
       );
 
       points.add(pt);
-      i == 0 ? radar.moveTo(pt.dx, pt.dy) : radar.lineTo(pt.dx, pt.dy);
+      if (i == 0) {
+        radar.moveTo(pt.dx, pt.dy);
+      } else {
+        radar.lineTo(pt.dx, pt.dy);
+      }
     }
 
     radar.close();
     canvas.drawPath(radar, fillPaint);
     canvas.drawPath(radar, outlinePaint);
 
+    // Dots
     final dot = Paint()..style = PaintingStyle.fill;
     for (int i = 0; i < pointCount; i++) {
       dot.color = colors[i];
       canvas.drawCircle(points[i], 5, dot);
     }
 
+    // Labels
     final tp = TextPainter(
       textAlign: TextAlign.center,
       textDirection: TextDirection.ltr,
@@ -310,8 +339,7 @@ class _PentagonRadarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PentagonRadarPainter oldDelegate) =>
-      oldDelegate.progress != progress ||
-          oldDelegate.stats != stats;
+      oldDelegate.progress != progress || oldDelegate.stats != stats;
 }
 
 // ---------------------------------------------------------

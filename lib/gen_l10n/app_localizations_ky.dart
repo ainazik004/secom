@@ -69,6 +69,12 @@ class AppLocalizationsKy extends AppLocalizations {
   String get passwordShort => 'Сырсөз кеминде 6 белгиден турушу керек';
 
   @override
+  String get confirmPassword => 'Сырсөздү тастыктаңыз';
+
+  @override
+  String get passwordNotMatching => 'Сырсөздөр дал келген жок';
+
+  @override
   String get enterName => 'Атыңызды киргизиңиз';
 
   @override
@@ -76,6 +82,9 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get name => 'Аты';
+
+  @override
+  String get surname => 'Фамилиясы';
 
   @override
   String get phone => 'Телефон';
@@ -223,14 +232,14 @@ class AppLocalizationsKy extends AppLocalizations {
   String get trophies => 'Трофейлер';
 
   @override
-  String get welcomeTitle => 'SECOM Prepке кош келиңиз';
+  String get welcomeTitle => 'ZHALBYRAK\'ка кош келиңиз';
 
   @override
   String get welcomeSubtitle =>
       'Акылдуу даярданып, жеңил окуп, максатыңызга жетиңиз.';
 
   @override
-  String get welcomeToSecom => 'SECOM Prepке кош келиңиз';
+  String get welcomeToSecom => 'ZHALBYRAK\'ка кош келиңиз';
 
   @override
   String get prepSmart =>

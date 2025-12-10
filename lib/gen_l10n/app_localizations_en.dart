@@ -69,6 +69,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordShort => 'Password must be at least 6 characters';
 
   @override
+  String get confirmPassword => 'Confirm the password';
+
+  @override
+  String get passwordNotMatching => 'Passwords do not match';
+
+  @override
   String get enterName => 'Enter name';
 
   @override
@@ -76,6 +82,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get name => 'Name';
+
+  @override
+  String get surname => 'Surname';
 
   @override
   String get phone => 'Phone';
@@ -223,13 +232,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trophies => 'Trophies';
 
   @override
-  String get welcomeTitle => 'Welcome to SECOM Prep';
+  String get welcomeTitle => 'Welcome to ZHALBYRAK';
 
   @override
   String get welcomeSubtitle => 'Prep smart, enjoy learning, reach your goals.';
 
   @override
-  String get welcomeToSecom => 'Welcome to SECOM Prep';
+  String get welcomeToSecom => 'Welcome to ZHALBYRAK';
 
   @override
   String get prepSmart => 'Prep smart, enjoy learning, reach your goals.';

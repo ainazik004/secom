@@ -12,14 +12,34 @@ class LeaderboardPage extends StatefulWidget {
 }
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
+  // Approximate total vertical space per item (tile + separator).
+  // You can fine-tune this if you change tile layout.
+  static const double _itemExtent = 90.0;
+
   late Future<List<DocumentSnapshot<Map<String, dynamic>>>> _leaderboardFuture;
 
+  final ScrollController _scrollController = ScrollController();
+
   bool _userTileVisible = false;
+
+  // Visible range tracking
+  double _viewportHeight = 0;
+  int _firstVisibleIndex = 0;
+  int _lastVisibleIndex = 0;
+  bool _visibleRangeReady = false;
 
   @override
   void initState() {
     super.initState();
     _leaderboardFuture = _loadLeaderboard();
+    _scrollController.addListener(_updateVisibleRange);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateVisibleRange);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   /// -----------------------------------------------------
@@ -51,6 +71,45 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     }
   }
 
+  /// -----------------------------------------------------
+  /// PULL-TO-REFRESH HANDLER
+  /// -----------------------------------------------------
+  Future<void> _onRefresh() async {
+    setState(() {
+      _leaderboardFuture = _loadLeaderboard();
+      _userTileVisible = false;
+      _visibleRangeReady = false;
+      _firstVisibleIndex = 0;
+      _lastVisibleIndex = 0;
+    });
+
+    await _leaderboardFuture;
+  }
+
+  /// -----------------------------------------------------
+  /// UPDATE VISIBLE RANGE (FIRST/LAST INDEX)
+  /// -----------------------------------------------------
+  void _updateVisibleRange() {
+    if (!_scrollController.hasClients || _viewportHeight <= 0) return;
+
+    final offset = _scrollController.offset.clamp(0.0, double.infinity);
+
+    final first = (offset / _itemExtent).floor().clamp(0, 1000000);
+    final last = ((offset + _viewportHeight) / _itemExtent)
+        .floor()
+        .clamp(first, 1000000);
+
+    if (first != _firstVisibleIndex ||
+        last != _lastVisibleIndex ||
+        !_visibleRangeReady) {
+      setState(() {
+        _firstVisibleIndex = first;
+        _lastVisibleIndex = last;
+        _visibleRangeReady = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -79,9 +138,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                   color: Colors.black.withOpacity(0.55),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Expanded(
                 child: FutureBuilder<
                     List<DocumentSnapshot<Map<String, dynamic>>>>(
@@ -108,83 +165,122 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                     final docs = snap.data!;
                     final userId = FirebaseAuth.instance.currentUser!.uid;
 
-                    return Stack(
-                      children: [
-                        // ---------------------- LIST ----------------------
-                        ListView.separated(
-                          itemCount: docs.length,
-                          separatorBuilder: (_, __) =>
-                          const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final doc = docs[index];
-                            final data = doc.data()!;
-                            final String name =
-                            (data['fullName'] ?? '—') as String;
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Track viewport height of the scrollable area.
+                        if (_viewportHeight != constraints.maxHeight) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            _viewportHeight = constraints.maxHeight;
+                            _updateVisibleRange();
+                          });
+                        }
 
-                            final rawTrophies = data['trophies'];
-                            final int trophies = rawTrophies is int
-                                ? rawTrophies
-                                : int.tryParse('$rawTrophies') ?? 0;
+                        final myIndex =
+                        docs.indexWhere((d) => d.id == userId);
 
-                            final String? photoUrl =
-                            data['photoUrl'] as String?;
+                        bool showTop = false;
+                        bool showBottom = false;
 
-                            final bool isMe = doc.id == userId;
+                        if (_visibleRangeReady &&
+                            myIndex != -1 &&
+                            !_userTileVisible) {
+                          if (myIndex < _firstVisibleIndex) {
+                            // User is ranked ABOVE the visible range
+                            showTop = true;
+                          } else if (myIndex > _lastVisibleIndex) {
+                            // User is ranked BELOW the visible range
+                            showBottom = true;
+                          }
+                        }
 
-                            if (isMe) {
-                              return VisibilityDetector(
-                                key: Key("user-tile-$userId"),
-                                onVisibilityChanged: (info) {
-                                  final visible = info.visibleFraction > 0.45;
-                                  if (_userTileVisible != visible) {
-                                    setState(
-                                            () => _userTileVisible = visible);
+                        return RefreshIndicator(
+                          onRefresh: _onRefresh,
+                          child: Stack(
+                            children: [
+                              // ---------------------- LIST ----------------------
+                              ListView.separated(
+                                controller: _scrollController,
+                                physics:
+                                const AlwaysScrollableScrollPhysics(),
+                                itemCount: docs.length,
+                                separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final doc = docs[index];
+                                  final data = doc.data()!;
+                                  final String name =
+                                  (data['fullName'] ?? '—') as String;
+
+                                  final rawTrophies = data['trophies'];
+                                  final int trophies = rawTrophies is int
+                                      ? rawTrophies
+                                      : int.tryParse('$rawTrophies') ?? 0;
+
+                                  final String? photoUrl =
+                                  data['photoUrl'] as String?;
+
+                                  final bool isMe = doc.id == userId;
+
+                                  if (isMe) {
+                                    return VisibilityDetector(
+                                      key: Key("user-tile-$userId"),
+                                      onVisibilityChanged: (info) {
+                                        final visible =
+                                            info.visibleFraction > 0.45;
+                                        if (_userTileVisible != visible) {
+                                          setState(() =>
+                                          _userTileVisible = visible);
+                                        }
+                                      },
+                                      child: _LeaderboardTile(
+                                        index: index,
+                                        name: name,
+                                        trophies: trophies,
+                                        photoUrl: photoUrl,
+                                        isMe: true,
+                                      ),
+                                    );
                                   }
+
+                                  return _LeaderboardTile(
+                                    index: index,
+                                    name: name,
+                                    trophies: trophies,
+                                    photoUrl: photoUrl,
+                                    isMe: false,
+                                  );
                                 },
-                                child: _LeaderboardTile(
-                                  index: index,
-                                  name: name,
-                                  trophies: trophies,
-                                  photoUrl: photoUrl,
-                                  isMe: true,
-                                ),
-                              );
-                            }
-
-                            return _LeaderboardTile(
-                              index: index,
-                              name: name,
-                              trophies: trophies,
-                              photoUrl: photoUrl,
-                              isMe: false,
-                            );
-                          },
-                        ),
-
-                        // ---------------------- FLOATING TILE ----------------------
-                        if (!_userTileVisible)
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            top: 4,
-                            child: TweenAnimationBuilder<double>(
-                              tween: Tween(begin: -50, end: 0),
-                              duration:
-                              const Duration(milliseconds: 450),
-                              curve: Curves.easeOutBack,
-                              builder: (context, value, child) {
-                                return Transform.translate(
-                                  offset: Offset(0, value),
-                                  child: child,
-                                );
-                              },
-                              child: _FloatingMyTile(
-                                docs: docs,
-                                userId: userId,
                               ),
-                            ),
+
+                              // ---------------------- FLOATING TILE ----------------------
+                              if (showTop || showBottom)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  top: showTop ? 4 : null,
+                                  bottom: showBottom ? 4 : null,
+                                  child: TweenAnimationBuilder<double>(
+                                    tween: Tween(begin: -50, end: 0),
+                                    duration:
+                                    const Duration(milliseconds: 450),
+                                    curve: Curves.easeOutBack,
+                                    builder: (context, value, child) {
+                                      return Transform.translate(
+                                        offset: Offset(0, value),
+                                        child: child,
+                                      );
+                                    },
+                                    child: _FloatingMyTile(
+                                      docs: docs,
+                                      userId: userId,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                      ],
+                        );
+                      },
                     );
                   },
                 ),
@@ -215,10 +311,10 @@ class _FloatingMyTile extends StatelessWidget {
     final doc = docs.firstWhere((d) => d.id == userId);
     final data = doc.data()!;
 
-    final name = data['fullName'] ?? "—";
+    final String name = data['fullName'] ?? "—";
     final raw = data['trophies'];
-    final trophies = raw is int ? raw : int.tryParse('$raw') ?? 0;
-    final photoUrl = data['photoUrl'];
+    final int trophies = raw is int ? raw : int.tryParse('$raw') ?? 0;
+    final String? photoUrl = data['photoUrl'];
 
     return _LeaderboardTile(
       index: docs.indexOf(doc),
@@ -267,8 +363,7 @@ class _LeaderboardTile extends StatelessWidget {
     final rank = index + 1;
     final rankColor = _rankColor(index);
 
-    final tileColor =
-    isMe ? const Color(0xFFEDD9FF) : Colors.white;
+    final tileColor = isMe ? const Color(0xFFEDD9FF) : Colors.white;
     final borderColor =
     isMe ? const Color(0xFF9A4DFF) : Colors.transparent;
 
@@ -278,11 +373,15 @@ class _LeaderboardTile extends StatelessWidget {
       curve: Curves.easeOutBack,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: tileColor,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: borderColor, width: isMe ? 2 : 0),
+          border: Border.all(
+            color: borderColor,
+            width: isMe ? 2 : 0,
+          ),
           boxShadow: const [
             BoxShadow(
               color: Color(0x142C015D),
@@ -317,13 +416,15 @@ class _LeaderboardTile extends StatelessWidget {
             CircleAvatar(
               radius: 22,
               backgroundColor: const Color(0xFF2C015D),
-              backgroundImage: (photoUrl != null &&
-                  photoUrl!.isNotEmpty)
+              backgroundImage:
+              (photoUrl != null && photoUrl!.isNotEmpty)
                   ? NetworkImage(photoUrl!)
                   : null,
               child: (photoUrl == null || photoUrl!.isEmpty)
                   ? Text(
-                name.isNotEmpty ? name[0].toUpperCase() : "?",
+                name.isNotEmpty
+                    ? name[0].toUpperCase()
+                    : "?",
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -350,11 +451,12 @@ class _LeaderboardTile extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   if (isMe)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF9A4DFF),
                         borderRadius: BorderRadius.circular(12),

@@ -220,6 +220,18 @@ abstract class AppLocalizations {
   /// **'Password must be at least 6 characters'**
   String get passwordShort;
 
+  /// No description provided for @confirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the password'**
+  String get confirmPassword;
+
+  /// No description provided for @passwordNotMatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordNotMatching;
+
   /// No description provided for @enterName.
   ///
   /// In en, this message translates to:
@@ -237,6 +249,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name'**
   String get name;
+
+  /// No description provided for @surname.
+  ///
+  /// In en, this message translates to:
+  /// **'Surname'**
+  String get surname;
 
   /// No description provided for @phone.
   ///
@@ -529,7 +547,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to SECOM Prep'**
+  /// **'Welcome to ZHALBYRAK'**
   String get welcomeTitle;
 
   /// No description provided for @welcomeSubtitle.
@@ -541,7 +559,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeToSecom.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to SECOM Prep'**
+  /// **'Welcome to ZHALBYRAK'**
   String get welcomeToSecom;
 
   /// No description provided for @prepSmart.

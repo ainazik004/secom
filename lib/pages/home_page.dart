@@ -11,8 +11,21 @@ import 'categories/analogy_page.dart';
 import 'categories/reading_page.dart';
 import 'categories/grammar_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late Future<Map<String, dynamic>> _userFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _userFuture = _loadUserData();
+  }
 
   Future<Map<String, dynamic>> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -24,13 +37,25 @@ class HomePage extends StatelessWidget {
     return snapshot.data() ?? {};
   }
 
+  Future<void> _onRefresh() async {
+    setState(() {
+      _userFuture = _loadUserData();
+    });
+    await _userFuture;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: _loadUserData(),
+      future: _userFuture,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const _HomeShimmer();
-        return _HomeContent(data: snapshot.data!);
+        if (!snapshot.hasData) {
+          return _HomeShimmer(onRefresh: _onRefresh);
+        }
+        return _HomeContent(
+          data: snapshot.data!,
+          onRefresh: _onRefresh,
+        );
       },
     );
   }
@@ -38,8 +63,12 @@ class HomePage extends StatelessWidget {
 
 class _HomeContent extends StatelessWidget {
   final Map<String, dynamic> data;
+  final Future<void> Function() onRefresh;
 
-  const _HomeContent({required this.data});
+  const _HomeContent({
+    required this.data,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -80,118 +109,124 @@ class _HomeContent extends StatelessWidget {
       ),
     ];
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // HERO BANNER
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Container(
-              padding: const EdgeInsets.all(26),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // HERO BANNER
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Container(
+                padding: const EdgeInsets.all(26),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1A2C015D),
+                      blurRadius: 24,
+                      offset: Offset(0, 12),
+                    ),
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x1A2C015D),
-                    blurRadius: 24,
-                    offset: Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    loc.welcomeToSecom,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.95),
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.welcomeToSecom,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.95),
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    loc.prepSmart,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
+                    const SizedBox(height: 12),
+                    Text(
+                      loc.prepSmart,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // Greeting
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.waving_hand_rounded,
-                            color: Colors.white),
-                        const SizedBox(width: 10),
-                        Text(
-                          greeting,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                    // Greeting
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.waving_hand_rounded,
+                              color: Colors.white),
+                          const SizedBox(width: 10),
+                          Text(
+                            greeting,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // TITLE
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              loc.homeCategories,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF2C015D),
+            // TITLE
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                loc.homeCategories,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2C015D),
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // CATEGORY GRID
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final width = (constraints.maxWidth - 16) / 2;
+            // CATEGORY GRID
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = (constraints.maxWidth - 16) / 2;
 
-                return Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: categories
-                      .map((c) => SizedBox(
-                    width: width,
-                    child: _CategoryCard(data: c),
-                  ))
-                      .toList(),
-                );
-              },
+                  return Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: categories
+                        .map(
+                          (c) => SizedBox(
+                        width: width,
+                        child: _CategoryCard(data: c),
+                      ),
+                    )
+                        .toList(),
+                  );
+                },
+              ),
             ),
-          ),
 
-          const SizedBox(height: 30),
-        ],
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }
@@ -209,7 +244,9 @@ class _CategoryCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(24),
         onTap: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => data.page)),
+          context,
+          MaterialPageRoute(builder: (_) => data.page),
+        ),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -292,44 +329,52 @@ class _CategoryData {
 //
 
 class _HomeShimmer extends StatelessWidget {
-  const _HomeShimmer();
+  final Future<void> Function() onRefresh;
+
+  const _HomeShimmer({required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // HERO shimmer
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Shimmer.fromColors(
-              baseColor: Colors.grey.shade300,
-              highlightColor: Colors.grey.shade100,
-              child: Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            // HERO shimmer
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // Categories shimmer
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: List.generate(
-                  4, (_) => const _CategoryShimmerCard()).toList(),
+            // Categories shimmer
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: List.generate(
+                  4,
+                      (_) => const _CategoryShimmerCard(),
+                ).toList(),
+              ),
             ),
-          ),
 
-          const SizedBox(height: 30),
-        ],
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }

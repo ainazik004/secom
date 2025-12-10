@@ -24,10 +24,13 @@
   "password": "Password",
   "enterPassword": "Enter password",
   "passwordShort": "Password must be at least 6 characters",
+  "confirmPassword": "Confirm the password",
+  "passwordNotMatching": "Passwords do not match",
 
   "enterName": "Enter name",
   "enterPhone": "Enter phone number",
   "name": "Name",
+  "surname" : "Surname",
   "phone": "Phone",
 
   "confirmEmail": "Email confirmation",
@@ -88,9 +91,9 @@
 
   "trophies": "Trophies",
 
-  "welcomeTitle": "Welcome to SECOM Prep",
+  "welcomeTitle": "Welcome to ZHALBYRAK",
   "welcomeSubtitle": "Prep smart, enjoy learning, reach your goals.",
-  "welcomeToSecom": "Welcome to SECOM Prep",
+  "welcomeToSecom": "Welcome to ZHALBYRAK",
   "prepSmart": "Prep smart, enjoy learning, reach your goals.",
   "over500questions": "500+ Questions",
   "sharpenReasoning": "Sharpen reasoning skills",

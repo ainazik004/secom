@@ -24,10 +24,13 @@
   "password": "Пароль",
   "enterPassword": "Введите пароль",
   "passwordShort": "Пароль должен быть не менее 6 символов",
+  "confirmPassword": "Подтвердите пароль",
+  "passwordNotMatching": "Пароли не совпадают",
 
   "enterName": "Введите имя",
   "enterPhone": "Введите номер телефона",
   "name": "Имя",
+  "surname" : "Фамилия",
   "phone": "Телефон",
 
   "confirmEmail": "Подтверждение email",
@@ -88,9 +91,9 @@
 
   "trophies": "Трофеи",
 
-  "welcomeTitle": "Добро пожаловать в SECOM Prep",
+  "welcomeTitle": "Добро пожаловать в ZHALBYRAK",
   "welcomeSubtitle": "Учитесь умно, занимайтесь с удовольствием, достигайте целей.",
-  "welcomeToSecom": "Добро пожаловать в SECOM Prep",
+  "welcomeToSecom": "Добро пожаловать в ZHALBYRAK",
   "prepSmart": "Учитесь умно, занимайтесь с удовольствием, достигайте целей.",
   "over500questions": "500+ вопросов",
   "sharpenReasoning": "Развивайте логическое мышление",

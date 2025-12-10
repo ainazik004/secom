@@ -69,6 +69,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get passwordShort => 'Пароль должен быть не менее 6 символов';
 
   @override
+  String get confirmPassword => 'Подтвердите пароль';
+
+  @override
+  String get passwordNotMatching => 'Пароли не совпадают';
+
+  @override
   String get enterName => 'Введите имя';
 
   @override
@@ -76,6 +82,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get name => 'Имя';
+
+  @override
+  String get surname => 'Фамилия';
 
   @override
   String get phone => 'Телефон';
@@ -223,14 +232,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trophies => 'Трофеи';
 
   @override
-  String get welcomeTitle => 'Добро пожаловать в SECOM Prep';
+  String get welcomeTitle => 'Добро пожаловать в ZHALBYRAK';
 
   @override
   String get welcomeSubtitle =>
       'Учитесь умно, занимайтесь с удовольствием, достигайте целей.';
 
   @override
-  String get welcomeToSecom => 'Добро пожаловать в SECOM Prep';
+  String get welcomeToSecom => 'Добро пожаловать в ZHALBYRAK';
 
   @override
   String get prepSmart =>
