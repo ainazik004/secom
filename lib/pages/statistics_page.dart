@@ -1,6 +1,9 @@
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:secom/gen_l10n/app_localizations.dart';
+import 'advancedStatistics.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
@@ -13,15 +16,6 @@ class _StatisticsPageState extends State<StatisticsPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _progress;
-
-  /// Stats are now stored in state so they can be "reloaded".
-  Map<String, int> _stats = {
-    'overall': 84,
-    'math': 100,
-    'reading': 72,
-    'analogy': 70,
-    'grammar': 78,
-  };
 
   @override
   void initState() {
@@ -48,152 +42,286 @@ class _StatisticsPageState extends State<StatisticsPage>
     super.dispose();
   }
 
-  /// Pull-to-refresh handler.
-  /// Here it simply restarts the animation and could later be extended
-  /// to fetch fresh data from Firestore/your backend.
   Future<void> _onRefresh() async {
-    // Example: if you later load from backend, do it here and call setState.
-    // For now we just restart the animation and keep the same stats.
     _controller.forward(from: 0);
-
-    // Optional small delay to show the refresh indicator.
     await Future.delayed(const Duration(milliseconds: 600));
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F4FF),
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _onRefresh,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                // -----------------------------------
-                // Header section
-                // -----------------------------------
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(32),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        loc.statistics,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        loc.statsSubtitle,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 35),
-
-                      AnimatedBuilder(
-                        animation: _progress,
-                        builder: (_, __) {
-                          final p = _progress.value.clamp(0.0, 1.0);
-
-                          return SizedBox(
-                            height: 330,
-                            width: double.infinity,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Container(
-                                  width: 260,
-                                  height: 260,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: RadialGradient(
-                                      colors: [
-                                        Colors.white.withOpacity(0.23 * p),
-                                        Colors.transparent,
-                                      ],
-                                      radius: 0.75,
-                                    ),
-                                  ),
-                                ),
-                                CustomPaint(
-                                  size: const Size(260, 260),
-                                  painter: _PentagonRadarPainter(
-                                    stats: _stats,
-                                    progress: p,
-                                    context: context,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // -----------------------------------
-                // Skill Cards
-                // -----------------------------------
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      _SkillCard(
-                        title: loc.math,
-                        icon: Icons.calculate_rounded,
-                        answered: 0,
-                        total: 500,
-                      ),
-                      _SkillCard(
-                        title: loc.analogy,
-                        icon: Icons.compare_arrows_rounded,
-                        answered: 0,
-                        total: 300,
-                      ),
-                      _SkillCard(
-                        title: loc.reading,
-                        icon: Icons.menu_book_rounded,
-                        answered: 9,
-                        total: 489,
-                      ),
-                      _SkillCard(
-                        title: loc.grammar,
-                        icon: Icons.spellcheck_rounded,
-                        answered: 0,
-                        total: 600,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-              ],
+        child: user == null
+            ? Center(
+          child: Text(
+            'Not logged in',
+            style: TextStyle(
+              color: Colors.black.withOpacity(0.6),
+              fontSize: 14,
             ),
           ),
+        )
+            : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return Center(
+                child: Text(
+                  'No statistics yet',
+                  style: TextStyle(
+                    color: Colors.black.withOpacity(0.6),
+                    fontSize: 14,
+                  ),
+                ),
+              );
+            }
+
+            final data = snapshot.data!.data() ?? {};
+
+            num _getNum(String key, [num fallback = 0]) {
+              final v = data[key];
+              if (v is num) return v;
+              return fallback;
+            }
+
+            Map<String, dynamic> _getMap(String key) {
+              final v = data[key];
+              if (v is Map<String, dynamic>) return v;
+              return {};
+            }
+
+            final totalQuestionsAnswered =
+            _getNum('totalQuestionsAnswered').toInt();
+            final totalCorrectAnswers =
+            _getNum('totalCorrectAnswers').toInt();
+            final averageScore =
+            _getNum('averageScore').toDouble().clamp(0, 100);
+
+            final categoryStats = _getMap('categoryStats');
+
+            num _catScore(String key) {
+              final cat = categoryStats[key];
+              if (cat is Map<String, dynamic>) {
+                final avg = cat['avgScore'];
+                if (avg is num) return avg;
+              }
+              return 0;
+            }
+
+            int _catAnswered(String key) {
+              final cat = categoryStats[key];
+              if (cat is Map<String, dynamic>) {
+                final a = cat['answered'];
+                if (a is num) return a.toInt();
+              }
+              return 0;
+            }
+
+            final stats = <String, int>{
+              'overall': averageScore.round(),
+              'math': _catScore('math').toDouble().clamp(0, 100).round(),
+              'reading':
+              _catScore('reading').toDouble().clamp(0, 100).round(),
+              'analogy':
+              _catScore('analogy').toDouble().clamp(0, 100).round(),
+              'grammar':
+              _catScore('grammar').toDouble().clamp(0, 100).round(),
+            };
+
+            final mathAnswered = _catAnswered('math');
+            final readingAnswered = _catAnswered('reading');
+            final analogyAnswered = _catAnswered('analogy');
+            final grammarAnswered = _catAnswered('grammar');
+
+            final totalAnsweredAll =
+            totalQuestionsAnswered <= 0 ? 1 : totalQuestionsAnswered;
+
+            return RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // -----------------------------------
+                    // Header section
+                    // -----------------------------------
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFFFF7FB2),
+                            Color(0xFF7F4BFF)
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(32),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            loc.statistics,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            loc.statsSubtitle,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 35),
+
+                          AnimatedBuilder(
+                            animation: _progress,
+                            builder: (_, __) {
+                              final p =
+                              _progress.value.clamp(0.0, 1.0);
+
+                              return SizedBox(
+                                height: 330,
+                                width: double.infinity,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Container(
+                                      width: 260,
+                                      height: 260,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: RadialGradient(
+                                          colors: [
+                                            Colors.white
+                                                .withOpacity(0.23 * p),
+                                            Colors.transparent,
+                                          ],
+                                          radius: 0.75,
+                                        ),
+                                      ),
+                                    ),
+                                    CustomPaint(
+                                      size: const Size(260, 260),
+                                      painter: _PentagonRadarPainter(
+                                        stats: stats,
+                                        progress: p,
+                                        context: context,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // ---------- Advanced statistics button ----------
+                          TextButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                  const AdvancedStatisticsPage(),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor:
+                              Colors.white.withOpacity(0.16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.bar_chart_rounded,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Advanced statistics',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // -----------------------------------
+                    // Skill Cards
+                    // -----------------------------------
+                    Padding(
+                      padding:
+                      const EdgeInsets.symmetric(horizontal: 20),
+                      child: Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: [
+                          _SkillCard(
+                            title: loc.math,
+                            icon: Icons.calculate_rounded,
+                            answered: mathAnswered,
+                            total: totalAnsweredAll,
+                          ),
+                          _SkillCard(
+                            title: loc.analogy,
+                            icon: Icons.compare_arrows_rounded,
+                            answered: analogyAnswered,
+                            total: totalAnsweredAll,
+                          ),
+                          _SkillCard(
+                            title: loc.reading,
+                            icon: Icons.menu_book_rounded,
+                            answered: readingAnswered,
+                            total: totalAnsweredAll,
+                          ),
+                          _SkillCard(
+                            title: loc.grammar,
+                            icon: Icons.spellcheck_rounded,
+                            answered: grammarAnswered,
+                            total: totalAnsweredAll,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -324,7 +452,7 @@ class _PentagonRadarPainter extends CustomPainter {
       final ly = center.dy + labelRadius * sin(ang);
 
       tp.text = TextSpan(
-        text: "${labels[i]}\n${values[i]}%",
+        text: "${labels[i]}\n${values[i].round()}%",
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
@@ -383,11 +511,10 @@ class _SkillCard extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // ---- Main content ----
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 4), // spacing since indicator is inside
+                const SizedBox(height: 4),
 
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -419,7 +546,6 @@ class _SkillCard extends StatelessWidget {
               ],
             ),
 
-            // ---- Circular progress INSIDE card ----
             Positioned(
               top: 0,
               right: 0,
