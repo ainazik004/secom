@@ -191,9 +191,16 @@ class _MainPageState extends State<MainPage> {
 
             final data = s.data ?? {};
 
+            // ── TROPHIES ───────────────────────────────────────
             final dynamic t = data['trophies'];
             final int trophies = t is int ? t : int.tryParse('$t') ?? 0;
 
+            // ── STREAK (NEW) ───────────────────────────────────
+            final dynamic cs = data['currentStreakDays'];
+            final int currentStreakDays =
+            cs is int ? cs : int.tryParse('$cs') ?? 0;
+
+            // ── AVATAR URL ─────────────────────────────────────
             final photoUrl =
             data['photoUrl'] is String ? data['photoUrl'] as String : null;
 
@@ -202,10 +209,11 @@ class _MainPageState extends State<MainPage> {
             return Column(
               children: [
                 //
-                // ───────── UPDATED SHORTER HEADER ─────────
+                // ───────── HEADER WITH STREAK ─────────
                 //
                 MainAppHeader(
                   trophyCount: trophies,
+                  streakDays: currentStreakDays, // <<< NEW
                   photoUrl: photoUrl,
                   onTapProfile: () {
                     Navigator.push(
@@ -218,7 +226,6 @@ class _MainPageState extends State<MainPage> {
                     });
                   },
                   onTapTrophy: () {
-                    // optional behaviour
                     setState(() => _index = 1); // leaderboard
                   },
                 ),

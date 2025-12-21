@@ -130,14 +130,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                   color: Color(0xFF2C015D),
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                "Top learners ranked by trophies",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.black.withOpacity(0.55),
-                ),
-              ),
               const SizedBox(height: 16),
               Expanded(
                 child: FutureBuilder<
