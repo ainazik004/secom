@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:secom/gen_l10n/app_localizations.dart';
+import 'package:secom/pages/categories/topic_quiz_page.dart';
 
 class MathematicsPage extends StatelessWidget {
   const MathematicsPage({super.key});
@@ -51,30 +52,43 @@ class MathematicsPage extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            // LIST OF PLACEHOLDER TOPICS
+            // LIST OF TOPICS
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                children: const [
+                children: [
                   _TopicCard(
                     icon: Icons.functions_rounded,
-                    accentColor: Color(0xFFFF3D7F),
+                    accentColor: const Color(0xFFFF3D7F),
                     title: 'Algebra basics',
                     subtitle: 'Linear equations, inequalities',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const TopicQuizPage(
+                            // IMPORTANT: must match Firestore field "topic"
+                            topic: 'algebra/basics',
+                            section: 'math',
+                            language: 'ru',
+                            limit: 20,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  _TopicCard(
+                  const _TopicCard(
                     icon: Icons.ssid_chart_rounded,
                     accentColor: Color(0xFF7F4BFF),
                     title: 'Functions & graphs',
                     subtitle: 'Understand graphs and relations',
                   ),
-                  _TopicCard(
+                  const _TopicCard(
                     icon: Icons.calculate_rounded,
                     accentColor: Color(0xFFFFB74D),
                     title: 'Word problems',
                     subtitle: 'Translate tasks into equations',
                   ),
-                  _TopicCard(
+                  const _TopicCard(
                     icon: Icons.bar_chart_rounded,
                     accentColor: Color(0xFF26A69A),
                     title: 'Statistics & probability',
@@ -121,12 +135,14 @@ class _TopicCard extends StatelessWidget {
   final Color accentColor;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   const _TopicCard({
     required this.icon,
     required this.accentColor,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   @override
@@ -146,15 +162,16 @@ class _TopicCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Coming soon'),
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(milliseconds: 900),
-            ),
-          );
-        },
+        onTap: onTap ??
+                () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Coming soon'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(milliseconds: 900),
+                ),
+              );
+            },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           child: Row(
