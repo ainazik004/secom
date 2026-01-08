@@ -621,6 +621,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This field is required'**
   String get fieldRequired;
+
+  /// No description provided for @quiz_result_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get quiz_result_title;
+
+  /// No description provided for @quiz_correct_out_of.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct: {correct} out of {total}'**
+  String quiz_correct_out_of(Object correct, Object total);
+
+  /// No description provided for @quiz_score_pct.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {score}%'**
+  String quiz_score_pct(Object score);
+
+  /// No description provided for @quiz_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get quiz_close;
+
+  /// No description provided for @quiz_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get quiz_retry;
+
+  /// No description provided for @quiz_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get quiz_empty_title;
+
+  /// No description provided for @quiz_empty_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No questions found for this test.'**
+  String get quiz_empty_subtitle;
+
+  /// No description provided for @quiz_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get quiz_back;
+
+  /// No description provided for @quiz_load_error_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading error'**
+  String get quiz_load_error_title;
+
+  /// No description provided for @quiz_retry_btn.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get quiz_retry_btn;
+
+  /// No description provided for @quiz_question_of.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {current} of {total}'**
+  String quiz_question_of(Object current, Object total);
+
+  /// No description provided for @quiz_finish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get quiz_finish;
+
+  /// No description provided for @quiz_next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get quiz_next;
+
+  /// No description provided for @quiz_correct.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct ✅ (+1 trophy)'**
+  String get quiz_correct;
+
+  /// No description provided for @quiz_wrong_correct_answer.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong ❌ (correct answer: {answer})'**
+  String quiz_wrong_correct_answer(Object answer);
+
+  /// No description provided for @quiz_difficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty: {difficulty}'**
+  String quiz_difficulty(Object difficulty);
 }
 
 class _AppLocalizationsDelegate

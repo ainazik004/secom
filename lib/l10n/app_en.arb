@@ -105,6 +105,25 @@
 
   "resetEmailRequired": "Please enter your email",
   "invalidPhone": "Enter a valid phone number",
-  "fieldRequired": "This field is required"
+  "fieldRequired": "This field is required",
 
+  "quiz_result_title": "Result",
+  "quiz_correct_out_of": "Correct: {correct} out of {total}",
+  "quiz_score_pct": "Score: {score}%",
+  "quiz_close": "Close",
+  "quiz_retry": "Try again",
+  "quiz_empty_title": "Empty",
+  "quiz_empty_subtitle": "No questions found for this test.",
+  "quiz_back": "Back",
+  "quiz_load_error_title": "Loading error",
+  "quiz_retry_btn": "Retry",
+  "quiz_question_of": "Question {current} of {total}",
+  "quiz_finish": "Finish",
+  "quiz_next": "Next",
+  "quiz_correct": "Correct ✅ (+1 trophy)",
+  "quiz_wrong_correct_answer": "Wrong ❌ (correct answer: {answer})",
+  "quiz_difficulty": "Difficulty: {difficulty}"
 }
+
+
+

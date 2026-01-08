@@ -105,5 +105,24 @@
 
   "resetEmailRequired": "Введите email",
   "invalidPhone": "Введите корректный номер телефона",
-  "fieldRequired": "Поле обязательно"
+  "fieldRequired": "Поле обязательно",
+
+  "quiz_result_title": "Результат",
+  "quiz_correct_out_of": "Правильных: {correct} из {total}",
+  "quiz_score_pct": "Баллы: {score}%",
+  "quiz_close": "Закрыть",
+  "quiz_retry": "Пройти снова",
+  "quiz_empty_title": "Пусто",
+  "quiz_empty_subtitle": "Нет вопросов для этого теста.",
+  "quiz_back": "Назад",
+  "quiz_load_error_title": "Ошибка загрузки",
+  "quiz_retry_btn": "Повторить",
+  "quiz_question_of": "Вопрос {current} из {total}",
+  "quiz_finish": "Завершить",
+  "quiz_next": "Далее",
+  "quiz_correct": "Верно ✅ (+1 трофей)",
+  "quiz_wrong_correct_answer": "Неверно ❌ (правильный ответ: {answer})",
+  "quiz_difficulty": "Сложность: {difficulty}"
 }
+
+

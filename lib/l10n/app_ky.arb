@@ -106,5 +106,23 @@
 
   "resetEmailRequired": "Email киргизиңиз",
   "invalidPhone": "Туура телефон номер киргизиңиз",
-  "fieldRequired": "Бул талаа толтурулушу керек"
+  "fieldRequired": "Бул талаа толтурулушу керек",
+
+  "quiz_result_title": "Жыйынтык",
+  "quiz_correct_out_of": "Туура: {correct} / {total}",
+  "quiz_score_pct": "Упай: {score}%",
+  "quiz_close": "Жабуу",
+  "quiz_retry": "Кайра тапшыруу",
+  "quiz_empty_title": "Бош",
+  "quiz_empty_subtitle": "Бул тест үчүн суроолор табылган жок.",
+  "quiz_back": "Артка",
+  "quiz_load_error_title": "Жүктөөдө ката",
+  "quiz_retry_btn": "Кайталоо",
+  "quiz_question_of": "{current} суроо / {total}",
+  "quiz_finish": "Аяктоо",
+  "quiz_next": "Кийинки",
+  "quiz_correct": "Туура ✅ (+1 трофей)",
+  "quiz_wrong_correct_answer": "Туура эмес ❌ (туура жооп: {answer})",
+  "quiz_difficulty": "Кыйынчылык: {difficulty}"
+
 }

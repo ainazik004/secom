@@ -271,4 +271,62 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get fieldRequired => 'Поле обязательно';
+
+  @override
+  String get quiz_result_title => 'Результат';
+
+  @override
+  String quiz_correct_out_of(Object correct, Object total) {
+    return 'Правильных: $correct из $total';
+  }
+
+  @override
+  String quiz_score_pct(Object score) {
+    return 'Баллы: $score%';
+  }
+
+  @override
+  String get quiz_close => 'Закрыть';
+
+  @override
+  String get quiz_retry => 'Пройти снова';
+
+  @override
+  String get quiz_empty_title => 'Пусто';
+
+  @override
+  String get quiz_empty_subtitle => 'Нет вопросов для этого теста.';
+
+  @override
+  String get quiz_back => 'Назад';
+
+  @override
+  String get quiz_load_error_title => 'Ошибка загрузки';
+
+  @override
+  String get quiz_retry_btn => 'Повторить';
+
+  @override
+  String quiz_question_of(Object current, Object total) {
+    return 'Вопрос $current из $total';
+  }
+
+  @override
+  String get quiz_finish => 'Завершить';
+
+  @override
+  String get quiz_next => 'Далее';
+
+  @override
+  String get quiz_correct => 'Верно ✅ (+1 трофей)';
+
+  @override
+  String quiz_wrong_correct_answer(Object answer) {
+    return 'Неверно ❌ (правильный ответ: $answer)';
+  }
+
+  @override
+  String quiz_difficulty(Object difficulty) {
+    return 'Сложность: $difficulty';
+  }
 }

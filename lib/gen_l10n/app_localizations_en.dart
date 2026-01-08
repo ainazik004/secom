@@ -269,4 +269,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fieldRequired => 'This field is required';
+
+  @override
+  String get quiz_result_title => 'Result';
+
+  @override
+  String quiz_correct_out_of(Object correct, Object total) {
+    return 'Correct: $correct out of $total';
+  }
+
+  @override
+  String quiz_score_pct(Object score) {
+    return 'Score: $score%';
+  }
+
+  @override
+  String get quiz_close => 'Close';
+
+  @override
+  String get quiz_retry => 'Try again';
+
+  @override
+  String get quiz_empty_title => 'Empty';
+
+  @override
+  String get quiz_empty_subtitle => 'No questions found for this test.';
+
+  @override
+  String get quiz_back => 'Back';
+
+  @override
+  String get quiz_load_error_title => 'Loading error';
+
+  @override
+  String get quiz_retry_btn => 'Retry';
+
+  @override
+  String quiz_question_of(Object current, Object total) {
+    return 'Question $current of $total';
+  }
+
+  @override
+  String get quiz_finish => 'Finish';
+
+  @override
+  String get quiz_next => 'Next';
+
+  @override
+  String get quiz_correct => 'Correct ✅ (+1 trophy)';
+
+  @override
+  String quiz_wrong_correct_answer(Object answer) {
+    return 'Wrong ❌ (correct answer: $answer)';
+  }
+
+  @override
+  String quiz_difficulty(Object difficulty) {
+    return 'Difficulty: $difficulty';
+  }
 }

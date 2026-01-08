@@ -271,4 +271,62 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get fieldRequired => 'Бул талаа толтурулушу керек';
+
+  @override
+  String get quiz_result_title => 'Жыйынтык';
+
+  @override
+  String quiz_correct_out_of(Object correct, Object total) {
+    return 'Туура: $correct / $total';
+  }
+
+  @override
+  String quiz_score_pct(Object score) {
+    return 'Упай: $score%';
+  }
+
+  @override
+  String get quiz_close => 'Жабуу';
+
+  @override
+  String get quiz_retry => 'Кайра тапшыруу';
+
+  @override
+  String get quiz_empty_title => 'Бош';
+
+  @override
+  String get quiz_empty_subtitle => 'Бул тест үчүн суроолор табылган жок.';
+
+  @override
+  String get quiz_back => 'Артка';
+
+  @override
+  String get quiz_load_error_title => 'Жүктөөдө ката';
+
+  @override
+  String get quiz_retry_btn => 'Кайталоо';
+
+  @override
+  String quiz_question_of(Object current, Object total) {
+    return '$current суроо / $total';
+  }
+
+  @override
+  String get quiz_finish => 'Аяктоо';
+
+  @override
+  String get quiz_next => 'Кийинки';
+
+  @override
+  String get quiz_correct => 'Туура ✅ (+1 трофей)';
+
+  @override
+  String quiz_wrong_correct_answer(Object answer) {
+    return 'Туура эмес ❌ (туура жооп: $answer)';
+  }
+
+  @override
+  String quiz_difficulty(Object difficulty) {
+    return 'Кыйынчылык: $difficulty';
+  }
 }

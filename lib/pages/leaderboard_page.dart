@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:secom/gen_l10n/app_localizations.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class LeaderboardPage extends StatefulWidget {
@@ -11,108 +10,141 @@ class LeaderboardPage extends StatefulWidget {
   State<LeaderboardPage> createState() => _LeaderboardPageState();
 }
 
-class _LeaderboardPageState extends State<LeaderboardPage> {
-  // Approximate total vertical space per item (tile + separator).
-  // You can fine-tune this if you change tile layout.
+enum _BoardType { trophies, streak }
+
+class _LeaderboardPageState extends State<LeaderboardPage>
+    with SingleTickerProviderStateMixin {
   static const double _itemExtent = 90.0;
 
-  late Future<List<DocumentSnapshot<Map<String, dynamic>>>> _leaderboardFuture;
+  late final TabController _tabController;
 
-  final ScrollController _scrollController = ScrollController();
+  late Future<List<DocumentSnapshot<Map<String, dynamic>>>> _trophyFuture;
+  late Future<List<DocumentSnapshot<Map<String, dynamic>>>> _streakFuture;
 
-  bool _userTileVisible = false;
+  final ScrollController _trophyScroll = ScrollController();
+  final ScrollController _streakScroll = ScrollController();
 
-  // Visible range tracking
-  double _viewportHeight = 0;
-  int _firstVisibleIndex = 0;
-  int _lastVisibleIndex = 0;
-  bool _visibleRangeReady = false;
+  // --- TROPHY visible tracking
+  bool _trophyUserTileVisible = false;
+  double _trophyViewportHeight = 0;
+  int _trophyFirstVisibleIndex = 0;
+  int _trophyLastVisibleIndex = 0;
+  bool _trophyVisibleRangeReady = false;
+
+  // --- STREAK visible tracking
+  bool _streakUserTileVisible = false;
+  double _streakViewportHeight = 0;
+  int _streakFirstVisibleIndex = 0;
+  int _streakLastVisibleIndex = 0;
+  bool _streakVisibleRangeReady = false;
 
   @override
   void initState() {
     super.initState();
-    _leaderboardFuture = _loadLeaderboard();
-    _scrollController.addListener(_updateVisibleRange);
+
+    _tabController = TabController(length: 2, vsync: this);
+
+    _trophyFuture = _loadLeaderboard(_BoardType.trophies);
+    _streakFuture = _loadLeaderboard(_BoardType.streak);
+
+    _trophyScroll.addListener(() => _updateVisibleRange(_BoardType.trophies));
+    _streakScroll.addListener(() => _updateVisibleRange(_BoardType.streak));
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_updateVisibleRange);
-    _scrollController.dispose();
+    _trophyScroll.dispose();
+    _streakScroll.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
-  /// -----------------------------------------------------
-  /// LOAD TOP 50 USERS + CURRENT USER (IF NOT IN TOP 50)
-  /// -----------------------------------------------------
-  Future<List<DocumentSnapshot<Map<String, dynamic>>>> _loadLeaderboard() async {
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>> _loadLeaderboard(
+      _BoardType type,
+      ) async {
     final db = FirebaseFirestore.instance;
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) return [];
 
+    final field =
+    type == _BoardType.trophies ? 'trophies' : 'currentStreakDays';
+
     final top50snap = await db
         .collection('users')
-        .orderBy('trophies', descending: true)
+        .orderBy(field, descending: true)
         .limit(50)
         .get();
 
     final top50 = top50snap.docs;
 
-    // Get current user doc
     final me = await db.collection('users').doc(user.uid).get();
-
     final isInTop50 = top50.any((d) => d.id == user.uid);
 
-    if (isInTop50) {
-      return top50;
-    } else {
-      return [...top50, me];
-    }
+    return isInTop50 ? top50 : [...top50, me];
   }
 
-  /// -----------------------------------------------------
-  /// PULL-TO-REFRESH HANDLER
-  /// -----------------------------------------------------
-  Future<void> _onRefresh() async {
+  Future<void> _onRefresh(_BoardType type) async {
     setState(() {
-      _leaderboardFuture = _loadLeaderboard();
-      _userTileVisible = false;
-      _visibleRangeReady = false;
-      _firstVisibleIndex = 0;
-      _lastVisibleIndex = 0;
+      if (type == _BoardType.trophies) {
+        _trophyFuture = _loadLeaderboard(_BoardType.trophies);
+        _trophyUserTileVisible = false;
+        _trophyVisibleRangeReady = false;
+        _trophyFirstVisibleIndex = 0;
+        _trophyLastVisibleIndex = 0;
+      } else {
+        _streakFuture = _loadLeaderboard(_BoardType.streak);
+        _streakUserTileVisible = false;
+        _streakVisibleRangeReady = false;
+        _streakFirstVisibleIndex = 0;
+        _streakLastVisibleIndex = 0;
+      }
     });
 
-    await _leaderboardFuture;
+    if (type == _BoardType.trophies) {
+      await _trophyFuture;
+    } else {
+      await _streakFuture;
+    }
   }
 
-  /// -----------------------------------------------------
-  /// UPDATE VISIBLE RANGE (FIRST/LAST INDEX)
-  /// -----------------------------------------------------
-  void _updateVisibleRange() {
-    if (!_scrollController.hasClients || _viewportHeight <= 0) return;
+  void _updateVisibleRange(_BoardType type) {
+    final sc = type == _BoardType.trophies ? _trophyScroll : _streakScroll;
+    final viewport =
+    type == _BoardType.trophies ? _trophyViewportHeight : _streakViewportHeight;
 
-    final offset = _scrollController.offset.clamp(0.0, double.infinity);
+    if (!sc.hasClients || viewport <= 0) return;
+
+    final offset = sc.offset.clamp(0.0, double.infinity);
 
     final first = (offset / _itemExtent).floor().clamp(0, 1000000);
-    final last = ((offset + _viewportHeight) / _itemExtent)
-        .floor()
-        .clamp(first, 1000000);
+    final last =
+    ((offset + viewport) / _itemExtent).floor().clamp(first, 1000000);
 
-    if (first != _firstVisibleIndex ||
-        last != _lastVisibleIndex ||
-        !_visibleRangeReady) {
-      setState(() {
-        _firstVisibleIndex = first;
-        _lastVisibleIndex = last;
-        _visibleRangeReady = true;
-      });
-    }
+    setState(() {
+      if (type == _BoardType.trophies) {
+        if (first != _trophyFirstVisibleIndex ||
+            last != _trophyLastVisibleIndex ||
+            !_trophyVisibleRangeReady) {
+          _trophyFirstVisibleIndex = first;
+          _trophyLastVisibleIndex = last;
+          _trophyVisibleRangeReady = true;
+        }
+      } else {
+        if (first != _streakFirstVisibleIndex ||
+            last != _streakLastVisibleIndex ||
+            !_streakVisibleRangeReady) {
+          _streakFirstVisibleIndex = first;
+          _streakLastVisibleIndex = last;
+          _streakVisibleRangeReady = true;
+        }
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+    const purple = Color(0xFF2C015D);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F4FF),
@@ -122,159 +154,114 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                loc.leaderboard,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2C015D),
+              // ✅ Removed the title text (e.g., "Рейтинг")
+
+              // Tabs (icon-only), shorter height, full-width indicator
+              SizedBox(
+                height: 44, // ✅ shorter
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x142C015D),
+                        blurRadius: 14,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorSize: TabBarIndicatorSize.tab, // ✅ full tab width
+                    indicator: BoxDecoration(
+                      color: const Color(0xFFEDD9FF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    indicatorPadding: EdgeInsets.zero,
+                    dividerColor: Colors.transparent,
+                    splashBorderRadius: BorderRadius.circular(12),
+                    labelPadding: EdgeInsets.zero, // ✅ no extra height
+                    labelColor: purple,
+                    unselectedLabelColor: purple.withOpacity(0.55),
+                    tabs: const [
+                      Tab(
+                        iconMargin: EdgeInsets.zero,
+                        icon: Icon(Icons.emoji_events_rounded, size: 22),
+                      ),
+                      Tab(
+                        iconMargin: EdgeInsets.zero,
+                        icon: Icon(Icons.local_fire_department_rounded, size: 22),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+
+              const SizedBox(height: 12),
+
               Expanded(
-                child: FutureBuilder<
-                    List<DocumentSnapshot<Map<String, dynamic>>>>(
-                  future: _leaderboardFuture,
-                  builder: (context, snap) {
-                    if (snap.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-
-                    if (!snap.hasData || snap.data!.isEmpty) {
-                      return Center(
-                        child: Text(
-                          "No users yet",
-                          style: TextStyle(
-                            color: Colors.black.withOpacity(0.6),
-                            fontSize: 14,
-                          ),
-                        ),
-                      );
-                    }
-
-                    final docs = snap.data!;
-                    final userId = FirebaseAuth.instance.currentUser!.uid;
-
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        // Track viewport height of the scrollable area.
-                        if (_viewportHeight != constraints.maxHeight) {
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _LeaderboardTab(
+                      type: _BoardType.trophies,
+                      future: _trophyFuture,
+                      scrollController: _trophyScroll,
+                      onRefresh: () => _onRefresh(_BoardType.trophies),
+                      itemExtent: _itemExtent,
+                      onViewportHeight: (h) {
+                        if (_trophyViewportHeight != h) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (!mounted) return;
-                            _viewportHeight = constraints.maxHeight;
-                            _updateVisibleRange();
+                            _trophyViewportHeight = h;
+                            _updateVisibleRange(_BoardType.trophies);
                           });
                         }
-
-                        final myIndex =
-                        docs.indexWhere((d) => d.id == userId);
-
-                        bool showTop = false;
-                        bool showBottom = false;
-
-                        if (_visibleRangeReady &&
-                            myIndex != -1 &&
-                            !_userTileVisible) {
-                          if (myIndex < _firstVisibleIndex) {
-                            // User is ranked ABOVE the visible range
-                            showTop = true;
-                          } else if (myIndex > _lastVisibleIndex) {
-                            // User is ranked BELOW the visible range
-                            showBottom = true;
-                          }
-                        }
-
-                        return RefreshIndicator(
-                          onRefresh: _onRefresh,
-                          child: Stack(
-                            children: [
-                              // ---------------------- LIST ----------------------
-                              ListView.separated(
-                                controller: _scrollController,
-                                physics:
-                                const AlwaysScrollableScrollPhysics(),
-                                itemCount: docs.length,
-                                separatorBuilder: (_, __) =>
-                                const SizedBox(height: 8),
-                                itemBuilder: (context, index) {
-                                  final doc = docs[index];
-                                  final data = doc.data()!;
-                                  final String name =
-                                  (data['fullName'] ?? '—') as String;
-
-                                  final rawTrophies = data['trophies'];
-                                  final int trophies = rawTrophies is int
-                                      ? rawTrophies
-                                      : int.tryParse('$rawTrophies') ?? 0;
-
-                                  final String? photoUrl =
-                                  data['photoUrl'] as String?;
-
-                                  final bool isMe = doc.id == userId;
-
-                                  if (isMe) {
-                                    return VisibilityDetector(
-                                      key: Key("user-tile-$userId"),
-                                      onVisibilityChanged: (info) {
-                                        final visible =
-                                            info.visibleFraction > 0.45;
-                                        if (_userTileVisible != visible) {
-                                          setState(() =>
-                                          _userTileVisible = visible);
-                                        }
-                                      },
-                                      child: _LeaderboardTile(
-                                        index: index,
-                                        name: name,
-                                        trophies: trophies,
-                                        photoUrl: photoUrl,
-                                        isMe: true,
-                                      ),
-                                    );
-                                  }
-
-                                  return _LeaderboardTile(
-                                    index: index,
-                                    name: name,
-                                    trophies: trophies,
-                                    photoUrl: photoUrl,
-                                    isMe: false,
-                                  );
-                                },
-                              ),
-
-                              // ---------------------- FLOATING TILE ----------------------
-                              if (showTop || showBottom)
-                                Positioned(
-                                  left: 0,
-                                  right: 0,
-                                  top: showTop ? 4 : null,
-                                  bottom: showBottom ? 4 : null,
-                                  child: TweenAnimationBuilder<double>(
-                                    tween: Tween(begin: -50, end: 0),
-                                    duration:
-                                    const Duration(milliseconds: 450),
-                                    curve: Curves.easeOutBack,
-                                    builder: (context, value, child) {
-                                      return Transform.translate(
-                                        offset: Offset(0, value),
-                                        child: child,
-                                      );
-                                    },
-                                    child: _FloatingMyTile(
-                                      docs: docs,
-                                      userId: userId,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
                       },
-                    );
-                  },
+                      isUserTileVisible: _trophyUserTileVisible,
+                      setUserTileVisible: (v) {
+                        if (_trophyUserTileVisible != v) {
+                          setState(() => _trophyUserTileVisible = v);
+                        }
+                      },
+                      visibleRangeReady: _trophyVisibleRangeReady,
+                      firstVisibleIndex: _trophyFirstVisibleIndex,
+                      lastVisibleIndex: _trophyLastVisibleIndex,
+                      metricField: 'trophies',
+                      metricIcon: Icons.emoji_events_rounded,
+                      metricIconColor: const Color(0xFFFFC107),
+                    ),
+                    _LeaderboardTab(
+                      type: _BoardType.streak,
+                      future: _streakFuture,
+                      scrollController: _streakScroll,
+                      onRefresh: () => _onRefresh(_BoardType.streak),
+                      itemExtent: _itemExtent,
+                      onViewportHeight: (h) {
+                        if (_streakViewportHeight != h) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            _streakViewportHeight = h;
+                            _updateVisibleRange(_BoardType.streak);
+                          });
+                        }
+                      },
+                      isUserTileVisible: _streakUserTileVisible,
+                      setUserTileVisible: (v) {
+                        if (_streakUserTileVisible != v) {
+                          setState(() => _streakUserTileVisible = v);
+                        }
+                      },
+                      visibleRangeReady: _streakVisibleRangeReady,
+                      firstVisibleIndex: _streakFirstVisibleIndex,
+                      lastVisibleIndex: _streakLastVisibleIndex,
+                      metricField: 'currentStreakDays', // ✅ Firestore field
+                      metricIcon: Icons.local_fire_department_rounded,
+                      metricIconColor: const Color(0xFFFF6A00),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -285,66 +272,248 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 }
 
-/// ------------------------------------------------------------
-/// FLOATING USER TILE
-/// ------------------------------------------------------------
+class _LeaderboardTab extends StatelessWidget {
+  final _BoardType type;
+  final Future<List<DocumentSnapshot<Map<String, dynamic>>>> future;
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+  final double itemExtent;
+
+  final void Function(double height) onViewportHeight;
+
+  final bool isUserTileVisible;
+  final void Function(bool visible) setUserTileVisible;
+
+  final bool visibleRangeReady;
+  final int firstVisibleIndex;
+  final int lastVisibleIndex;
+
+  final String metricField;
+  final IconData metricIcon;
+  final Color metricIconColor;
+
+  const _LeaderboardTab({
+    required this.type,
+    required this.future,
+    required this.scrollController,
+    required this.onRefresh,
+    required this.itemExtent,
+    required this.onViewportHeight,
+    required this.isUserTileVisible,
+    required this.setUserTileVisible,
+    required this.visibleRangeReady,
+    required this.firstVisibleIndex,
+    required this.lastVisibleIndex,
+    required this.metricField,
+    required this.metricIcon,
+    required this.metricIconColor,
+  });
+
+  int _readInt(dynamic v) {
+    if (v is int) return v;
+    return int.tryParse('$v') ?? 0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final userId = user?.uid;
+
+    return FutureBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
+      future: future,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snap.hasData || snap.data!.isEmpty || userId == null) {
+          return Center(
+            child: Text(
+              "No users yet",
+              style: TextStyle(
+                color: Colors.black.withOpacity(0.6),
+                fontSize: 14,
+              ),
+            ),
+          );
+        }
+
+        final docs = snap.data!;
+        final myIndex = docs.indexWhere((d) => d.id == userId);
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            onViewportHeight(constraints.maxHeight);
+
+            bool showTop = false;
+            bool showBottom = false;
+
+            if (visibleRangeReady && myIndex != -1 && !isUserTileVisible) {
+              if (myIndex < firstVisibleIndex) {
+                showTop = true;
+              } else if (myIndex > lastVisibleIndex) {
+                showBottom = true;
+              }
+            }
+
+            return RefreshIndicator(
+              onRefresh: onRefresh,
+              child: Stack(
+                children: [
+                  ListView.separated(
+                    controller: scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: docs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      final data = doc.data() ?? {};
+
+                      final String name = (data['fullName'] ?? '—') as String;
+                      final String? photoUrl = data['photoUrl'] as String?;
+
+                      final int metricValue = _readInt(data[metricField]);
+
+                      final bool isMe = doc.id == userId;
+
+                      if (isMe) {
+                        return VisibilityDetector(
+                          key: Key("${type.name}-user-tile-$userId"),
+                          onVisibilityChanged: (info) {
+                            final visible = info.visibleFraction > 0.45;
+                            setUserTileVisible(visible);
+                          },
+                          child: _LeaderboardTile(
+                            index: index,
+                            name: name,
+                            metricValue: metricValue,
+                            photoUrl: photoUrl,
+                            isMe: true,
+                            metricIcon: metricIcon,
+                            metricIconColor: metricIconColor,
+                          ),
+                        );
+                      }
+
+                      return _LeaderboardTile(
+                        index: index,
+                        name: name,
+                        metricValue: metricValue,
+                        photoUrl: photoUrl,
+                        isMe: false,
+                        metricIcon: metricIcon,
+                        metricIconColor: metricIconColor,
+                      );
+                    },
+                  ),
+
+                  if (showTop || showBottom)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: showTop ? 4 : null,
+                      bottom: showBottom ? 4 : null,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: -50, end: 0),
+                        duration: const Duration(milliseconds: 450),
+                        curve: Curves.easeOutBack,
+                        builder: (context, value, child) {
+                          return Transform.translate(
+                            offset: Offset(0, value),
+                            child: child,
+                          );
+                        },
+                        child: _FloatingMyTile(
+                          docs: docs,
+                          userId: userId,
+                          metricField: metricField,
+                          metricIcon: metricIcon,
+                          metricIconColor: metricIconColor,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
 class _FloatingMyTile extends StatelessWidget {
   final List<DocumentSnapshot<Map<String, dynamic>>> docs;
   final String userId;
+  final String metricField;
+  final IconData metricIcon;
+  final Color metricIconColor;
 
   const _FloatingMyTile({
     super.key,
     required this.docs,
     required this.userId,
+    required this.metricField,
+    required this.metricIcon,
+    required this.metricIconColor,
   });
+
+  int _readInt(dynamic v) {
+    if (v is int) return v;
+    return int.tryParse('$v') ?? 0;
+  }
 
   @override
   Widget build(BuildContext context) {
     final doc = docs.firstWhere((d) => d.id == userId);
-    final data = doc.data()!;
+    final data = doc.data() ?? {};
 
-    final String name = data['fullName'] ?? "—";
-    final raw = data['trophies'];
-    final int trophies = raw is int ? raw : int.tryParse('$raw') ?? 0;
-    final String? photoUrl = data['photoUrl'];
+    final String name = (data['fullName'] ?? '—') as String;
+    final String? photoUrl = data['photoUrl'] as String?;
+
+    final int metricValue = _readInt(data[metricField]);
 
     return _LeaderboardTile(
       index: docs.indexOf(doc),
       name: name,
-      trophies: trophies,
+      metricValue: metricValue,
       photoUrl: photoUrl,
       isMe: true,
+      metricIcon: metricIcon,
+      metricIconColor: metricIconColor,
     );
   }
 }
 
-/// ------------------------------------------------------------
-/// LEADERBOARD TILE
-/// ------------------------------------------------------------
 class _LeaderboardTile extends StatelessWidget {
   final int index;
   final String name;
-  final int trophies;
+  final int metricValue;
   final String? photoUrl;
   final bool isMe;
+
+  final IconData metricIcon;
+  final Color metricIconColor;
 
   const _LeaderboardTile({
     super.key,
     required this.index,
     required this.name,
-    required this.trophies,
+    required this.metricValue,
     required this.photoUrl,
     required this.isMe,
+    required this.metricIcon,
+    required this.metricIconColor,
   });
 
   Color _rankColor(int rank) {
     switch (rank) {
       case 0:
-        return const Color(0xFFFFD700); // gold
+        return const Color(0xFFFFD700);
       case 1:
-        return const Color(0xFFC0C0C0); // silver
+        return const Color(0xFFC0C0C0);
       case 2:
-        return const Color(0xFFCD7F32); // bronze
+        return const Color(0xFFCD7F32);
       default:
         return const Color(0xFF2C015D);
     }
@@ -356,8 +525,7 @@ class _LeaderboardTile extends StatelessWidget {
     final rankColor = _rankColor(index);
 
     final tileColor = isMe ? const Color(0xFFEDD9FF) : Colors.white;
-    final borderColor =
-    isMe ? const Color(0xFF9A4DFF) : Colors.transparent;
+    final borderColor = isMe ? const Color(0xFF9A4DFF) : Colors.transparent;
 
     return AnimatedScale(
       scale: isMe ? 1.03 : 1.0,
@@ -365,8 +533,7 @@ class _LeaderboardTile extends StatelessWidget {
       curve: Curves.easeOutBack,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding:
-        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: tileColor,
           borderRadius: BorderRadius.circular(18),
@@ -384,7 +551,6 @@ class _LeaderboardTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Rank number circle
             Container(
               width: 32,
               height: 32,
@@ -401,22 +567,16 @@ class _LeaderboardTile extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(width: 10),
-
-            // Profile Image
             CircleAvatar(
               radius: 22,
               backgroundColor: const Color(0xFF2C015D),
-              backgroundImage:
-              (photoUrl != null && photoUrl!.isNotEmpty)
+              backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
                   ? NetworkImage(photoUrl!)
                   : null,
               child: (photoUrl == null || photoUrl!.isEmpty)
                   ? Text(
-                name.isNotEmpty
-                    ? name[0].toUpperCase()
-                    : "?",
+                name.isNotEmpty ? name[0].toUpperCase() : "?",
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -424,10 +584,7 @@ class _LeaderboardTile extends StatelessWidget {
               )
                   : null,
             ),
-
             const SizedBox(width: 12),
-
-            // Name + YOU
             Expanded(
               child: Row(
                 children: [
@@ -465,18 +622,12 @@ class _LeaderboardTile extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Trophy Count
             Row(
               children: [
-                const Icon(
-                  Icons.emoji_events_rounded,
-                  size: 20,
-                  color: Color(0xFFFFC107),
-                ),
+                Icon(metricIcon, size: 20, color: metricIconColor),
                 const SizedBox(width: 4),
                 Text(
-                  "$trophies",
+                  "$metricValue",
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
