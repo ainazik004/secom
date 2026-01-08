@@ -49,7 +49,6 @@ class MathematicsPage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 18),
 
             // LIST OF TOPICS
@@ -66,10 +65,8 @@ class MathematicsPage extends StatelessWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const TopicQuizPage(
-                            // IMPORTANT: must match Firestore field "topic"
-                            topic: 'algebra/basics',
+                            title: 'Math', // or loc.math
                             section: 'math',
-                            language: 'ru',
                             limit: 20,
                           ),
                         ),

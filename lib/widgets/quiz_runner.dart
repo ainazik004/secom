@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:secom/gen_l10n/app_localizations.dart';
 
 class QuizRunner extends StatefulWidget {
-  final String title; // AppBar title
-  final Future<List<Question>> Function() loader;
+  final String title;
 
-  /// Map field key in user doc, e.g. "math"
+  /// Loader MUST return questions for canonical language code: "ru" or "ky"
+  final Future<List<Question>> Function(String languageCode) loader;
+
+  /// e.g. "math", "reading", "grammar", "analogy"
   final String statsSectionKey;
 
   final int limit; // 0 = all
@@ -39,14 +41,55 @@ class _QuizRunnerState extends State<QuizRunner> {
 
   bool _trophyAwardedForThisQuestion = false;
 
+  String _currentLang = 'ru';
+
+  // timer for "time per question"
+  DateTime _questionStartedUtc = DateTime.now().toUtc();
+
+  // Fixed timezone day boundary for Kyrgyzstan: UTC+6
+  static const Duration _tzOffset = Duration(hours: 6);
+
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _future = Future.value(const <Question>[]);
+    _questionStartedUtc = DateTime.now().toUtc();
+  }
+
+  String _normalizedLang(BuildContext context) {
+    final code = Localizations.localeOf(context).languageCode.toLowerCase();
+    if (code.startsWith('ru')) return 'ru';
+    if (code.startsWith('ky')) return 'ky';
+    return 'ru';
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final lang = _normalizedLang(context);
+    if (_currentLang != lang) {
+      _currentLang = lang;
+
+      // reset run state
+      _index = 0;
+      _correctThisRun = 0;
+      _selectedOption = null;
+      _revealed = false;
+      _trophyAwardedForThisQuestion = false;
+      _questionStartedUtc = DateTime.now().toUtc();
+
+      _future = _load();
+      setState(() {});
+    } else {
+      // ensure we load at least once
+      _future = _load();
+    }
   }
 
   Future<List<Question>> _load() async {
-    var list = await widget.loader();
+    var list = await widget.loader(_currentLang);
+
     if (widget.shuffle) list.shuffle(Random());
     if (widget.limit > 0 && list.length > widget.limit) {
       list = list.take(widget.limit).toList();
@@ -60,6 +103,52 @@ class _QuizRunnerState extends State<QuizRunner> {
     return FirebaseFirestore.instance.collection('users').doc(uid);
   }
 
+  // ─────────────────────────────────────────
+  // UTC+6 Day Keys (YYYY-MM-DD)
+  // ─────────────────────────────────────────
+  String _dayKeyUtcPlus6(DateTime utcNow) {
+    final local = utcNow.toUtc().add(_tzOffset);
+    final y = local.year.toString().padLeft(4, '0');
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  String _yesterdayKeyUtcPlus6(DateTime utcNow) {
+    final local = utcNow.toUtc().add(_tzOffset);
+    final yest = DateTime(local.year, local.month, local.day)
+        .subtract(const Duration(days: 1));
+    final y = yest.year.toString().padLeft(4, '0');
+    final m = yest.month.toString().padLeft(2, '0');
+    final d = yest.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  int _asInt(dynamic v, {int fallback = 0}) {
+    if (v == null) return fallback;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? fallback;
+    return fallback;
+  }
+
+  double _asDouble(dynamic v, {double fallback = 0.0}) {
+    if (v == null) return fallback;
+    if (v is double) return v;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? fallback;
+    return fallback;
+  }
+
+  String? _asDayKeyFromLastTestDate(dynamic v) {
+    if (v == null) return null;
+    if (v is String && v.trim().isNotEmpty) return v.trim();
+    if (v is Timestamp) {
+      return _dayKeyUtcPlus6(v.toDate().toUtc());
+    }
+    return null;
+  }
+
   Future<void> _awardTrophyPoint() async {
     final ref = _userRef();
     if (ref == null) return;
@@ -70,7 +159,85 @@ class _QuizRunnerState extends State<QuizRunner> {
     );
   }
 
-  Future<void> _commitCompletionStats({
+  /// ✅ Update stats immediately after each answered question
+  Future<void> _commitPerQuestionStats({
+    required bool isCorrect,
+    required int timeSpentSeconds,
+  }) async {
+    final ref = _userRef();
+    if (ref == null) return;
+
+    final section = widget.statsSectionKey;
+
+    await FirebaseFirestore.instance.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data() ?? <String, dynamic>{};
+
+      // section map at root: math / reading / grammar / analogy
+      final rootSection = (data[section] as Map<String, dynamic>?) ?? {};
+      final int oldAnswered = _asInt(rootSection['answered'], fallback: 0);
+      final int oldCorrect = _asInt(rootSection['correct'], fallback: 0);
+
+      final int newAnswered = oldAnswered + 1;
+      final int newCorrect = oldCorrect + (isCorrect ? 1 : 0);
+      final double newAvgScore = newAnswered == 0
+          ? 0.0
+          : (newCorrect / newAnswered) * 100.0;
+
+      // categoryStats.section map
+      final catStats = (data['categoryStats'] as Map<String, dynamic>?) ?? {};
+      final catSection = (catStats[section] as Map<String, dynamic>?) ?? {};
+      final int oldCatAnswered = _asInt(catSection['answered'], fallback: 0);
+      final int oldCatCorrect = _asInt(catSection['correct'], fallback: 0);
+
+      final int newCatAnswered = oldCatAnswered + 1;
+      final int newCatCorrect = oldCatCorrect + (isCorrect ? 1 : 0);
+      final double newCatAvgScore = newCatAnswered == 0
+          ? 0.0
+          : (newCatCorrect / newCatAnswered) * 100.0;
+
+      // global totals
+      final int oldTotalAnswered =
+      _asInt(data['totalQuestionsAnswered'], fallback: 0);
+      final int oldTotalCorrect =
+      _asInt(data['totalCorrectAnswers'], fallback: 0);
+      final int oldTotalStudySeconds =
+      _asInt(data['totalStudyTimeSeconds'], fallback: 0);
+
+      final int newTotalAnswered = oldTotalAnswered + 1;
+      final int newTotalCorrect = oldTotalCorrect + (isCorrect ? 1 : 0);
+      final int newTotalStudySeconds = oldTotalStudySeconds + timeSpentSeconds;
+
+      final double newAvgTimePerQuestion = newTotalAnswered == 0
+          ? 0.0
+          : (newTotalStudySeconds / newTotalAnswered);
+
+      tx.set(
+        ref,
+        {
+          // root section updates
+          '$section.answered': newAnswered,
+          '$section.correct': newCorrect,
+          '$section.avgScore': newAvgScore,
+
+          // categoryStats updates (mirrored)
+          'categoryStats.$section.answered': newCatAnswered,
+          'categoryStats.$section.correct': newCatCorrect,
+          'categoryStats.$section.avgScore': newCatAvgScore,
+
+          // global totals
+          'totalQuestionsAnswered': newTotalAnswered,
+          'totalCorrectAnswers': newTotalCorrect,
+          'totalStudyTimeSeconds': newTotalStudySeconds,
+          'averageTimePerQuestionSeconds': newAvgTimePerQuestion,
+        },
+        SetOptions(merge: true),
+      );
+    });
+  }
+
+  /// End-of-quiz: testsCompleted + avgScore + streak
+  Future<void> _commitCompletionStatsAndStreak({
     required int totalQuestions,
     required int correct,
   }) async {
@@ -78,30 +245,50 @@ class _QuizRunnerState extends State<QuizRunner> {
     if (ref == null) return;
 
     final section = widget.statsSectionKey;
-    final scorePct = totalQuestions == 0 ? 0.0 : (correct / totalQuestions) * 100.0;
+    final scorePct =
+    totalQuestions == 0 ? 0.0 : (correct / totalQuestions) * 100.0;
+
+    final nowUtc = DateTime.now().toUtc();
+    final todayKey = _dayKeyUtcPlus6(nowUtc);
+    final yesterdayKey = _yesterdayKeyUtcPlus6(nowUtc);
 
     await FirebaseFirestore.instance.runTransaction((tx) async {
       final snap = await tx.get(ref);
       final data = snap.data() ?? <String, dynamic>{};
       final sectionMap = (data[section] as Map<String, dynamic>?) ?? {};
 
-      final int oldAnswered = (sectionMap['answered'] as num?)?.toInt() ?? 0;
-      final int oldCorrect = (sectionMap['correct'] as num?)?.toInt() ?? 0;
-      final int oldTests = (sectionMap['testsCompleted'] as num?)?.toInt() ?? 0;
-      final double oldAvg = (sectionMap['avgScore'] as num?)?.toDouble() ?? 0.0;
+      final int oldTests = _asInt(sectionMap['testsCompleted'], fallback: 0);
+      final double oldAvg = _asDouble(sectionMap['avgScore'], fallback: 0.0);
 
-      final int newAnswered = oldAnswered + totalQuestions;
-      final int newCorrect = oldCorrect + correct;
       final int newTests = oldTests + 1;
       final double newAvg = ((oldAvg * oldTests) + scorePct) / newTests;
+
+      final int currentStreak = _asInt(data['currentStreakDays'], fallback: 0);
+      final String? lastKey = _asDayKeyFromLastTestDate(data['lastTestDate']);
+
+      int updatedStreak;
+      if (lastKey == todayKey) {
+        updatedStreak = currentStreak;
+      } else if (lastKey == yesterdayKey) {
+        updatedStreak = (currentStreak <= 0) ? 1 : currentStreak + 1;
+      } else {
+        updatedStreak = 1;
+      }
 
       tx.set(
         ref,
         {
-          '$section.answered': newAnswered,
-          '$section.correct': newCorrect,
+          // tests completed + avg score
           '$section.testsCompleted': newTests,
           '$section.avgScore': newAvg,
+
+          // mirrored to categoryStats too
+          'categoryStats.$section.testsCompleted': FieldValue.increment(1),
+          'categoryStats.$section.avgScore': newAvg,
+
+          // streak
+          'currentStreakDays': updatedStreak,
+          'lastTestDate': todayKey,
         },
         SetOptions(merge: true),
       );
@@ -111,12 +298,23 @@ class _QuizRunnerState extends State<QuizRunner> {
   void _select(String key, Question q) {
     if (_revealed) return;
 
+    final nowUtc = DateTime.now().toUtc();
+    final timeSpentSeconds =
+    nowUtc.difference(_questionStartedUtc).inSeconds.clamp(0, 60 * 60);
+
     setState(() {
       _selectedOption = key;
       _revealed = true;
     });
 
     final isCorrect = key == q.answer;
+
+    // update immediate stats
+    _commitPerQuestionStats(
+      isCorrect: isCorrect,
+      timeSpentSeconds: timeSpentSeconds,
+    );
+
     if (isCorrect) {
       setState(() => _correctThisRun++);
       if (!_trophyAwardedForThisQuestion) {
@@ -136,6 +334,7 @@ class _QuizRunnerState extends State<QuizRunner> {
       _selectedOption = null;
       _revealed = false;
       _trophyAwardedForThisQuestion = false;
+      _questionStartedUtc = DateTime.now().toUtc(); // restart timer
     });
   }
 
@@ -146,12 +345,16 @@ class _QuizRunnerState extends State<QuizRunner> {
       _selectedOption = null;
       _revealed = false;
       _trophyAwardedForThisQuestion = false;
+      _questionStartedUtc = DateTime.now().toUtc();
       _future = _load();
     });
   }
 
   Future<void> _showResult(int total) async {
-    await _commitCompletionStats(totalQuestions: total, correct: _correctThisRun);
+    await _commitCompletionStatsAndStreak(
+      totalQuestions: total,
+      correct: _correctThisRun,
+    );
 
     final loc = AppLocalizations.of(context)!;
     final scorePct = total == 0 ? 0 : ((_correctThisRun / total) * 100).round();
@@ -258,8 +461,10 @@ class _QuizRunnerState extends State<QuizRunner> {
                               style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
-                          Text('$_correctThisRun',
-                              style: const TextStyle(fontWeight: FontWeight.w800)),
+                          Text(
+                            '$_correctThisRun',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
                           const SizedBox(width: 6),
                           const Icon(Icons.emoji_events_outlined, size: 18),
                         ],
@@ -279,15 +484,13 @@ class _QuizRunnerState extends State<QuizRunner> {
                         children: [
                           _Pill(text: loc.quiz_difficulty(q.difficulty ?? '-')),
                           const SizedBox(width: 8),
-                          if ((q.language ?? '').trim().isNotEmpty)
-                            _Pill(text: q.language!.toUpperCase()),
+                          _Pill(text: _currentLang.toUpperCase()),
                         ],
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 14),
-
                 Expanded(
                   child: ListView(
                     children: [
@@ -314,10 +517,8 @@ class _QuizRunnerState extends State<QuizRunner> {
                         ),
                       ),
                       const SizedBox(height: 12),
-
                       ...q.optionKeys.map((key) {
                         final text = q.options[key] ?? '';
-
                         final isSelected = _selectedOption == key;
                         final isCorrect = key == q.answer;
 
@@ -361,8 +562,10 @@ class _QuizRunnerState extends State<QuizRunner> {
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(color: const Color(0xFFE6E6E6)),
                                     ),
-                                    child: Text(key,
-                                        style: const TextStyle(fontWeight: FontWeight.w800)),
+                                    child: Text(
+                                      key,
+                                      style: const TextStyle(fontWeight: FontWeight.w800),
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -381,7 +584,6 @@ class _QuizRunnerState extends State<QuizRunner> {
                           ),
                         );
                       }),
-
                       if (_revealed) ...[
                         const SizedBox(height: 6),
                         Container(
@@ -402,8 +604,10 @@ class _QuizRunnerState extends State<QuizRunner> {
                               ),
                               const SizedBox(height: 8),
                               if ((q.explanation ?? '').trim().isNotEmpty)
-                                Text(q.explanation!.trim(),
-                                    style: const TextStyle(height: 1.35)),
+                                Text(
+                                  q.explanation!.trim(),
+                                  style: const TextStyle(height: 1.35),
+                                ),
                             ],
                           ),
                         ),
@@ -411,7 +615,6 @@ class _QuizRunnerState extends State<QuizRunner> {
                     ],
                   ),
                 ),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -425,7 +628,9 @@ class _QuizRunnerState extends State<QuizRunner> {
                       ),
                     ),
                     child: Text(
-                      _index == questions.length - 1 ? loc.quiz_finish : loc.quiz_next,
+                      _index == questions.length - 1
+                          ? loc.quiz_finish
+                          : loc.quiz_next,
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -532,8 +737,10 @@ class _EmptyState extends StatelessWidget {
           children: [
             const Icon(Icons.inbox_outlined, size: 42),
             const SizedBox(height: 10),
-            Text(title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 8),
             Text(subtitle, textAlign: TextAlign.center),
             const SizedBox(height: 14),
@@ -568,8 +775,10 @@ class _ErrorState extends StatelessWidget {
           children: [
             const Icon(Icons.error_outline, size: 42),
             const SizedBox(height: 10),
-            Text(title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 8),
             Text(errorText, textAlign: TextAlign.center),
             const SizedBox(height: 14),

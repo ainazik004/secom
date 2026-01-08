@@ -131,24 +131,8 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _index = 0;
-  late Future<Map<String, dynamic>> _userFuture;
 
   final List<Widget?> _pages = List<Widget?>.filled(4, null, growable: false);
-
-  @override
-  void initState() {
-    super.initState();
-    _userFuture = _loadUser();
-  }
-
-  Future<Map<String, dynamic>> _loadUser() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return {};
-
-    final snap =
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    return snap.data() ?? {};
-  }
 
   Widget _buildPage(int i) {
     switch (i) {
@@ -168,85 +152,38 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
+    _pages[_index] ??= _buildPage(_index);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F4FF),
-
       body: SafeArea(
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: _userFuture,
-          builder: (context, s) {
-            if (s.connectionState == ConnectionState.waiting) {
-              return const _MainShimmer();
-            }
+        child: Column(
+          children: [
+            MainAppHeader(
+              onTapProfile: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                );
+              },
+              onTapTrophy: () {
+                setState(() => _index = 1);
+              },
+            ),
 
-            if (s.hasError) {
-              return Center(
-                child: Text(
-                  'Error: ${s.error}',
-                  style: const TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
-                ),
-              );
-            }
+            Expanded(
+              child: IndexedStack(
+                index: _index,
+                children: List.generate(_pages.length, (i) {
+                  final page = _pages[i];
+                  if (page != null) return page;
 
-            final data = s.data ?? {};
-
-            // ── TROPHIES ───────────────────────────────────────
-            final dynamic t = data['trophies'];
-            final int trophies = t is int ? t : int.tryParse('$t') ?? 0;
-
-            // ── STREAK (NEW) ───────────────────────────────────
-            final dynamic cs = data['currentStreakDays'];
-            final int currentStreakDays =
-            cs is int ? cs : int.tryParse('$cs') ?? 0;
-
-            // ── AVATAR URL ─────────────────────────────────────
-            final photoUrl =
-            data['photoUrl'] is String ? data['photoUrl'] as String : null;
-
-            _pages[_index] ??= _buildPage(_index);
-
-            return Column(
-              children: [
-                //
-                // ───────── HEADER WITH STREAK ─────────
-                //
-                MainAppHeader(
-                  trophyCount: trophies,
-                  streakDays: currentStreakDays, // <<< NEW
-                  photoUrl: photoUrl,
-                  onTapProfile: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProfilePage(),
-                      ),
-                    ).then((_) {
-                      setState(() => _userFuture = _loadUser());
-                    });
-                  },
-                  onTapTrophy: () {
-                    setState(() => _index = 1); // leaderboard
-                  },
-                ),
-
-                Expanded(
-                  child: IndexedStack(
-                    index: _index,
-                    children: List.generate(_pages.length, (i) {
-                      final page = _pages[i];
-                      if (page != null) return page;
-
-                      if (i == 0) {
-                        return const HomePage();
-                      }
-                      return const SizedBox.shrink();
-                    }),
-                  ),
-                ),
-              ],
-            );
-          },
+                  if (i == 0) return const HomePage();
+                  return const SizedBox.shrink();
+                }),
+              ),
+            ),
+          ],
         ),
       ),
 
