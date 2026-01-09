@@ -136,7 +136,44 @@
 
   "notLoggedIn": "Not logged in",
   "noStatisticsYet": "No statistics yet",
-  "advancedStatistics": "Advanced statistics"
+  "advancedStatistics": "Advanced statistics",
+
+  "advancedStatisticsTitle": "Advanced statistics",
+  "overview": "Overview",
+  "overallAccuracy": "Overall accuracy",
+  "categoryBreakdown": "Category breakdown",
+  "accuracyPerCategory": "Accuracy per category",
+  "recentTestPerformance": "Recent test performance",
+  "recentTests": "Recent tests",
+  "accountAndSettings": "Account & settings",
+
+  "accuracy": "Accuracy",
+  "avgScore": "Avg score",
+  "avgTimePerQuestion": "Avg time / question",
+  "studyTime": "Study time",
+  "testsCompleted": "Tests completed",
+
+  "currentStreak": "Current streak",
+  "longestStreak": "Longest streak",
+
+  "lastLogin": "Last login",
+  "lastUpdated": "Last updated",
+  "lastTestDate": "Last test date",
+
+  "appVersion": "App version",
+  "authProvider": "Auth provider",
+  "premium": "Premium",
+  "emailVerified": "Email verified",
+
+  "yes": "Yes",
+  "no": "No",
+  "notAvailable": "N/A",
+
+  "seconds": "s",
+  "minutes": "min",
+  "hours": "h",
+  "days": "days",
+  "theme": "Theme"
 }
 
 

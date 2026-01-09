@@ -343,4 +343,94 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get advancedStatistics => 'Расширенная статистика';
+
+  @override
+  String get advancedStatisticsTitle => 'Расширенная статистика';
+
+  @override
+  String get overview => 'Обзор';
+
+  @override
+  String get overallAccuracy => 'Общая точность';
+
+  @override
+  String get categoryBreakdown => 'Разбивка по категориям';
+
+  @override
+  String get accuracyPerCategory => 'Точность по категориям';
+
+  @override
+  String get recentTestPerformance => 'Результаты последних тестов';
+
+  @override
+  String get recentTests => 'Последние тесты';
+
+  @override
+  String get accountAndSettings => 'Аккаунт и настройки';
+
+  @override
+  String get accuracy => 'Точность';
+
+  @override
+  String get avgScore => 'Средний балл';
+
+  @override
+  String get avgTimePerQuestion => 'Среднее время / вопрос';
+
+  @override
+  String get studyTime => 'Время обучения';
+
+  @override
+  String get testsCompleted => 'Тестов завершено';
+
+  @override
+  String get currentStreak => 'Текущая серия';
+
+  @override
+  String get longestStreak => 'Лучшая серия';
+
+  @override
+  String get lastLogin => 'Последний вход';
+
+  @override
+  String get lastUpdated => 'Последнее обновление';
+
+  @override
+  String get lastTestDate => 'Дата последнего теста';
+
+  @override
+  String get appVersion => 'Версия приложения';
+
+  @override
+  String get authProvider => 'Способ входа';
+
+  @override
+  String get premium => 'Премиум';
+
+  @override
+  String get emailVerified => 'Email подтверждён';
+
+  @override
+  String get yes => 'Да';
+
+  @override
+  String get no => 'Нет';
+
+  @override
+  String get notAvailable => 'Нет данных';
+
+  @override
+  String get seconds => 'с';
+
+  @override
+  String get minutes => 'мин';
+
+  @override
+  String get hours => 'ч';
+
+  @override
+  String get days => 'дн.';
+
+  @override
+  String get theme => 'Тема';
 }

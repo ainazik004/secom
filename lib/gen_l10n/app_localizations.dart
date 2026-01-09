@@ -741,6 +741,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Advanced statistics'**
   String get advancedStatistics;
+
+  /// No description provided for @advancedStatisticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced statistics'**
+  String get advancedStatisticsTitle;
+
+  /// No description provided for @overview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get overview;
+
+  /// No description provided for @overallAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall accuracy'**
+  String get overallAccuracy;
+
+  /// No description provided for @categoryBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Category breakdown'**
+  String get categoryBreakdown;
+
+  /// No description provided for @accuracyPerCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy per category'**
+  String get accuracyPerCategory;
+
+  /// No description provided for @recentTestPerformance.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent test performance'**
+  String get recentTestPerformance;
+
+  /// No description provided for @recentTests.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent tests'**
+  String get recentTests;
+
+  /// No description provided for @accountAndSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & settings'**
+  String get accountAndSettings;
+
+  /// No description provided for @accuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'Accuracy'**
+  String get accuracy;
+
+  /// No description provided for @avgScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg score'**
+  String get avgScore;
+
+  /// No description provided for @avgTimePerQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg time / question'**
+  String get avgTimePerQuestion;
+
+  /// No description provided for @studyTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Study time'**
+  String get studyTime;
+
+  /// No description provided for @testsCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests completed'**
+  String get testsCompleted;
+
+  /// No description provided for @currentStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Current streak'**
+  String get currentStreak;
+
+  /// No description provided for @longestStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest streak'**
+  String get longestStreak;
+
+  /// No description provided for @lastLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Last login'**
+  String get lastLogin;
+
+  /// No description provided for @lastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated'**
+  String get lastUpdated;
+
+  /// No description provided for @lastTestDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Last test date'**
+  String get lastTestDate;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get appVersion;
+
+  /// No description provided for @authProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Auth provider'**
+  String get authProvider;
+
+  /// No description provided for @premium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get premium;
+
+  /// No description provided for @emailVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified'**
+  String get emailVerified;
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
+
+  /// No description provided for @notAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'N/A'**
+  String get notAvailable;
+
+  /// No description provided for @seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'s'**
+  String get seconds;
+
+  /// No description provided for @minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get minutes;
+
+  /// No description provided for @hours.
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get hours;
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get days;
+
+  /// No description provided for @theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get theme;
 }
 
 class _AppLocalizationsDelegate

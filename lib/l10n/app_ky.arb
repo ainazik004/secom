@@ -136,5 +136,42 @@
 
   "notLoggedIn": "Сиз системага кирген эмессиз",
   "noStatisticsYet": "Азырынча статистика жок",
-  "advancedStatistics": "Кеңейтилген статистика"
+  "advancedStatistics": "Кеңейтилген статистика",
+
+  "advancedStatisticsTitle": "Кеңейтилген статистика",
+  "overview": "Жалпы маалымат",
+  "overallAccuracy": "Жалпы тактык",
+  "categoryBreakdown": "Категориялар боюнча бөлүштүрүү",
+  "accuracyPerCategory": "Категориялар боюнча тактык",
+  "recentTestPerformance": "Акыркы тесттердин жыйынтыгы",
+  "recentTests": "Акыркы тесттер",
+  "accountAndSettings": "Аккаунт жана жөндөөлөр",
+
+  "accuracy": "Тактык",
+  "avgScore": "Орточо балл",
+  "avgTimePerQuestion": "Орточо убакыт / суроо",
+  "studyTime": "Окуу убактысы",
+  "testsCompleted": "Бүткөн тесттер",
+
+  "currentStreak": "Азыркы серия",
+  "longestStreak": "Эң узун серия",
+
+  "lastLogin": "Акыркы кирүү",
+  "lastUpdated": "Акыркы жаңыртуу",
+  "lastTestDate": "Акыркы тест күнү",
+
+  "appVersion": "Колдонмонун версиясы",
+  "authProvider": "Кирүү ыкмасы",
+  "premium": "Премиум",
+  "emailVerified": "Email тастыкталган",
+
+  "yes": "Ооба",
+  "no": "Жок",
+  "notAvailable": "Маалымат жок",
+
+  "seconds": "с",
+  "minutes": "мин",
+  "hours": "саат",
+  "days": "күн",
+  "theme": "Тема"
 }

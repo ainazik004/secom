@@ -135,7 +135,44 @@
 
   "notLoggedIn": "Вы не вошли в систему",
   "noStatisticsYet": "Статистика пока недоступна",
-  "advancedStatistics": "Расширенная статистика"
+  "advancedStatistics": "Расширенная статистика",
+
+  "advancedStatisticsTitle": "Расширенная статистика",
+  "overview": "Обзор",
+  "overallAccuracy": "Общая точность",
+  "categoryBreakdown": "Разбивка по категориям",
+  "accuracyPerCategory": "Точность по категориям",
+  "recentTestPerformance": "Результаты последних тестов",
+  "recentTests": "Последние тесты",
+  "accountAndSettings": "Аккаунт и настройки",
+
+  "accuracy": "Точность",
+  "avgScore": "Средний балл",
+  "avgTimePerQuestion": "Среднее время / вопрос",
+  "studyTime": "Время обучения",
+  "testsCompleted": "Тестов завершено",
+
+  "currentStreak": "Текущая серия",
+  "longestStreak": "Лучшая серия",
+
+  "lastLogin": "Последний вход",
+  "lastUpdated": "Последнее обновление",
+  "lastTestDate": "Дата последнего теста",
+
+  "appVersion": "Версия приложения",
+  "authProvider": "Способ входа",
+  "premium": "Премиум",
+  "emailVerified": "Email подтверждён",
+
+  "yes": "Да",
+  "no": "Нет",
+  "notAvailable": "Нет данных",
+
+  "seconds": "с",
+  "minutes": "мин",
+  "hours": "ч",
+  "days": "дн.",
+  "theme": "Тема"
 }
 
 

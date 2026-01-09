@@ -343,4 +343,94 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get advancedStatistics => 'Кеңейтилген статистика';
+
+  @override
+  String get advancedStatisticsTitle => 'Кеңейтилген статистика';
+
+  @override
+  String get overview => 'Жалпы маалымат';
+
+  @override
+  String get overallAccuracy => 'Жалпы тактык';
+
+  @override
+  String get categoryBreakdown => 'Категориялар боюнча бөлүштүрүү';
+
+  @override
+  String get accuracyPerCategory => 'Категориялар боюнча тактык';
+
+  @override
+  String get recentTestPerformance => 'Акыркы тесттердин жыйынтыгы';
+
+  @override
+  String get recentTests => 'Акыркы тесттер';
+
+  @override
+  String get accountAndSettings => 'Аккаунт жана жөндөөлөр';
+
+  @override
+  String get accuracy => 'Тактык';
+
+  @override
+  String get avgScore => 'Орточо балл';
+
+  @override
+  String get avgTimePerQuestion => 'Орточо убакыт / суроо';
+
+  @override
+  String get studyTime => 'Окуу убактысы';
+
+  @override
+  String get testsCompleted => 'Бүткөн тесттер';
+
+  @override
+  String get currentStreak => 'Азыркы серия';
+
+  @override
+  String get longestStreak => 'Эң узун серия';
+
+  @override
+  String get lastLogin => 'Акыркы кирүү';
+
+  @override
+  String get lastUpdated => 'Акыркы жаңыртуу';
+
+  @override
+  String get lastTestDate => 'Акыркы тест күнү';
+
+  @override
+  String get appVersion => 'Колдонмонун версиясы';
+
+  @override
+  String get authProvider => 'Кирүү ыкмасы';
+
+  @override
+  String get premium => 'Премиум';
+
+  @override
+  String get emailVerified => 'Email тастыкталган';
+
+  @override
+  String get yes => 'Ооба';
+
+  @override
+  String get no => 'Жок';
+
+  @override
+  String get notAvailable => 'Маалымат жок';
+
+  @override
+  String get seconds => 'с';
+
+  @override
+  String get minutes => 'мин';
+
+  @override
+  String get hours => 'саат';
+
+  @override
+  String get days => 'күн';
+
+  @override
+  String get theme => 'Тема';
 }

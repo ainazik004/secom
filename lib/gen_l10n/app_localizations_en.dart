@@ -341,4 +341,94 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get advancedStatistics => 'Advanced statistics';
+
+  @override
+  String get advancedStatisticsTitle => 'Advanced statistics';
+
+  @override
+  String get overview => 'Overview';
+
+  @override
+  String get overallAccuracy => 'Overall accuracy';
+
+  @override
+  String get categoryBreakdown => 'Category breakdown';
+
+  @override
+  String get accuracyPerCategory => 'Accuracy per category';
+
+  @override
+  String get recentTestPerformance => 'Recent test performance';
+
+  @override
+  String get recentTests => 'Recent tests';
+
+  @override
+  String get accountAndSettings => 'Account & settings';
+
+  @override
+  String get accuracy => 'Accuracy';
+
+  @override
+  String get avgScore => 'Avg score';
+
+  @override
+  String get avgTimePerQuestion => 'Avg time / question';
+
+  @override
+  String get studyTime => 'Study time';
+
+  @override
+  String get testsCompleted => 'Tests completed';
+
+  @override
+  String get currentStreak => 'Current streak';
+
+  @override
+  String get longestStreak => 'Longest streak';
+
+  @override
+  String get lastLogin => 'Last login';
+
+  @override
+  String get lastUpdated => 'Last updated';
+
+  @override
+  String get lastTestDate => 'Last test date';
+
+  @override
+  String get appVersion => 'App version';
+
+  @override
+  String get authProvider => 'Auth provider';
+
+  @override
+  String get premium => 'Premium';
+
+  @override
+  String get emailVerified => 'Email verified';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get notAvailable => 'N/A';
+
+  @override
+  String get seconds => 's';
+
+  @override
+  String get minutes => 'min';
+
+  @override
+  String get hours => 'h';
+
+  @override
+  String get days => 'days';
+
+  @override
+  String get theme => 'Theme';
 }
