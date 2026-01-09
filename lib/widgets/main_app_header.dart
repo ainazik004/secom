@@ -47,68 +47,73 @@ class MainAppHeader extends StatelessWidget {
         final photoUrl = _readString(data, 'photoUrl');
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x182C015D),
-                  blurRadius: 15,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Left: logo
-                Image.asset(
-                  'assets/secom_logo.png',
-                  height: 38,
-                ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6), // ↓ less tall
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Base design tuned for ~360px wide phones.
+              // Scale gently down on smaller widths, and do not scale up.
+              final width = constraints.maxWidth;
+              final s = (width / 360.0).clamp(0.82, 1.0);
 
-                const Spacer(),
+              final logoH = 34.0 * s; // was 38
+              final avatarR = 19.0 * s; // was 21
+              final containerVPad = 8.0 * s; // was 10
+              final containerHPad = 14.0 * s; // was 16
 
-                // Right side: streak, trophies, avatar
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Transform.translate(
-                      offset: const Offset(-6, 0),
-                      child: _StreakPill(streakDays: streakDays),
+              return Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: containerHPad,
+                  vertical: containerVPad,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22 * s), // slightly smaller
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x182C015D),
+                      blurRadius: 15,
+                      offset: Offset(0, 8),
                     ),
-                    const SizedBox(width: 10),
-                    Transform.translate(
-                      offset: const Offset(-6, 0),
-                      child: _AdaptiveTrophyPill(
-                        count: trophyCount,
-                        onTap: onTapTrophy,
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Logo: constrained + scaleDown so it never forces overflow
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 140 * s),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Image.asset(
+                          'assets/secom_logo.png',
+                          height: logoH,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 14),
 
-                    GestureDetector(
-                      onTap: onTapProfile,
-                      child: CircleAvatar(
-                        radius: 21,
-                        backgroundColor: purple,
-                        backgroundImage:
-                        (photoUrl != null) ? NetworkImage(photoUrl) : null,
-                        child: (photoUrl == null)
-                            ? const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 20,
-                        )
-                            : null,
+                    SizedBox(width: 10 * s),
+
+                    // Right side takes remaining width and scales as needed
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _RightClusterAdaptive(
+                          scale: s,
+                          streakDays: streakDays,
+                          trophyCount: trophyCount,
+                          onTapTrophy: onTapTrophy,
+                          onTapProfile: onTapProfile,
+                          photoUrl: photoUrl,
+                          purple: purple,
+                          avatarRadius: avatarR,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
@@ -116,13 +121,106 @@ class MainAppHeader extends StatelessWidget {
   }
 }
 
-class _AdaptiveTrophyPill extends StatelessWidget {
+class _RightClusterAdaptive extends StatelessWidget {
+  final double scale;
+  final int streakDays;
+  final int trophyCount;
+  final VoidCallback? onTapTrophy;
+  final VoidCallback onTapProfile;
+  final String? photoUrl;
+  final Color purple;
+  final double avatarRadius;
+
+  const _RightClusterAdaptive({
+    required this.scale,
+    required this.streakDays,
+    required this.trophyCount,
+    required this.onTapTrophy,
+    required this.onTapProfile,
+    required this.photoUrl,
+    required this.purple,
+    required this.avatarRadius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final avatarDiameter = avatarRadius * 2.0;
+        final gapBeforeAvatar = 12.0 * scale; // was 14
+
+        // Available width for pills row
+        final pillsMaxWidth =
+        (constraints.maxWidth - avatarDiameter - gapBeforeAvatar)
+            .clamp(0.0, constraints.maxWidth);
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Pills area: scales down as a whole if needed (no overflow)
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: pillsMaxWidth),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Transform.translate(
+                      offset: Offset(-5 * scale, 0),
+                      child: _StreakPill(
+                        streakDays: streakDays,
+                        scale: scale,
+                      ),
+                    ),
+                    SizedBox(width: 8 * scale),
+                    Transform.translate(
+                      offset: Offset(-5 * scale, 0),
+                      child: _TrophyPill(
+                        count: trophyCount,
+                        onTap: onTapTrophy,
+                        scale: scale,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            SizedBox(width: gapBeforeAvatar),
+
+            // Avatar: also scales down
+            GestureDetector(
+              onTap: onTapProfile,
+              child: CircleAvatar(
+                radius: avatarRadius,
+                backgroundColor: purple,
+                backgroundImage: (photoUrl != null) ? NetworkImage(photoUrl!) : null,
+                child: (photoUrl == null)
+                    ? Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 18 * scale,
+                )
+                    : null,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TrophyPill extends StatelessWidget {
   final int count;
   final VoidCallback? onTap;
+  final double scale;
 
-  const _AdaptiveTrophyPill({
+  const _TrophyPill({
     required this.count,
     this.onTap,
+    required this.scale,
   });
 
   String _shorten(int value) {
@@ -136,10 +234,11 @@ class _AdaptiveTrophyPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pill = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      constraints: BoxConstraints(minHeight: 30 * scale),
+      padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4E0),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(22 * scale),
         boxShadow: const [
           BoxShadow(
             color: Color(0x1A000000),
@@ -151,15 +250,19 @@ class _AdaptiveTrophyPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.emoji_events, size: 18, color: Colors.amber[700]),
-          const SizedBox(width: 6),
-          Text(
-            _shorten(count),
-            maxLines: 1,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF2C015D),
-              fontSize: 15,
+          Icon(Icons.emoji_events, size: 17 * scale, color: Colors.amber[700]),
+          SizedBox(width: 6 * scale),
+          // Scale down the number if needed
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              _shorten(count),
+              maxLines: 1,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF2C015D),
+                fontSize: 14.5 * scale,
+              ),
             ),
           ),
         ],
@@ -170,7 +273,7 @@ class _AdaptiveTrophyPill extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(22 * scale),
       child: pill,
     );
   }
@@ -178,8 +281,12 @@ class _AdaptiveTrophyPill extends StatelessWidget {
 
 class _StreakPill extends StatelessWidget {
   final int streakDays;
+  final double scale;
 
-  const _StreakPill({required this.streakDays});
+  const _StreakPill({
+    required this.streakDays,
+    required this.scale,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -187,26 +294,27 @@ class _StreakPill extends StatelessWidget {
 
     if (!hasStreak) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        constraints: BoxConstraints(minHeight: 30 * scale),
+        padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F7),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(22 * scale),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
+          children: [
             Icon(
               Icons.local_fire_department_rounded,
-              size: 18,
-              color: Color(0xFFB0B0B5),
+              size: 17 * scale,
+              color: const Color(0xFFB0B0B5),
             ),
-            SizedBox(width: 6),
+            SizedBox(width: 6 * scale),
             Text(
               '0',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14.5 * scale,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF7E7E86),
+                color: const Color(0xFF7E7E86),
               ),
             ),
           ],
@@ -215,17 +323,15 @@ class _StreakPill extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      constraints: BoxConstraints(minHeight: 30 * scale),
+      padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFF7FB2),
-            Color(0xFF7F4BFF),
-          ],
+          colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(22 * scale),
         boxShadow: const [
           BoxShadow(
             color: Color(0x22000000),
@@ -237,18 +343,22 @@ class _StreakPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.local_fire_department_rounded,
-            size: 18,
+            size: 17 * scale,
             color: Colors.white,
           ),
-          const SizedBox(width: 6),
-          Text(
-            '$streakDays',
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
+          SizedBox(width: 6 * scale),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '$streakDays',
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 14.5 * scale,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
