@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:secom/main.dart';
+import 'package:zhalbyrak/main.dart';
 import '../services/auth_service.dart';
 import 'register_page.dart';
 import 'verify_email_page.dart';
-import 'package:secom/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

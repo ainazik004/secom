@@ -329,4 +329,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String quiz_difficulty(Object difficulty) {
     return 'Сложность: $difficulty';
   }
+
+  @override
+  String statsAnsweredOutOf(int answered, int total) {
+    return '$answered / $total';
+  }
+
+  @override
+  String get notLoggedIn => 'Вы не вошли в систему';
+
+  @override
+  String get noStatisticsYet => 'Статистика пока недоступна';
+
+  @override
+  String get advancedStatistics => 'Расширенная статистика';
 }

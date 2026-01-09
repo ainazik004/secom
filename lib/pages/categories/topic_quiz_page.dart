@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:secom/widgets/quiz_runner.dart';
+import 'package:zhalbyrak/widgets/quiz_runner.dart';
 
 class TopicQuizPage extends StatelessWidget {
   // Keep topic only for UI title (optional).

@@ -329,4 +329,18 @@ class AppLocalizationsKy extends AppLocalizations {
   String quiz_difficulty(Object difficulty) {
     return 'Кыйынчылык: $difficulty';
   }
+
+  @override
+  String statsAnsweredOutOf(int answered, int total) {
+    return '$answered / $total';
+  }
+
+  @override
+  String get notLoggedIn => 'Сиз системага кирген эмессиз';
+
+  @override
+  String get noStatisticsYet => 'Азырынча статистика жок';
+
+  @override
+  String get advancedStatistics => 'Кеңейтилген статистика';
 }

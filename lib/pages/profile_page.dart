@@ -6,7 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:secom/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 import '../pages/login_page.dart';
 
 class ProfilePage extends StatefulWidget {

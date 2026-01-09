@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:secom/l10n/l10n.dart';
+import 'package:zhalbyrak/l10n/l10n.dart';
 
 class LocaleProvider extends ChangeNotifier {
   Locale _locale = const Locale('ru');

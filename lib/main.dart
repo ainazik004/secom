@@ -10,7 +10,7 @@ import 'firebase_options.dart';
 
 // Localization
 import 'gen_l10n/app_localizations.dart';
-import 'package:secom/l10n/l10n.dart';
+import 'package:zhalbyrak/l10n/l10n.dart';
 
 // Pages
 import 'pages/welcome_page.dart';
@@ -53,7 +53,7 @@ class SecomApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'SECOM',
+      title: 'ZHALBYRAK',
 
       locale: provider.locale,
       supportedLocales: const [

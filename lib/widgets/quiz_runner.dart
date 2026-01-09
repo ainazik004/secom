@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:secom/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 class QuizRunner extends StatefulWidget {
   final String title;
@@ -42,8 +42,9 @@ class _QuizRunnerState extends State<QuizRunner> {
   bool _trophyAwardedForThisQuestion = false;
 
   String _currentLang = 'ru';
+  bool _initialized = false;
 
-  // timer for "time per question"
+  // time per question
   DateTime _questionStartedUtc = DateTime.now().toUtc();
 
   // Fixed timezone day boundary for Kyrgyzstan: UTC+6
@@ -68,23 +69,23 @@ class _QuizRunnerState extends State<QuizRunner> {
     super.didChangeDependencies();
 
     final lang = _normalizedLang(context);
-    if (_currentLang != lang) {
-      _currentLang = lang;
 
-      // reset run state
-      _index = 0;
-      _correctThisRun = 0;
-      _selectedOption = null;
-      _revealed = false;
-      _trophyAwardedForThisQuestion = false;
-      _questionStartedUtc = DateTime.now().toUtc();
+    final needReload = !_initialized || _currentLang != lang;
+    if (!needReload) return;
 
-      _future = _load();
-      setState(() {});
-    } else {
-      // ensure we load at least once
-      _future = _load();
-    }
+    _initialized = true;
+    _currentLang = lang;
+
+    // reset run state
+    _index = 0;
+    _correctThisRun = 0;
+    _selectedOption = null;
+    _revealed = false;
+    _trophyAwardedForThisQuestion = false;
+    _questionStartedUtc = DateTime.now().toUtc();
+
+    _future = _load();
+    setState(() {});
   }
 
   Future<List<Question>> _load() async {
@@ -159,7 +160,9 @@ class _QuizRunnerState extends State<QuizRunner> {
     );
   }
 
-  /// ✅ Update stats immediately after each answered question
+  /// ✅ Per-question update:
+  /// - ONLY updates categoryStats.<section> (answered/correct/avgScore)
+  /// - Also updates global totals/time fields
   Future<void> _commitPerQuestionStats({
     required bool isCorrect,
     required int timeSpentSeconds,
@@ -173,28 +176,16 @@ class _QuizRunnerState extends State<QuizRunner> {
       final snap = await tx.get(ref);
       final data = snap.data() ?? <String, dynamic>{};
 
-      // section map at root: math / reading / grammar / analogy
-      final rootSection = (data[section] as Map<String, dynamic>?) ?? {};
-      final int oldAnswered = _asInt(rootSection['answered'], fallback: 0);
-      final int oldCorrect = _asInt(rootSection['correct'], fallback: 0);
+      final catStats = (data['categoryStats'] as Map<String, dynamic>?) ?? {};
+      final catSection = (catStats[section] as Map<String, dynamic>?) ?? {};
+
+      final int oldAnswered = _asInt(catSection['answered'], fallback: 0);
+      final int oldCorrect = _asInt(catSection['correct'], fallback: 0);
 
       final int newAnswered = oldAnswered + 1;
       final int newCorrect = oldCorrect + (isCorrect ? 1 : 0);
-      final double newAvgScore = newAnswered == 0
-          ? 0.0
-          : (newCorrect / newAnswered) * 100.0;
-
-      // categoryStats.section map
-      final catStats = (data['categoryStats'] as Map<String, dynamic>?) ?? {};
-      final catSection = (catStats[section] as Map<String, dynamic>?) ?? {};
-      final int oldCatAnswered = _asInt(catSection['answered'], fallback: 0);
-      final int oldCatCorrect = _asInt(catSection['correct'], fallback: 0);
-
-      final int newCatAnswered = oldCatAnswered + 1;
-      final int newCatCorrect = oldCatCorrect + (isCorrect ? 1 : 0);
-      final double newCatAvgScore = newCatAnswered == 0
-          ? 0.0
-          : (newCatCorrect / newCatAnswered) * 100.0;
+      final double newAvgScore =
+      newAnswered == 0 ? 0.0 : (newCorrect / newAnswered) * 100.0;
 
       // global totals
       final int oldTotalAnswered =
@@ -208,24 +199,24 @@ class _QuizRunnerState extends State<QuizRunner> {
       final int newTotalCorrect = oldTotalCorrect + (isCorrect ? 1 : 0);
       final int newTotalStudySeconds = oldTotalStudySeconds + timeSpentSeconds;
 
-      final double newAvgTimePerQuestion = newTotalAnswered == 0
-          ? 0.0
-          : (newTotalStudySeconds / newTotalAnswered);
+      final double newAvgTimePerQuestion =
+      newTotalAnswered == 0 ? 0.0 : (newTotalStudySeconds / newTotalAnswered);
 
       tx.set(
         ref,
         {
-          // root section updates
-          '$section.answered': newAnswered,
-          '$section.correct': newCorrect,
-          '$section.avgScore': newAvgScore,
+          // ✅ only categoryStats.<section> for per-category performance
+          'categoryStats': {
+            ...catStats,
+            section: {
+              ...catSection,
+              'answered': newAnswered,
+              'correct': newCorrect,
+              'avgScore': newAvgScore,
+            },
+          },
 
-          // categoryStats updates (mirrored)
-          'categoryStats.$section.answered': newCatAnswered,
-          'categoryStats.$section.correct': newCatCorrect,
-          'categoryStats.$section.avgScore': newCatAvgScore,
-
-          // global totals
+          // ✅ global totals
           'totalQuestionsAnswered': newTotalAnswered,
           'totalCorrectAnswers': newTotalCorrect,
           'totalStudyTimeSeconds': newTotalStudySeconds,
@@ -236,8 +227,10 @@ class _QuizRunnerState extends State<QuizRunner> {
     });
   }
 
-  /// End-of-quiz: testsCompleted + avgScore + streak
-  Future<void> _commitCompletionStatsAndStreak({
+  /// End-of-quiz:
+  /// - increments categoryStats.<section>.testsCompleted
+  /// - updates streak fields + longestStreakDays
+  Future<void> _commitCompletionAndStreak({
     required int totalQuestions,
     required int correct,
   }) async {
@@ -245,8 +238,6 @@ class _QuizRunnerState extends State<QuizRunner> {
     if (ref == null) return;
 
     final section = widget.statsSectionKey;
-    final scorePct =
-    totalQuestions == 0 ? 0.0 : (correct / totalQuestions) * 100.0;
 
     final nowUtc = DateTime.now().toUtc();
     final todayKey = _dayKeyUtcPlus6(nowUtc);
@@ -255,39 +246,46 @@ class _QuizRunnerState extends State<QuizRunner> {
     await FirebaseFirestore.instance.runTransaction((tx) async {
       final snap = await tx.get(ref);
       final data = snap.data() ?? <String, dynamic>{};
-      final sectionMap = (data[section] as Map<String, dynamic>?) ?? {};
 
-      final int oldTests = _asInt(sectionMap['testsCompleted'], fallback: 0);
-      final double oldAvg = _asDouble(sectionMap['avgScore'], fallback: 0.0);
+      // categoryStats
+      final catStats = (data['categoryStats'] as Map<String, dynamic>?) ?? {};
+      final catSection = (catStats[section] as Map<String, dynamic>?) ?? {};
+      final int oldTests = _asInt(catSection['testsCompleted'], fallback: 0);
 
-      final int newTests = oldTests + 1;
-      final double newAvg = ((oldAvg * oldTests) + scorePct) / newTests;
-
+      // streak
       final int currentStreak = _asInt(data['currentStreakDays'], fallback: 0);
+      final int longestStreak = _asInt(data['longestStreakDays'], fallback: 0);
       final String? lastKey = _asDayKeyFromLastTestDate(data['lastTestDate']);
 
       int updatedStreak;
       if (lastKey == todayKey) {
-        updatedStreak = currentStreak;
+        updatedStreak = currentStreak; // already counted today
       } else if (lastKey == yesterdayKey) {
         updatedStreak = (currentStreak <= 0) ? 1 : currentStreak + 1;
       } else {
         updatedStreak = 1;
       }
 
+      final int updatedLongest =
+      (updatedStreak > longestStreak) ? updatedStreak : longestStreak;
+
       tx.set(
         ref,
         {
-          // tests completed + avg score
-          '$section.testsCompleted': newTests,
-          '$section.avgScore': newAvg,
+          // ✅ only categoryStats.<section> test completion increment
+          'categoryStats': {
+            ...catStats,
+            section: {
+              ...catSection,
+              'testsCompleted': oldTests + 1,
+              // NOTE: avgScore is maintained per-question in _commitPerQuestionStats
+              // If you want test-average instead, tell me and I’ll change the formula.
+            },
+          },
 
-          // mirrored to categoryStats too
-          'categoryStats.$section.testsCompleted': FieldValue.increment(1),
-          'categoryStats.$section.avgScore': newAvg,
-
-          // streak
+          // ✅ streak + longest streak
           'currentStreakDays': updatedStreak,
+          'longestStreakDays': updatedLongest,
           'lastTestDate': todayKey,
         },
         SetOptions(merge: true),
@@ -299,7 +297,7 @@ class _QuizRunnerState extends State<QuizRunner> {
     if (_revealed) return;
 
     final nowUtc = DateTime.now().toUtc();
-    final timeSpentSeconds =
+    final int timeSpentSeconds =
     nowUtc.difference(_questionStartedUtc).inSeconds.clamp(0, 60 * 60);
 
     setState(() {
@@ -309,7 +307,7 @@ class _QuizRunnerState extends State<QuizRunner> {
 
     final isCorrect = key == q.answer;
 
-    // update immediate stats
+    // ✅ immediate per-question stats (categoryStats only) + global totals/time
     _commitPerQuestionStats(
       isCorrect: isCorrect,
       timeSpentSeconds: timeSpentSeconds,
@@ -334,7 +332,7 @@ class _QuizRunnerState extends State<QuizRunner> {
       _selectedOption = null;
       _revealed = false;
       _trophyAwardedForThisQuestion = false;
-      _questionStartedUtc = DateTime.now().toUtc(); // restart timer
+      _questionStartedUtc = DateTime.now().toUtc();
     });
   }
 
@@ -351,7 +349,7 @@ class _QuizRunnerState extends State<QuizRunner> {
   }
 
   Future<void> _showResult(int total) async {
-    await _commitCompletionStatsAndStreak(
+    await _commitCompletionAndStreak(
       totalQuestions: total,
       correct: _correctThisRun,
     );
@@ -560,7 +558,9 @@ class _QuizRunnerState extends State<QuizRunner> {
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF6F4FF),
                                       borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: const Color(0xFFE6E6E6)),
+                                      border: Border.all(
+                                        color: const Color(0xFFE6E6E6),
+                                      ),
                                     ),
                                     child: Text(
                                       key,

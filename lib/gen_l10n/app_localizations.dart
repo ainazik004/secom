@@ -717,6 +717,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Difficulty: {difficulty}'**
   String quiz_difficulty(Object difficulty);
+
+  /// Answered questions out of total
+  ///
+  /// In en, this message translates to:
+  /// **'{answered} / {total}'**
+  String statsAnsweredOutOf(int answered, int total);
+
+  /// No description provided for @notLoggedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not logged in'**
+  String get notLoggedIn;
+
+  /// No description provided for @noStatisticsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No statistics yet'**
+  String get noStatisticsYet;
+
+  /// No description provided for @advancedStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced statistics'**
+  String get advancedStatistics;
 }
 
 class _AppLocalizationsDelegate

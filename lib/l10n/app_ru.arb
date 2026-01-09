@@ -122,7 +122,20 @@
   "quiz_next": "Далее",
   "quiz_correct": "Верно ✅ (+1 трофей)",
   "quiz_wrong_correct_answer": "Неверно ❌ (правильный ответ: {answer})",
-  "quiz_difficulty": "Сложность: {difficulty}"
+  "quiz_difficulty": "Сложность: {difficulty}",
+
+  "statsAnsweredOutOf": "{answered} / {total}",
+  "@statsAnsweredOutOf": {
+    "description": "Answered questions out of total",
+    "placeholders": {
+      "answered": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "notLoggedIn": "Вы не вошли в систему",
+  "noStatisticsYet": "Статистика пока недоступна",
+  "advancedStatistics": "Расширенная статистика"
 }
 
 

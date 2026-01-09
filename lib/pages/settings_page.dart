@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:secom/provider/provider.dart';
-import 'package:secom/l10n/l10n.dart';
-import 'package:secom/gen_l10n/app_localizations.dart';
-import 'package:secom/pages/login_page.dart';
+import 'package:zhalbyrak/provider/provider.dart';
+import 'package:zhalbyrak/l10n/l10n.dart';
+import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/pages/login_page.dart';
 
 class SettingsPage extends StatelessWidget {
   final bool embedded;
@@ -48,10 +48,14 @@ class SettingsPage extends StatelessWidget {
     final currentLocale = provider.locale;
     final loc = AppLocalizations.of(context)!;
 
+    // Only show RU + KY in settings
+    final availableLocales =
+    L10n.all.where((l) => l.languageCode != 'en').toList();
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
-        const SizedBox(height: 12), // spacing after header
+        const SizedBox(height: 12),
 
         // ---------- Language ----------
         _SettingCard(
@@ -62,7 +66,7 @@ class SettingsPage extends StatelessWidget {
                 title: Text(loc.language),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: L10n.all.map((locale) {
+                  children: availableLocales.map((locale) {
                     final languageName =
                     L10n.getLanguageName(locale.languageCode);
                     final isSelected = locale == currentLocale;

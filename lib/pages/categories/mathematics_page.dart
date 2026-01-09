@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:secom/gen_l10n/app_localizations.dart';
-import 'package:secom/pages/categories/topic_quiz_page.dart';
+import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/pages/categories/topic_quiz_page.dart';
 
 class MathematicsPage extends StatelessWidget {
   const MathematicsPage({super.key});

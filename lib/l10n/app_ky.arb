@@ -123,6 +123,18 @@
   "quiz_next": "Кийинки",
   "quiz_correct": "Туура ✅ (+1 трофей)",
   "quiz_wrong_correct_answer": "Туура эмес ❌ (туура жооп: {answer})",
-  "quiz_difficulty": "Кыйынчылык: {difficulty}"
+  "quiz_difficulty": "Кыйынчылык: {difficulty}",
 
+  "statsAnsweredOutOf": "{answered} / {total}",
+  "@statsAnsweredOutOf": {
+    "description": "Answered questions out of total",
+    "placeholders": {
+      "answered": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "notLoggedIn": "Сиз системага кирген эмессиз",
+  "noStatisticsYet": "Азырынча статистика жок",
+  "advancedStatistics": "Кеңейтилген статистика"
 }

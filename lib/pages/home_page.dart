@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:secom/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'categories/mathematics_page.dart';

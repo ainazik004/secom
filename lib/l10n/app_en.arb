@@ -122,7 +122,21 @@
   "quiz_next": "Next",
   "quiz_correct": "Correct ✅ (+1 trophy)",
   "quiz_wrong_correct_answer": "Wrong ❌ (correct answer: {answer})",
-  "quiz_difficulty": "Difficulty: {difficulty}"
+  "quiz_difficulty": "Difficulty: {difficulty}",
+
+
+  "statsAnsweredOutOf": "{answered} / {total}",
+  "@statsAnsweredOutOf": {
+    "description": "Answered questions out of total",
+    "placeholders": {
+      "answered": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "notLoggedIn": "Not logged in",
+  "noStatisticsYet": "No statistics yet",
+  "advancedStatistics": "Advanced statistics"
 }
 
 

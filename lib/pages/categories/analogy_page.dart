@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:secom/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 class AnalogyPage extends StatelessWidget {
   const AnalogyPage({super.key});
