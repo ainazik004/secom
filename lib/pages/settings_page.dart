@@ -29,6 +29,19 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
+  // Emoji flags for supported languages (RU, KY).
+  // You can extend this map later if you add more languages.
+  String _flagForLanguage(String languageCode) {
+    switch (languageCode) {
+      case 'ru':
+        return '🇷🇺';
+      case 'ky':
+        return '🇰🇬';
+      default:
+        return '🏳️';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // If embedded inside MainPage → return body only
@@ -67,11 +80,16 @@ class SettingsPage extends StatelessWidget {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: availableLocales.map((locale) {
-                    final languageName =
-                    L10n.getLanguageName(locale.languageCode);
+                    final code = locale.languageCode;
+                    final languageName = L10n.getLanguageName(code);
                     final isSelected = locale == currentLocale;
 
                     return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Text(
+                        _flagForLanguage(code),
+                        style: const TextStyle(fontSize: 22),
+                      ),
                       title: Text(languageName),
                       trailing: isSelected
                           ? const Icon(Icons.check, color: Color(0xFFFF3D7F))
