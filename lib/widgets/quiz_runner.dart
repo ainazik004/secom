@@ -230,6 +230,10 @@ class _QuizRunnerState extends State<QuizRunner> {
   /// End-of-quiz:
   /// - increments categoryStats.<section>.testsCompleted
   /// - updates streak fields + longestStreakDays
+  /// - updates global derived fields: totalTestsCompleted, averageScore
+  /// - ✅ stores last 7 test accuracies under `recentResults` as subfields:
+  ///   recentResults: { r0: <oldest>, r1: ..., r6: <newest> }
+  ///   When adding 8th, drops oldest.
   Future<void> _commitCompletionAndStreak({
     required int totalQuestions,
     required int correct,
@@ -243,47 +247,111 @@ class _QuizRunnerState extends State<QuizRunner> {
     final todayKey = _dayKeyUtcPlus6(nowUtc);
     final yesterdayKey = _yesterdayKeyUtcPlus6(nowUtc);
 
+    // accuracy percent 0..100
+    final double thisTestAccuracyPct = totalQuestions == 0
+        ? 0.0
+        : ((correct / totalQuestions) * 100.0).clamp(0.0, 100.0);
+
     await FirebaseFirestore.instance.runTransaction((tx) async {
       final snap = await tx.get(ref);
       final data = snap.data() ?? <String, dynamic>{};
 
-      // categoryStats
-      final catStats = (data['categoryStats'] as Map<String, dynamic>?) ?? {};
-      final catSection = (catStats[section] as Map<String, dynamic>?) ?? {};
+      // ───── categoryStats ─────
+      final Map<String, dynamic> catStats =
+          (data['categoryStats'] as Map<String, dynamic>?) ?? {};
+
+      final Map<String, dynamic> catSection =
+          (catStats[section] as Map<String, dynamic>?) ?? {};
+
       final int oldTests = _asInt(catSection['testsCompleted'], fallback: 0);
 
-      // streak
+      // ───── streak logic ─────
       final int currentStreak = _asInt(data['currentStreakDays'], fallback: 0);
       final int longestStreak = _asInt(data['longestStreakDays'], fallback: 0);
       final String? lastKey = _asDayKeyFromLastTestDate(data['lastTestDate']);
 
       int updatedStreak;
       if (lastKey == todayKey) {
-        updatedStreak = currentStreak; // already counted today
+        updatedStreak = currentStreak;
       } else if (lastKey == yesterdayKey) {
-        updatedStreak = (currentStreak <= 0) ? 1 : currentStreak + 1;
+        updatedStreak = currentStreak <= 0 ? 1 : currentStreak + 1;
       } else {
         updatedStreak = 1;
       }
 
       final int updatedLongest =
-      (updatedStreak > longestStreak) ? updatedStreak : longestStreak;
+      updatedStreak > longestStreak ? updatedStreak : longestStreak;
 
+      // ───── recompute GLOBAL averageScore from categoryStats ─────
+      double sum = 0.0;
+      int count = 0;
+
+      for (final entry in catStats.entries) {
+        final v = entry.value;
+        if (v is Map<String, dynamic>) {
+          final answered = _asInt(v['answered']);
+          final avg = _asDouble(v['avgScore']);
+          if (answered > 0) {
+            sum += avg;
+            count++;
+          }
+        }
+      }
+
+      final double newGlobalAvgScore = count == 0 ? 0.0 : (sum / count);
+
+      // ───── global tests completed ─────
+      final int oldTotalTests = _asInt(data['totalTestsCompleted'], fallback: 0);
+
+      // ───── recentResults (map of subfields r0..r6) ─────
+      final Map<String, dynamic> oldRecent =
+      (data['recentResults'] is Map<String, dynamic>)
+          ? Map<String, dynamic>.from(data['recentResults'] as Map)
+          : <String, dynamic>{};
+
+      // Extract values in order r0..rN (oldest->newest)
+      final List<double> recentList = [];
+      for (int i = 0; i < 50; i++) {
+        final k = 'r$i';
+        if (!oldRecent.containsKey(k)) break;
+        recentList.add(_asDouble(oldRecent[k]).clamp(0.0, 100.0));
+      }
+
+      // append newest
+      recentList.add(thisTestAccuracyPct);
+
+      // keep only last 7 (drop oldest)
+      while (recentList.length > 7) {
+        recentList.removeAt(0);
+      }
+
+      // rebuild as subfields r0..r6
+      final Map<String, dynamic> newRecent = <String, dynamic>{};
+      for (int i = 0; i < recentList.length; i++) {
+        newRecent['r$i'] = recentList[i];
+      }
+
+      // ───── write ─────
       tx.set(
         ref,
         {
-          // ✅ only categoryStats.<section> test completion increment
+          // category-level increment
           'categoryStats': {
             ...catStats,
             section: {
               ...catSection,
               'testsCompleted': oldTests + 1,
-              // NOTE: avgScore is maintained per-question in _commitPerQuestionStats
-              // If you want test-average instead, tell me and I’ll change the formula.
             },
           },
 
-          // ✅ streak + longest streak
+          // global derived fields
+          'totalTestsCompleted': oldTotalTests + 1,
+          'averageScore': newGlobalAvgScore,
+
+          // ✅ recent results as subfields
+          'recentResults': newRecent,
+
+          // streak
           'currentStreakDays': updatedStreak,
           'longestStreakDays': updatedLongest,
           'lastTestDate': todayKey,
@@ -628,9 +696,7 @@ class _QuizRunnerState extends State<QuizRunner> {
                       ),
                     ),
                     child: Text(
-                      _index == questions.length - 1
-                          ? loc.quiz_finish
-                          : loc.quiz_next,
+                      _index == questions.length - 1 ? loc.quiz_finish : loc.quiz_next,
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         color: Colors.white,

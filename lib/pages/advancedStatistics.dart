@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -33,10 +34,7 @@ class AdvancedStatisticsPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF6F4FF),
       body: SafeArea(
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .snapshots(),
+          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
           builder: (context, snapshot) {
             final header = _AdvancedStatsHeader(
               title: loc.advancedStatisticsTitle,
@@ -47,9 +45,7 @@ class AdvancedStatisticsPage extends StatelessWidget {
               return Column(
                 children: [
                   header,
-                  const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
+                  const Expanded(child: Center(child: CircularProgressIndicator())),
                 ],
               );
             }
@@ -73,112 +69,70 @@ class AdvancedStatisticsPage extends StatelessWidget {
               );
             }
 
-            final data = snapshot.data!.data() ?? {};
+            final data = snapshot.data!.data() ?? <String, dynamic>{};
 
-            // ---------- Typed helpers ----------
+            // ───────────────────────── helpers ─────────────────────────
             num _num(String key, [num fallback = 0]) {
               final v = data[key];
               return v is num ? v : fallback;
             }
 
-            String? _str(String key) {
-              final v = data[key];
-              return v is String && v.trim().isNotEmpty ? v : null;
+            Map<String, dynamic> _map(dynamic v) {
+              if (v is Map<String, dynamic>) return v;
+              if (v is Map) return Map<String, dynamic>.from(v);
+              return <String, dynamic>{};
             }
 
-            bool _bool(String key, [bool fallback = false]) {
-              final v = data[key];
-              return v is bool ? v : fallback;
+            int _asInt(dynamic v, {int fallback = 0}) {
+              if (v == null) return fallback;
+              if (v is int) return v;
+              if (v is num) return v.toInt();
+              if (v is String) return int.tryParse(v) ?? fallback;
+              return fallback;
             }
 
-            Map<String, dynamic> _map(String key) {
-              final v = data[key];
-              return v is Map<String, dynamic> ? v : <String, dynamic>{};
+            double _asDouble(dynamic v, {double fallback = 0.0}) {
+              if (v == null) return fallback;
+              if (v is double) return v;
+              if (v is num) return v.toDouble();
+              if (v is String) return double.tryParse(v) ?? fallback;
+              return fallback;
             }
 
-            DateTime? _timestamp(String key) {
-              final v = data[key];
-              if (v is Timestamp) return v.toDate();
-              return null;
-            }
+            // ───────────────────────── global stats ─────────────────────────
+            final totalAnswered = _num('totalQuestionsAnswered').toInt().clamp(0, 1 << 31);
+            final totalCorrect = _num('totalCorrectAnswers').toInt().clamp(0, totalAnswered);
 
-            // ---------- Global stats (from your fields) ----------
-            final totalAnswered =
-            _num('totalQuestionsAnswered').toInt().clamp(0, 1 << 31);
-            final totalCorrect =
-            _num('totalCorrectAnswers').toInt().clamp(0, totalAnswered);
+            final accuracy =
+            totalAnswered == 0 ? 0.0 : (totalCorrect / totalAnswered).clamp(0.0, 1.0);
 
-            final accuracy = totalAnswered == 0
-                ? 0.0
-                : (totalCorrect / totalAnswered).clamp(0.0, 1.0);
+            final avgScorePercent = _num('averageScore').toDouble().clamp(0.0, 100.0);
 
-            final avgScorePercent =
-            _num('averageScore').toDouble().clamp(0.0, 100.0);
-            final avgScore = avgScorePercent / 100.0;
+            final avgTimePerQuestionSeconds =
+            _num('averageTimePerQuestionSeconds').toDouble().clamp(0.0, 3600.0);
 
-            final avgTimePerQuestionSeconds = _num('averageTimePerQuestionSeconds')
-                .toDouble()
-                .clamp(0.0, 3600.0);
+            final totalStudySeconds = _num('totalStudyTimeSeconds').toInt().clamp(0, 1 << 31);
 
-            final totalStudySeconds =
-            _num('totalStudyTimeSeconds').toInt().clamp(0, 1 << 31);
-
-            final currentStreakDays =
-            _num('currentStreakDays').toInt().clamp(0, 36500);
-            final longestStreakDays =
-            _num('longestStreakDays').toInt().clamp(0, 36500);
+            final currentStreakDays = _num('currentStreakDays').toInt().clamp(0, 36500);
+            final longestStreakDays = _num('longestStreakDays').toInt().clamp(0, 36500);
 
             final trophies = _num('trophies').toInt().clamp(0, 1 << 31);
+            final totalTestsCompleted = _num('totalTestsCompleted').toInt().clamp(0, 1 << 31);
 
-            final totalTestsCompleted =
-            _num('totalTestsCompleted').toInt().clamp(0, 1 << 31);
+            // ───────────────────────── category stats ─────────────────────────
+            final categoryStats = _map(data['categoryStats']);
 
-            final lastLoginAt = _timestamp('lastLoginAt');
-            final lastUpdatedAt = _timestamp('lastUpdatedAt');
+            Map<String, dynamic> _cat(String key) => _map(categoryStats[key]);
 
-            final lastTestDateStr = _str('lastTestDate'); // "2026-01-09" in your example
-
-            final appVersion = _str('appVersion');
-            final authProvider = _str('authProvider');
-
-            final isPremium = _bool('isPremium', false);
-            final emailVerified = _bool('emailVerified', false); // you also have isEmailVerified
-            final languageCode = _str('languageCode');
-            final theme = _str('theme');
-            final notificationsEnabled = _bool('notificationsEnabled', true);
-
-            // ---------- Category stats ----------
-            final categoryStats = _map('categoryStats');
-
-            Map<String, dynamic> _cat(String key) {
-              final v = categoryStats[key];
-              return v is Map<String, dynamic> ? v : <String, dynamic>{};
-            }
-
-            int _catAnswered(String key) {
-              final v = _cat(key)['answered'];
-              return v is num ? v.toInt() : 0;
-            }
-
-            int _catCorrect(String key) {
-              final v = _cat(key)['correct'];
-              return v is num ? v.toInt() : 0;
-            }
-
-            int _catTests(String key) {
-              final v = _cat(key)['testsCompleted'];
-              return v is num ? v.toInt() : 0;
-            }
-
-            double _catAvgScore(String key) {
-              final v = _cat(key)['avgScore'];
-              return v is num ? v.toDouble().clamp(0.0, 100.0) : 0.0;
-            }
+            int _catAnswered(String key) => _asInt(_cat(key)['answered']);
+            int _catCorrect(String key) => _asInt(_cat(key)['correct']);
+            int _catTests(String key) => _asInt(_cat(key)['testsCompleted']);
+            double _catAvgScore(String key) => _asDouble(_cat(key)['avgScore']).clamp(0.0, 100.0);
 
             double _catAccuracy(String key) {
               final a = _catAnswered(key);
+              if (a <= 0) return 0.0;
               final c = _catCorrect(key).clamp(0, a);
-              if (a == 0) return 0.0;
               return (c / a).clamp(0.0, 1.0);
             }
 
@@ -187,6 +141,7 @@ class AdvancedStatisticsPage extends StatelessWidget {
                 key: 'math',
                 title: loc.math,
                 icon: Icons.calculate_rounded,
+                iconColor: const Color(0xFF3B82F6),
                 answered: _catAnswered('math'),
                 correct: _catCorrect('math'),
                 avgScorePercent: _catAvgScore('math'),
@@ -197,6 +152,7 @@ class AdvancedStatisticsPage extends StatelessWidget {
                 key: 'reading',
                 title: loc.reading,
                 icon: Icons.menu_book_rounded,
+                iconColor: const Color(0xFF22C55E),
                 answered: _catAnswered('reading'),
                 correct: _catCorrect('reading'),
                 avgScorePercent: _catAvgScore('reading'),
@@ -207,6 +163,7 @@ class AdvancedStatisticsPage extends StatelessWidget {
                 key: 'analogy',
                 title: loc.analogy,
                 icon: Icons.compare_arrows_rounded,
+                iconColor: const Color(0xFFF59E0B),
                 answered: _catAnswered('analogy'),
                 correct: _catCorrect('analogy'),
                 avgScorePercent: _catAvgScore('analogy'),
@@ -217,6 +174,7 @@ class AdvancedStatisticsPage extends StatelessWidget {
                 key: 'grammar',
                 title: loc.grammar,
                 icon: Icons.spellcheck_rounded,
+                iconColor: const Color(0xFFA855F7),
                 answered: _catAnswered('grammar'),
                 correct: _catCorrect('grammar'),
                 avgScorePercent: _catAvgScore('grammar'),
@@ -225,33 +183,27 @@ class AdvancedStatisticsPage extends StatelessWidget {
               ),
             ];
 
-            // ---------- Recent tests history (optional) ----------
-            List<double> lastTests = [];
-            final rawLastTests = data['recentTestScores'];
-            if (rawLastTests is List) {
-              lastTests = rawLastTests
-                  .whereType<num>()
-                  .map((e) => (e.toDouble().clamp(0.0, 100.0) / 100.0))
-                  .toList();
-            }
-            if (lastTests.isEmpty) {
-              lastTests = List<double>.filled(7, avgScore);
-            } else if (lastTests.length > 14) {
-              lastTests = lastTests.sublist(lastTests.length - 14);
+            // ───────────────────────── recentResults: r0..r6 (0..100), oldest->newest ─────────────────────────
+            final recentResultsMap = _map(data['recentResults']);
+            final List<double> recentAccPct = [];
+            for (int i = 0; i < 50; i++) {
+              final k = 'r$i';
+              if (!recentResultsMap.containsKey(k)) break;
+              recentAccPct.add(_asDouble(recentResultsMap[k]).clamp(0.0, 100.0));
             }
 
-            // ---------- Formatting ----------
-            final matLoc = MaterialLocalizations.of(context);
-
-            String fmtDateTime(DateTime? dt) {
-              if (dt == null) return loc.notAvailable;
-              final d = matLoc.formatShortDate(dt);
-              final t = matLoc.formatTimeOfDay(TimeOfDay.fromDateTime(dt),
-                  alwaysUse24HourFormat: true);
-              return "$d  $t";
+            if (recentAccPct.isEmpty) {
+              recentAccPct.addAll(List<double>.filled(7, avgScorePercent));
+            }
+            if (recentAccPct.length > 7) {
+              final tail = recentAccPct.sublist(recentAccPct.length - 7);
+              recentAccPct
+                ..clear()
+                ..addAll(tail);
             }
 
-            String fmtDurationMinutes(int seconds) {
+            // ───────────────────────── formatting ─────────────────────────
+            String _fmtTotalStudy(int seconds) {
               final totalMinutes = seconds ~/ 60;
               final h = totalMinutes ~/ 60;
               final m = totalMinutes % 60;
@@ -259,100 +211,60 @@ class AdvancedStatisticsPage extends StatelessWidget {
               return "${h} ${loc.hours} ${m} ${loc.minutes}";
             }
 
-            String fmtSeconds(double s) {
-              return "${s.round()} ${loc.seconds}";
-            }
+            String _fmtSeconds(double s) => "${s.round()} ${loc.seconds}";
 
-            String fmtBool(bool v) => v ? loc.yes : loc.no;
-
-            // ---------- Layout ----------
-            return Column(
-              children: [
-                header,
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SectionTitle(label: loc.overview),
-                        const SizedBox(height: 8),
-
-                        _OverviewCard(
-                          loc: loc,
-                          accuracy: accuracy,
-                          totalAnswered: totalAnswered,
-                          totalCorrect: totalCorrect,
-                          avgScorePercent: avgScorePercent,
-                          avgTimePerQuestionLabel: fmtSeconds(avgTimePerQuestionSeconds),
-                          totalStudyLabel: fmtDurationMinutes(totalStudySeconds),
+            // ───────────────────────── layout ─────────────────────────
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
+                  children: [
+                    header,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight - 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _SectionTitle(label: loc.overview),
+                              const SizedBox(height: 8),
+                              _OverviewCard(
+                                loc: loc,
+                                accuracy: accuracy,
+                                totalAnswered: totalAnswered,
+                                totalCorrect: totalCorrect,
+                                avgScorePercent: avgScorePercent,
+                                avgTimePerQuestionLabel: _fmtSeconds(avgTimePerQuestionSeconds),
+                              ),
+                              const SizedBox(height: 14),
+                              _HighlightsCard(
+                                loc: loc,
+                                trophies: trophies,
+                                totalTestsCompleted: totalTestsCompleted,
+                                currentStreakDays: currentStreakDays,
+                                longestStreakDays: longestStreakDays,
+                                totalStudyLabel: _fmtTotalStudy(totalStudySeconds),
+                              ),
+                              const SizedBox(height: 22),
+                              _SectionTitle(label: loc.categoryBreakdown),
+                              const SizedBox(height: 8),
+                              _CategoryCardsGrid(loc: loc, categories: categories),
+                              const SizedBox(height: 20),
+                              _CategoryBarsCard(loc: loc, categories: categories),
+                              const SizedBox(height: 20),
+                              _SectionTitle(label: loc.recentTestPerformance),
+                              const SizedBox(height: 8),
+                              _RecentResultsCard(loc: loc, recentAccPct: recentAccPct),
+                              const SizedBox(height: 32),
+                            ],
+                          ),
                         ),
-
-                        const SizedBox(height: 14),
-
-                        _QuickFactsCard(
-                          loc: loc,
-                          trophies: trophies,
-                          totalTestsCompleted: totalTestsCompleted,
-                          currentStreakDays: currentStreakDays,
-                          longestStreakDays: longestStreakDays,
-                          lastLogin: fmtDateTime(lastLoginAt),
-                          lastUpdated: fmtDateTime(lastUpdatedAt),
-                          lastTestDate: lastTestDateStr ?? loc.notAvailable,
-                        ),
-
-                        const SizedBox(height: 22),
-
-                        _SectionTitle(label: loc.categoryBreakdown),
-                        const SizedBox(height: 8),
-
-                        _CategoryCardsGrid(
-                          loc: loc,
-                          categories: categories,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _CategoryBarsCard(
-                          loc: loc,
-                          categories: categories,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _SectionTitle(label: loc.recentTestPerformance),
-                        const SizedBox(height: 8),
-
-                        _TestHistoryCard(
-                          loc: loc,
-                          lastTests: lastTests,
-                          avgScore: avgScore,
-                          totalTestsCompleted: totalTestsCompleted,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _SectionTitle(label: loc.accountAndSettings),
-                        const SizedBox(height: 8),
-
-                        _AccountCard(
-                          loc: loc,
-                          appVersion: appVersion ?? loc.notAvailable,
-                          authProvider: authProvider ?? loc.notAvailable,
-                          isPremium: fmtBool(isPremium),
-                          emailVerified: fmtBool(emailVerified),
-                          languageCode: languageCode ?? loc.notAvailable,
-                          theme: theme ?? loc.notAvailable,
-                          notificationsEnabled: fmtBool(notificationsEnabled),
-                        ),
-
-                        const SizedBox(height: 32),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             );
           },
         ),
@@ -361,9 +273,9 @@ class AdvancedStatisticsPage extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 // Header
-// ---------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 class _AdvancedStatsHeader extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -383,9 +295,7 @@ class _AdvancedStatsHeader extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(28),
-        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Row(
         children: [
@@ -399,11 +309,7 @@ class _AdvancedStatsHeader extends StatelessWidget {
                 color: Colors.white.withOpacity(0.18),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.close_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
+              child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
             ),
           ),
           const SizedBox(width: 14),
@@ -426,10 +332,7 @@ class _AdvancedStatsHeader extends StatelessWidget {
                   subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
                 ),
               ],
             ),
@@ -440,9 +343,9 @@ class _AdvancedStatsHeader extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 // Section title
-// ---------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 class _SectionTitle extends StatelessWidget {
   final String label;
 
@@ -461,709 +364,9 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------
-// Overview card
-// ---------------------------------------------------------
-class _OverviewCard extends StatelessWidget {
-  final AppLocalizations loc;
-  final double accuracy;
-  final int totalAnswered;
-  final int totalCorrect;
-  final double avgScorePercent;
-  final String avgTimePerQuestionLabel;
-  final String totalStudyLabel;
-
-  const _OverviewCard({
-    required this.loc,
-    required this.accuracy,
-    required this.totalAnswered,
-    required this.totalCorrect,
-    required this.avgScorePercent,
-    required this.avgTimePerQuestionLabel,
-    required this.totalStudyLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _CardShell(
-      child: Row(
-        children: [
-          SizedBox(
-            width: 92,
-            height: 92,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: accuracy.clamp(0.0, 1.0),
-                  strokeWidth: 7,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    Color(0xFF7F4BFF),
-                  ),
-                ),
-                Text(
-                  "${(accuracy * 100).round()}%",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF2C015D),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  loc.overallAccuracy,
-                  style: const TextStyle(
-                    color: Color(0xFF2C015D),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _MiniStat(
-                      label: loc.answered,
-                      value: "$totalAnswered",
-                    ),
-                    const SizedBox(width: 14),
-                    _MiniStat(
-                      label: loc.correct,
-                      value: "$totalCorrect",
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _MiniStat(
-                      label: loc.avgScore,
-                      value: "${avgScorePercent.round()}%",
-                    ),
-                    const SizedBox(width: 14),
-                    _MiniStat(
-                      label: loc.avgTimePerQuestion,
-                      value: avgTimePerQuestionLabel,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  "${loc.studyTime}: $totalStudyLabel",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.65),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _MiniStat({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF2C015D),
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.black.withOpacity(0.6),
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------
-// Quick facts card
-// ---------------------------------------------------------
-class _QuickFactsCard extends StatelessWidget {
-  final AppLocalizations loc;
-  final int trophies;
-  final int totalTestsCompleted;
-  final int currentStreakDays;
-  final int longestStreakDays;
-  final String lastLogin;
-  final String lastUpdated;
-  final String lastTestDate;
-
-  const _QuickFactsCard({
-    required this.loc,
-    required this.trophies,
-    required this.totalTestsCompleted,
-    required this.currentStreakDays,
-    required this.longestStreakDays,
-    required this.lastLogin,
-    required this.lastUpdated,
-    required this.lastTestDate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _CardShell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _RowStat(
-            icon: Icons.emoji_events_rounded,
-            title: loc.trophies,
-            value: "$trophies",
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.fact_check_rounded,
-            title: loc.testsCompleted,
-            value: "$totalTestsCompleted",
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _RowStat(
-                  icon: Icons.local_fire_department_rounded,
-                  title: loc.currentStreak,
-                  value: "$currentStreakDays ${loc.days}",
-                  compact: true,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _RowStat(
-                  icon: Icons.whatshot_rounded,
-                  title: loc.longestStreak,
-                  value: "$longestStreakDays ${loc.days}",
-                  compact: true,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.login_rounded,
-            title: loc.lastLogin,
-            value: lastLogin,
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.update_rounded,
-            title: loc.lastUpdated,
-            value: lastUpdated,
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.event_rounded,
-            title: loc.lastTestDate,
-            value: lastTestDate,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RowStat extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final bool compact;
-
-  const _RowStat({
-    required this.icon,
-    required this.title,
-    required this.value,
-    this.compact = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: const Color(0xFF7F4BFF)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              color: const Color(0xFF2C015D),
-              fontSize: compact ? 12 : 13,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          value,
-          style: TextStyle(
-            color: Colors.black.withOpacity(0.7),
-            fontSize: compact ? 12 : 13,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------
-// Category cards grid
-// ---------------------------------------------------------
-class _CategoryCardsGrid extends StatelessWidget {
-  final AppLocalizations loc;
-  final List<_CategoryStat> categories;
-
-  const _CategoryCardsGrid({
-    required this.loc,
-    required this.categories,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final width = (MediaQuery.of(context).size.width - 56) / 2;
-
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: categories.map((c) {
-        return SizedBox(
-          width: width,
-          child: _CardShell(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(c.icon, color: const Color(0xFF2C015D)),
-                const SizedBox(height: 10),
-                Text(
-                  c.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                    color: Color(0xFF2C015D),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "${loc.correct}: ${c.correct}",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.65),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  "${loc.answered}: ${c.answered}",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.65),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: c.accuracy,
-                    minHeight: 7,
-                    backgroundColor: const Color(0xFFECE7FF),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "${loc.accuracy}: ${(c.accuracy * 100).round()}%   •   ${loc.avgScore}: ${c.avgScorePercent.round()}%",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.6),
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  "${loc.testsCompleted}: ${c.testsCompleted}",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.6),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-// ---------------------------------------------------------
-// Category accuracy bars card
-// ---------------------------------------------------------
-class _CategoryBarsCard extends StatelessWidget {
-  final AppLocalizations loc;
-  final List<_CategoryStat> categories;
-
-  const _CategoryBarsCard({
-    required this.loc,
-    required this.categories,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _CardShell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            loc.accuracyPerCategory,
-            style: const TextStyle(
-              color: Color(0xFF2C015D),
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 140,
-            width: double.infinity,
-            child: _CategoryBarChart(categories: categories),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 6,
-            children: categories.map((c) {
-              return _LegendChip(
-                label: c.title,
-                value: "${(c.accuracy * 100).round()}%",
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryBarChart extends StatelessWidget {
-  final List<_CategoryStat> categories;
-
-  const _CategoryBarChart({required this.categories});
-
-  @override
-  Widget build(BuildContext context) {
-    if (categories.isEmpty) return const SizedBox();
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final barCount = categories.length;
-        final barWidth = min(
-          36.0,
-          (constraints.maxWidth - 16 * (barCount - 1)) / barCount,
-        );
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (final c in categories)
-              _SingleBar(
-                heightFactor: c.accuracy.clamp(0.0, 1.0),
-                width: barWidth,
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SingleBar extends StatelessWidget {
-  final double heightFactor;
-  final double width;
-
-  const _SingleBar({
-    required this.heightFactor,
-    required this.width,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Flexible(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          width: width,
-          height: 110 * heightFactor,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF7F4BFF),
-                Color(0xFFFF7FB2),
-              ],
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LegendChip extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _LegendChip({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      backgroundColor: const Color(0xFFF4ECFF),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF2C015D),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.black.withOpacity(0.7),
-              fontSize: 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------
-// Test history card
-// ---------------------------------------------------------
-class _TestHistoryCard extends StatelessWidget {
-  final AppLocalizations loc;
-  final List<double> lastTests; // 0.0-1.0
-  final double avgScore; // 0.0-1.0
-  final int totalTestsCompleted;
-
-  const _TestHistoryCard({
-    required this.loc,
-    required this.lastTests,
-    required this.avgScore,
-    required this.totalTestsCompleted,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _CardShell(
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.insights_rounded, color: Color(0xFF42A5F5)),
-              const SizedBox(width: 10),
-              Text(
-                loc.recentTests,
-                style: const TextStyle(
-                  color: Color(0xFF2C015D),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 90,
-            width: double.infinity,
-            child: _MiniTestBarChart(lastTests: lastTests),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _MiniStat(
-                label: loc.avgScore,
-                value: "${(avgScore * 100).round()}%",
-              ),
-              const SizedBox(width: 14),
-              _MiniStat(
-                label: loc.testsCompleted,
-                value: "$totalTestsCompleted",
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniTestBarChart extends StatelessWidget {
-  final List<double> lastTests;
-
-  const _MiniTestBarChart({required this.lastTests});
-
-  @override
-  Widget build(BuildContext context) {
-    if (lastTests.isEmpty) return const SizedBox();
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxBars = lastTests.length;
-        final barWidth = min(
-          14.0,
-          (constraints.maxWidth - 8 * (maxBars - 1)) / maxBars,
-        );
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (int i = 0; i < maxBars; i++)
-              Container(
-                width: barWidth,
-                height: 70 * lastTests[i].clamp(0.0, 1.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: const Color(0xFF42A5F5).withOpacity(
-                    0.35 + 0.45 * lastTests[i].clamp(0.0, 1.0),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-// ---------------------------------------------------------
-// Account/settings card
-// ---------------------------------------------------------
-class _AccountCard extends StatelessWidget {
-  final AppLocalizations loc;
-  final String appVersion;
-  final String authProvider;
-  final String isPremium;
-  final String emailVerified;
-  final String languageCode;
-  final String theme;
-  final String notificationsEnabled;
-
-  const _AccountCard({
-    required this.loc,
-    required this.appVersion,
-    required this.authProvider,
-    required this.isPremium,
-    required this.emailVerified,
-    required this.languageCode,
-    required this.theme,
-    required this.notificationsEnabled,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return _CardShell(
-      child: Column(
-        children: [
-          _RowStat(
-            icon: Icons.apps_rounded,
-            title: loc.appVersion,
-            value: appVersion,
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.lock_rounded,
-            title: loc.authProvider,
-            value: authProvider,
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.workspace_premium_rounded,
-            title: loc.premium,
-            value: isPremium,
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.verified_rounded,
-            title: loc.emailVerified,
-            value: emailVerified,
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.language_rounded,
-            title: loc.language,
-            value: languageCode,
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.palette_rounded,
-            title: loc.theme,
-            value: theme,
-          ),
-          const SizedBox(height: 10),
-          _RowStat(
-            icon: Icons.notifications_active_rounded,
-            title: loc.notifications,
-            value: notificationsEnabled,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 // Card shell
-// ---------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 class _CardShell extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -1193,13 +396,634 @@ class _CardShell extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------
-// Models
-// ---------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
+// Overview card
+// ─────────────────────────────────────────────────────────────
+class _OverviewCard extends StatelessWidget {
+  final AppLocalizations loc;
+  final double accuracy;
+  final int totalAnswered;
+  final int totalCorrect;
+  final double avgScorePercent;
+  final String avgTimePerQuestionLabel;
+
+  const _OverviewCard({
+    required this.loc,
+    required this.accuracy,
+    required this.totalAnswered,
+    required this.totalCorrect,
+    required this.avgScorePercent,
+    required this.avgTimePerQuestionLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      child: Row(
+        children: [
+          SizedBox(
+            width: 92,
+            height: 92,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: accuracy.clamp(0.0, 1.0),
+                  strokeWidth: 7,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7F4BFF)),
+                ),
+                Text(
+                  "${(accuracy * 100).round()}%",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF2C015D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  loc.overallAccuracy,
+                  style: const TextStyle(
+                    color: Color(0xFF2C015D),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _MiniStat(label: loc.answered, value: "$totalAnswered"),
+                    const SizedBox(width: 14),
+                    _MiniStat(label: loc.correct, value: "$totalCorrect"),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _MiniStat(label: loc.avgScore, value: "${avgScorePercent.round()}%"),
+                    const SizedBox(width: 14),
+                    _MiniStat(label: loc.avgTimePerQuestion, value: avgTimePerQuestionLabel),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MiniStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF2C015D),
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Highlights card (colorful icons + clock for study time)
+// ─────────────────────────────────────────────────────────────
+class _HighlightsCard extends StatelessWidget {
+  final AppLocalizations loc;
+  final int trophies;
+  final int totalTestsCompleted;
+  final int currentStreakDays;
+  final int longestStreakDays;
+  final String totalStudyLabel;
+
+  const _HighlightsCard({
+    required this.loc,
+    required this.trophies,
+    required this.totalTestsCompleted,
+    required this.currentStreakDays,
+    required this.longestStreakDays,
+    required this.totalStudyLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      child: Column(
+        children: [
+          _RowStat(
+            icon: Icons.emoji_events_rounded,
+            iconColor: const Color(0xFFF59E0B),
+            title: loc.trophies,
+            value: "$trophies",
+          ),
+          const SizedBox(height: 10),
+          _RowStat(
+            icon: Icons.fact_check_rounded,
+            iconColor: const Color(0xFF3B82F6),
+            title: loc.testsCompleted,
+            value: "$totalTestsCompleted",
+          ),
+          const SizedBox(height: 10),
+          _RowStat(
+            icon: Icons.access_time_rounded,
+            iconColor: const Color(0xFF06B6D4),
+            title: loc.studyTime,
+            value: totalStudyLabel,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _RowStat(
+                  icon: Icons.local_fire_department_rounded,
+                  iconColor: const Color(0xFFEF4444),
+                  title: loc.currentStreak,
+                  value: "$currentStreakDays ${loc.days}",
+                  compact: true,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _RowStat(
+                  icon: Icons.whatshot_rounded,
+                  iconColor: const Color(0xFF22C55E),
+                  title: loc.longestStreak,
+                  value: "$longestStreakDays ${loc.days}",
+                  compact: true,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RowStat extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String value;
+  final bool compact;
+
+  const _RowStat({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.value,
+    this.compact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: iconColor),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: const Color(0xFF2C015D),
+              fontSize: compact ? 12 : 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.black.withOpacity(0.7),
+            fontSize: compact ? 12 : 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Category cards grid (adaptive: 1 column on narrow phones)
+// ─────────────────────────────────────────────────────────────
+class _CategoryCardsGrid extends StatelessWidget {
+  final AppLocalizations loc;
+  final List<_CategoryStat> categories;
+
+  const _CategoryCardsGrid({required this.loc, required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        final columns = w < 380 ? 1 : 2;
+        final itemW = columns == 1 ? w : (w - 16) / 2;
+
+        return Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: categories.map((cat) {
+            return SizedBox(
+              width: itemW,
+              child: _CardShell(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(cat.icon, color: cat.iconColor),
+                    const SizedBox(height: 10),
+                    Text(
+                      cat.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        color: Color(0xFF2C015D),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "${loc.correct}: ${cat.correct}",
+                      style: TextStyle(
+                        color: Colors.black.withOpacity(0.65),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "${loc.answered}: ${cat.answered}",
+                      style: TextStyle(
+                        color: Colors.black.withOpacity(0.65),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: cat.accuracy.clamp(0.0, 1.0),
+                        minHeight: 7,
+                        backgroundColor: const Color(0xFFECE7FF),
+                        valueColor: AlwaysStoppedAnimation<Color>(cat.iconColor),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "${loc.accuracy}: ${(cat.accuracy * 100).round()}%",
+                      style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 11),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${loc.avgScore}: ${cat.avgScorePercent.round()}%",
+                      style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 11),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${loc.testsCompleted}: ${cat.testsCompleted}",
+                      style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Category accuracy bars card
+// ─────────────────────────────────────────────────────────────
+class _CategoryBarsCard extends StatelessWidget {
+  final AppLocalizations loc;
+  final List<_CategoryStat> categories;
+
+  const _CategoryBarsCard({required this.loc, required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            loc.accuracyPerCategory,
+            style: const TextStyle(
+              color: Color(0xFF2C015D),
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 140,
+            width: double.infinity,
+            child: _CategoryBarChart(categories: categories),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 6,
+            children: categories.map((c) {
+              return _LegendChip(
+                label: c.title,
+                color: c.iconColor,
+                value: "${(c.accuracy * 100).round()}%",
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryBarChart extends StatelessWidget {
+  final List<_CategoryStat> categories;
+
+  const _CategoryBarChart({required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    if (categories.isEmpty) return const SizedBox();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final barCount = categories.length;
+        const spacing = 16.0;
+
+        final barWidth = min(
+          36.0,
+          (constraints.maxWidth - spacing * (barCount - 1)) / barCount,
+        );
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            for (final c in categories)
+              _SingleBar(
+                heightFactor: c.accuracy.clamp(0.0, 1.0),
+                width: barWidth,
+                color: c.iconColor,
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SingleBar extends StatelessWidget {
+  final double heightFactor;
+  final double width;
+  final Color color;
+
+  const _SingleBar({
+    required this.heightFactor,
+    required this.width,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          width: width,
+          height: 110 * heightFactor,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: color.withOpacity(0.85),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LegendChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _LegendChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      backgroundColor: const Color(0xFFF4ECFF),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF2C015D),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: TextStyle(color: Colors.black.withOpacity(0.7), fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Recent results card
+// - NO duplicated labels (only bottom labels)
+// - Fits all 7 bars/labels in one row
+// - Discrete band colors (high contrast):
+//   0–20 red, 20–40 yellow, 40–60 light green, 60–80 green, 80–100 dark green
+// ─────────────────────────────────────────────────────────────
+class _RecentResultsCard extends StatelessWidget {
+  final AppLocalizations loc;
+  final List<double> recentAccPct; // 0..100, oldest->newest
+
+  const _RecentResultsCard({
+    required this.loc,
+    required this.recentAccPct,
+  });
+
+  Color _bandColor(double pct) {
+    pct = pct.clamp(0.0, 100.0);
+    if (pct < 20) return const Color(0xFFEF4444); // red
+    if (pct < 40) return const Color(0xFFFACC15); // yellow
+    if (pct < 60) return const Color(0xFF86EFAC); // light green
+    if (pct < 80) return const Color(0xFF22C55E); // green
+    return const Color(0xFF15803D); // dark green
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vals = recentAccPct;
+
+    return _CardShell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.insights_rounded, color: Color(0xFF3B82F6)),
+              const SizedBox(width: 10),
+              Text(
+                loc.recentTests,
+                style: const TextStyle(
+                  color: Color(0xFF2C015D),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 120,
+            width: double.infinity,
+            child: _RecentBars(
+              vals: vals,
+              colorFn: _bandColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentBars extends StatelessWidget {
+  final List<double> vals; // 0..100
+  final Color Function(double pct) colorFn;
+
+  const _RecentBars({required this.vals, required this.colorFn});
+
+  @override
+  Widget build(BuildContext context) {
+    if (vals.isEmpty) return const SizedBox();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxBars = vals.length;
+        const spacing = 8.0;
+
+        final rawBarWidth = (constraints.maxWidth - spacing * (maxBars - 1)) / maxBars;
+        final barWidth = rawBarWidth.clamp(10.0, 22.0);
+
+        // Keep everything within the container height:
+        // bar + gap + label = <= constraints.maxHeight
+        const labelH = 14.0;
+        const gapH = 6.0;
+        final barAreaH = max(40.0, constraints.maxHeight - labelH - gapH);
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(maxBars, (i) {
+            final pct = vals[i].clamp(0.0, 100.0);
+            final h = barAreaH * (pct / 100.0);
+
+            return SizedBox(
+              width: barWidth,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // bar
+                  Container(
+                    width: barWidth,
+                    height: max(6.0, h),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: colorFn(pct).withOpacity(0.92),
+                    ),
+                  ),
+                  const SizedBox(height: gapH),
+                  // bottom label (ONLY label we keep)
+                  SizedBox(
+                    height: labelH,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "${pct.round()}%",
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black.withOpacity(0.75),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Model
+// ─────────────────────────────────────────────────────────────
 class _CategoryStat {
   final String key;
   final String title;
   final IconData icon;
+  final Color iconColor;
   final int answered;
   final int correct;
   final double avgScorePercent; // 0..100
@@ -1210,6 +1034,7 @@ class _CategoryStat {
     required this.key,
     required this.title,
     required this.icon,
+    required this.iconColor,
     required this.answered,
     required this.correct,
     required this.avgScorePercent,
