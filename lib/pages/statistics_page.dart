@@ -72,9 +72,7 @@ class _StatisticsPageState extends State<StatisticsPage>
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
             if (!snapshot.hasData || !snapshot.data!.exists) {
@@ -93,57 +91,54 @@ class _StatisticsPageState extends State<StatisticsPage>
             final categoryStats =
                 (data['categoryStats'] as Map<String, dynamic>?) ?? {};
 
-            num _catAvg(String key) {
-              final cat = categoryStats[key];
-              if (cat is Map<String, dynamic>) {
-                final avg = cat['avgScore'];
-                if (avg is num) return avg.clamp(0, 100);
-              }
-              return 0;
+            Map<String, dynamic> _cat(String key) {
+              final v = categoryStats[key];
+              return v is Map<String, dynamic> ? v : <String, dynamic>{};
             }
 
-            int _catAnswered(String key) {
-              final cat = categoryStats[key];
-              if (cat is Map<String, dynamic>) {
-                final a = cat['answered'];
-                if (a is num) return a.toInt();
-              }
-              return 0;
+            int _answered(String key) {
+              final v = _cat(key)['answered'];
+              return v is num ? v.toInt() : 0;
             }
 
-            // ─────────────────────────────────────────────
-            // OVERALL: average of the four category radar values
-            // (math/reading/analogy/grammar) — NOT "answered-weighted".
-            // ─────────────────────────────────────────────
-            final mathVal = _catAvg('math').toDouble();
-            final readingVal = _catAvg('reading').toDouble();
-            final analogyVal = _catAvg('analogy').toDouble();
-            final grammarVal = _catAvg('grammar').toDouble();
+            int _correct(String key) {
+              final v = _cat(key)['correct'];
+              return v is num ? v.toInt() : 0;
+            }
 
-            final overallAvg =
-            ((mathVal + readingVal + analogyVal + grammarVal) / 4.0)
+            double _avgScore(String key) {
+              final v = _cat(key)['avgScore'];
+              return v is num ? v.toDouble().clamp(0.0, 100.0) : 0.0;
+            }
+
+            // Category values (each is isolated, not mixed)
+            final mathAnswered = _answered('math');
+            final readingAnswered = _answered('reading');
+            final analogyAnswered = _answered('analogy');
+            final grammarAnswered = _answered('grammar');
+
+            final mathCorrect = _correct('math');
+            final readingCorrect = _correct('reading');
+            final analogyCorrect = _correct('analogy');
+            final grammarCorrect = _correct('grammar');
+
+            // Radar uses avgScore per category, overall = average of those 4 values
+            final mathAvg = _avgScore('math');
+            final readingAvg = _avgScore('reading');
+            final analogyAvg = _avgScore('analogy');
+            final grammarAvg = _avgScore('grammar');
+
+            final overallAvg = ((mathAvg + readingAvg + analogyAvg + grammarAvg) / 4.0)
                 .clamp(0.0, 100.0)
                 .round();
 
-            final stats = <String, int>{
+            final radarStats = <String, int>{
               'overall': overallAvg,
-              'math': mathVal.round(),
-              'reading': readingVal.round(),
-              'analogy': analogyVal.round(),
-              'grammar': grammarVal.round(),
+              'math': mathAvg.round(),
+              'reading': readingAvg.round(),
+              'analogy': analogyAvg.round(),
+              'grammar': grammarAvg.round(),
             };
-
-            final mathAnswered = _catAnswered('math');
-            final readingAnswered = _catAnswered('reading');
-            final analogyAnswered = _catAnswered('analogy');
-            final grammarAnswered = _catAnswered('grammar');
-
-            final totalAnsweredAll = [
-              mathAnswered,
-              readingAnswered,
-              analogyAnswered,
-              grammarAnswered,
-            ].reduce((a, b) => a + b);
 
             return RefreshIndicator(
               onRefresh: _onRefresh,
@@ -175,27 +170,18 @@ class _StatisticsPageState extends State<StatisticsPage>
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            loc.statsSubtitle,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(height: 35),
+                          const SizedBox(height: 30),
 
                           AnimatedBuilder(
                             animation: _progress,
                             builder: (_, __) {
-                              final p = _progress.value.clamp(0.0, 1.0);
                               return SizedBox(
-                                height: 330,
+                                height: 300,
                                 child: CustomPaint(
                                   size: const Size(260, 260),
                                   painter: _PentagonRadarPainter(
-                                    stats: stats,
-                                    progress: p,
+                                    stats: radarStats,
+                                    progress: _progress.value,
                                     context: context,
                                   ),
                                 ),
@@ -203,25 +189,20 @@ class _StatisticsPageState extends State<StatisticsPage>
                             },
                           ),
 
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 16),
 
-                          // ───────── MORE VISIBLE ADVANCED BUTTON ─────────
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20),
-                            child: _PrimaryActionButton(
-                              label: loc.advancedStatistics,
-                              icon: Icons.bar_chart_rounded,
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                    const AdvancedStatisticsPage(),
-                                  ),
-                                );
-                              },
-                            ),
+                          _PrimaryActionButton(
+                            label: loc.advancedStatistics,
+                            icon: Icons.bar_chart_rounded,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                  const AdvancedStatisticsPage(),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -229,6 +210,7 @@ class _StatisticsPageState extends State<StatisticsPage>
 
                     const SizedBox(height: 24),
 
+                    // ───────── CATEGORY CARDS (CORRECT / ANSWERED PER CATEGORY) ─────────
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Wrap(
@@ -238,47 +220,26 @@ class _StatisticsPageState extends State<StatisticsPage>
                           _SkillCard(
                             title: loc.math,
                             icon: Icons.calculate_rounded,
+                            correct: mathCorrect,
                             answered: mathAnswered,
-                            total: totalAnsweredAll,
-                            hint: _hintForCategory(
-                                categoryKey: 'math', loc: loc),
-                            onTap: () {
-                              // Suggested: navigate to Math section page, or filter quiz list by "math".
-                              // Navigator.push(...);
-                            },
                           ),
                           _SkillCard(
                             title: loc.analogy,
                             icon: Icons.compare_arrows_rounded,
+                            correct: analogyCorrect,
                             answered: analogyAnswered,
-                            total: totalAnsweredAll,
-                            hint: _hintForCategory(
-                                categoryKey: 'analogy', loc: loc),
-                            onTap: () {
-                              // Suggested: open Analogy practice / topic breakdown.
-                            },
                           ),
                           _SkillCard(
                             title: loc.reading,
                             icon: Icons.menu_book_rounded,
+                            correct: readingCorrect,
                             answered: readingAnswered,
-                            total: totalAnsweredAll,
-                            hint: _hintForCategory(
-                                categoryKey: 'reading', loc: loc),
-                            onTap: () {
-                              // Suggested: open Reading practice or “mistakes” list.
-                            },
                           ),
                           _SkillCard(
                             title: loc.grammar,
                             icon: Icons.spellcheck_rounded,
+                            correct: grammarCorrect,
                             answered: grammarAnswered,
-                            total: totalAnsweredAll,
-                            hint: _hintForCategory(
-                                categoryKey: 'grammar', loc: loc),
-                            onTap: () {
-                              // Suggested: open Grammar rules / drills.
-                            },
                           ),
                         ],
                       ),
@@ -294,31 +255,9 @@ class _StatisticsPageState extends State<StatisticsPage>
       ),
     );
   }
-
-  // Short “application-like” suggestions per category.
-  // (Uses only categoryKey, so no extra localization keys required.)
-  static String _hintForCategory({
-    required String categoryKey,
-    required AppLocalizations loc,
-  }) {
-    switch (categoryKey) {
-      case 'math':
-        return "Recommended: practice weak topics and timed sets.";
-      case 'reading':
-        return "Recommended: focus on speed + accuracy in passages.";
-      case 'analogy':
-        return "Recommended: learn common relationships and patterns.";
-      case 'grammar':
-        return "Recommended: drill rules, then review mistakes.";
-      default:
-        return "";
-    }
-  }
 }
 
-/* ─────────────────────────────────────────
-   RADAR + SKILL CARD CLASSES
-───────────────────────────────────────── */
+/* ───────────────────────── RADAR ───────────────────────── */
 
 class _PentagonRadarPainter extends CustomPainter {
   final Map<String, int> stats;
@@ -336,7 +275,8 @@ class _PentagonRadarPainter extends CustomPainter {
     final loc = AppLocalizations.of(context)!;
 
     final center = Offset(size.width / 2, size.height / 2);
-    final baseRadius = 70 * progress;
+    final radius = 70 * progress;
+    const step = 2 * pi / 5;
 
     final labels = [
       loc.statistics,
@@ -354,30 +294,16 @@ class _PentagonRadarPainter extends CustomPainter {
       stats['grammar']!.toDouble(),
     ];
 
-    const angleStep = 2 * pi / 5;
-
     final gridPaint = Paint()
       ..color = Colors.white.withOpacity(0.35)
       ..style = PaintingStyle.stroke;
 
-    final fillPaint = Paint()
-      ..color = Colors.amber.withOpacity(0.22)
-      ..style = PaintingStyle.fill;
-
-    final outlinePaint = Paint()
-      ..color = Colors.amber
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
     for (int layer = 1; layer <= 5; layer++) {
-      final r = baseRadius * (layer / 5);
+      final r = radius * (layer / 5);
       final path = Path();
       for (int i = 0; i < 5; i++) {
-        final ang = angleStep * i - pi / 2;
-        final p = Offset(
-          center.dx + r * cos(ang),
-          center.dy + r * sin(ang),
-        );
+        final a = step * i - pi / 2;
+        final p = center + Offset(r * cos(a), r * sin(a));
         if (i == 0) {
           path.moveTo(p.dx, p.dy);
         } else {
@@ -389,30 +315,29 @@ class _PentagonRadarPainter extends CustomPainter {
     }
 
     final radar = Path();
-    final points = <Offset>[];
-
     for (int i = 0; i < 5; i++) {
-      final r = baseRadius * (values[i] / 100);
-      final ang = angleStep * i - pi / 2;
-      final pt = Offset(
-        center.dx + r * cos(ang),
-        center.dy + r * sin(ang),
-      );
-      points.add(pt);
+      final r = radius * (values[i] / 100.0);
+      final a = step * i - pi / 2;
+      final p = center + Offset(r * cos(a), r * sin(a));
       if (i == 0) {
-        radar.moveTo(pt.dx, pt.dy);
+        radar.moveTo(p.dx, p.dy);
       } else {
-        radar.lineTo(pt.dx, pt.dy);
+        radar.lineTo(p.dx, p.dy);
       }
     }
-
     radar.close();
+
+    final fillPaint = Paint()
+      ..color = Colors.amber.withOpacity(0.25)
+      ..style = PaintingStyle.fill;
+
+    final outlinePaint = Paint()
+      ..color = Colors.amber
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
     canvas.drawPath(radar, fillPaint);
     canvas.drawPath(radar, outlinePaint);
-
-    for (final p in points) {
-      canvas.drawCircle(p, 5, Paint()..color = Colors.white);
-    }
 
     final tp = TextPainter(
       textAlign: TextAlign.center,
@@ -420,10 +345,8 @@ class _PentagonRadarPainter extends CustomPainter {
     );
 
     for (int i = 0; i < 5; i++) {
-      final ang = angleStep * i - pi / 2;
-      final labelRadius = baseRadius + 44;
-      final lx = center.dx + labelRadius * cos(ang);
-      final ly = center.dy + labelRadius * sin(ang);
+      final a = step * i - pi / 2;
+      final pos = center + Offset((radius + 44) * cos(a), (radius + 44) * sin(a));
 
       tp.text = TextSpan(
         text: "${labels[i]}\n${values[i].round()}%",
@@ -433,12 +356,8 @@ class _PentagonRadarPainter extends CustomPainter {
           fontWeight: FontWeight.w600,
         ),
       );
-
-      tp.layout(maxWidth: 130);
-      tp.paint(
-        canvas,
-        Offset(lx - tp.width / 2, ly - tp.height / 2),
-      );
+      tp.layout(maxWidth: 120);
+      tp.paint(canvas, Offset(pos.dx - tp.width / 2, pos.dy - tp.height / 2));
     }
   }
 
@@ -447,104 +366,93 @@ class _PentagonRadarPainter extends CustomPainter {
       oldDelegate.progress != progress || oldDelegate.stats != stats;
 }
 
+/* ───────────────────────── CARD ───────────────────────── */
+
 class _SkillCard extends StatelessWidget {
   final String title;
   final IconData icon;
+  final int correct;
   final int answered;
-  final int total;
-
-  /// Optional “suggestion” text under the numbers.
-  final String hint;
-
-  /// Optional tap action (recommended: open that category’s stats/practice page).
-  final VoidCallback? onTap;
 
   const _SkillCard({
     required this.title,
     required this.icon,
+    required this.correct,
     required this.answered,
-    required this.total,
-    this.hint = "",
-    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final percent =
-    total == 0 ? 0.0 : (answered / total).clamp(0.0, 1.0);
+    final loc = AppLocalizations.of(context)!;
+
+    final accuracy =
+    answered == 0 ? 0.0 : (correct / answered).clamp(0.0, 1.0);
 
     final width = (MediaQuery.of(context).size.width - 56) / 2;
 
     return SizedBox(
       width: width,
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        child: InkWell(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(22),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x142C015D),
-                  blurRadius: 16,
-                  offset: Offset(0, 8),
-                ),
-              ],
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x142C015D),
+              blurRadius: 16,
+              offset: Offset(0, 8),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, color: const Color(0xFF2C015D)),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "$answered / $total",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.6),
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: percent,
-                    minHeight: 7,
-                    backgroundColor: const Color(0xFFECE7FF),
-                  ),
-                ),
-                if (hint.trim().isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    hint,
-                    style: TextStyle(
-                      color: Colors.black.withOpacity(0.55),
-                      fontSize: 11,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: const Color(0xFF2C015D)),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
             ),
-          ),
+            const SizedBox(height: 6),
+
+            // ✅ Separate lines
+            Text(
+              "${loc.correct}: $correct",
+              style: TextStyle(
+                color: Colors.black.withOpacity(0.6),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              "${loc.answered}: $answered",
+              style: TextStyle(
+                color: Colors.black.withOpacity(0.6),
+                fontSize: 12,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: accuracy,
+                minHeight: 7,
+                backgroundColor: const Color(0xFFECE7FF),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+
+/* ───────────────────────── BUTTON ───────────────────────── */
 
 class _PrimaryActionButton extends StatelessWidget {
   final String label;
@@ -559,44 +467,20 @@ class _PrimaryActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(18),
-      shadowColor: const Color(0x55000000),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onPressed,
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFE07A), Color(0xFFFFA24B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 18, color: Colors.black87),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                      color: Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        backgroundColor: Colors.amber,
+        foregroundColor: Colors.black,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
         ),
+      ),
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w700),
       ),
     );
   }

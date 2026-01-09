@@ -258,7 +258,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get over2000questions => '2000+ Суроолор';
 
   @override
-  String get answered => 'бүттү';
+  String get answered => 'жооп берилди';
 
   @override
   String get correct => 'туура';
