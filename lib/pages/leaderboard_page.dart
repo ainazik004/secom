@@ -59,6 +59,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     super.dispose();
   }
 
+  // ✅ TOP-51 LOGIC:
+  // - Load top 50
+  // - If current user is not in top 50, append current user doc => 51 items max
   Future<List<DocumentSnapshot<Map<String, dynamic>>>> _loadLeaderboard(
       _BoardType type,
       ) async {
@@ -142,6 +145,42 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     });
   }
 
+  void _openUserDialog(
+      BuildContext context,
+      DocumentSnapshot<Map<String, dynamic>> doc,
+      ) {
+    final data = doc.data() ?? {};
+
+    final fullNameRaw = data['fullName'];
+    final fullName = (fullNameRaw is String && fullNameRaw.trim().isNotEmpty)
+        ? fullNameRaw.trim()
+        : '—';
+
+    final photoUrlRaw = data['photoUrl'];
+    final photoUrl =
+    (photoUrlRaw is String && photoUrlRaw.trim().isNotEmpty) ? photoUrlRaw : null;
+
+    int readInt(dynamic v) {
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return int.tryParse('$v') ?? 0;
+    }
+
+    final trophies = readInt(data['trophies']);
+    final streakDays = readInt(data['currentStreakDays']);
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => _CenteredUserDialog(
+        fullName: fullName,
+        photoUrl: photoUrl,
+        trophies: trophies,
+        streakDays: streakDays,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const purple = Color(0xFF2C015D);
@@ -154,11 +193,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ Removed the title text (e.g., "Рейтинг")
-
-              // Tabs (icon-only), shorter height, full-width indicator
+              // Tabs (icon-only)
               SizedBox(
-                height: 44, // ✅ shorter
+                height: 44,
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -174,7 +211,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                   ),
                   child: TabBar(
                     controller: _tabController,
-                    indicatorSize: TabBarIndicatorSize.tab, // ✅ full tab width
+                    indicatorSize: TabBarIndicatorSize.tab,
                     indicator: BoxDecoration(
                       color: const Color(0xFFEDD9FF),
                       borderRadius: BorderRadius.circular(12),
@@ -182,7 +219,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                     indicatorPadding: EdgeInsets.zero,
                     dividerColor: Colors.transparent,
                     splashBorderRadius: BorderRadius.circular(12),
-                    labelPadding: EdgeInsets.zero, // ✅ no extra height
+                    labelPadding: EdgeInsets.zero,
                     labelColor: purple,
                     unselectedLabelColor: purple.withOpacity(0.55),
                     tabs: const [
@@ -232,6 +269,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                       metricField: 'trophies',
                       metricIcon: Icons.emoji_events_rounded,
                       metricIconColor: const Color(0xFFFFC107),
+                      shortenMetric: true,
+                      onOpenUser: _openUserDialog,
                     ),
                     _LeaderboardTab(
                       type: _BoardType.streak,
@@ -257,9 +296,11 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                       visibleRangeReady: _streakVisibleRangeReady,
                       firstVisibleIndex: _streakFirstVisibleIndex,
                       lastVisibleIndex: _streakLastVisibleIndex,
-                      metricField: 'currentStreakDays', // ✅ Firestore field
+                      metricField: 'currentStreakDays',
                       metricIcon: Icons.local_fire_department_rounded,
                       metricIconColor: const Color(0xFFFF6A00),
+                      shortenMetric: false,
+                      onOpenUser: _openUserDialog,
                     ),
                   ],
                 ),
@@ -292,6 +333,13 @@ class _LeaderboardTab extends StatelessWidget {
   final IconData metricIcon;
   final Color metricIconColor;
 
+  final bool shortenMetric;
+
+  final void Function(
+      BuildContext context,
+      DocumentSnapshot<Map<String, dynamic>> doc,
+      ) onOpenUser;
+
   const _LeaderboardTab({
     required this.type,
     required this.future,
@@ -307,10 +355,13 @@ class _LeaderboardTab extends StatelessWidget {
     required this.metricField,
     required this.metricIcon,
     required this.metricIconColor,
+    required this.shortenMetric,
+    required this.onOpenUser,
   });
 
   int _readInt(dynamic v) {
     if (v is int) return v;
+    if (v is num) return v.toInt();
     return int.tryParse('$v') ?? 0;
   }
 
@@ -363,18 +414,39 @@ class _LeaderboardTab extends StatelessWidget {
                   ListView.separated(
                     controller: scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: docs.length,
+                    itemCount: docs.length, // ✅ 50 or 51
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final doc = docs[index];
                       final data = doc.data() ?? {};
 
-                      final String name = (data['fullName'] ?? '—') as String;
-                      final String? photoUrl = data['photoUrl'] as String?;
+                      final nameRaw = data['fullName'];
+                      final String name =
+                      (nameRaw is String && nameRaw.trim().isNotEmpty)
+                          ? nameRaw.trim()
+                          : '—';
+
+                      final photoUrlRaw = data['photoUrl'];
+                      final String? photoUrl =
+                      (photoUrlRaw is String && photoUrlRaw.trim().isNotEmpty)
+                          ? photoUrlRaw
+                          : null;
 
                       final int metricValue = _readInt(data[metricField]);
 
                       final bool isMe = doc.id == userId;
+
+                      final tile = LeaderboardUserTile(
+                        index: index,
+                        name: name,
+                        metricValue: metricValue,
+                        photoUrl: photoUrl,
+                        isMe: isMe,
+                        metricIcon: metricIcon,
+                        metricIconColor: metricIconColor,
+                        shortenMetric: shortenMetric,
+                        onTap: () => onOpenUser(context, doc),
+                      );
 
                       if (isMe) {
                         return VisibilityDetector(
@@ -383,27 +455,11 @@ class _LeaderboardTab extends StatelessWidget {
                             final visible = info.visibleFraction > 0.45;
                             setUserTileVisible(visible);
                           },
-                          child: _LeaderboardTile(
-                            index: index,
-                            name: name,
-                            metricValue: metricValue,
-                            photoUrl: photoUrl,
-                            isMe: true,
-                            metricIcon: metricIcon,
-                            metricIconColor: metricIconColor,
-                          ),
+                          child: tile,
                         );
                       }
 
-                      return _LeaderboardTile(
-                        index: index,
-                        name: name,
-                        metricValue: metricValue,
-                        photoUrl: photoUrl,
-                        isMe: false,
-                        metricIcon: metricIcon,
-                        metricIconColor: metricIconColor,
-                      );
+                      return tile;
                     },
                   ),
 
@@ -429,6 +485,8 @@ class _LeaderboardTab extends StatelessWidget {
                           metricField: metricField,
                           metricIcon: metricIcon,
                           metricIconColor: metricIconColor,
+                          shortenMetric: shortenMetric,
+                          onTapDoc: (doc) => onOpenUser(context, doc),
                         ),
                       ),
                     ),
@@ -448,6 +506,8 @@ class _FloatingMyTile extends StatelessWidget {
   final String metricField;
   final IconData metricIcon;
   final Color metricIconColor;
+  final bool shortenMetric;
+  final void Function(DocumentSnapshot<Map<String, dynamic>> doc) onTapDoc;
 
   const _FloatingMyTile({
     super.key,
@@ -456,10 +516,13 @@ class _FloatingMyTile extends StatelessWidget {
     required this.metricField,
     required this.metricIcon,
     required this.metricIconColor,
+    required this.shortenMetric,
+    required this.onTapDoc,
   });
 
   int _readInt(dynamic v) {
     if (v is int) return v;
+    if (v is num) return v.toInt();
     return int.tryParse('$v') ?? 0;
   }
 
@@ -468,12 +531,19 @@ class _FloatingMyTile extends StatelessWidget {
     final doc = docs.firstWhere((d) => d.id == userId);
     final data = doc.data() ?? {};
 
-    final String name = (data['fullName'] ?? '—') as String;
-    final String? photoUrl = data['photoUrl'] as String?;
+    final nameRaw = data['fullName'];
+    final String name =
+    (nameRaw is String && nameRaw.trim().isNotEmpty) ? nameRaw.trim() : '—';
+
+    final photoUrlRaw = data['photoUrl'];
+    final String? photoUrl =
+    (photoUrlRaw is String && photoUrlRaw.trim().isNotEmpty)
+        ? photoUrlRaw
+        : null;
 
     final int metricValue = _readInt(data[metricField]);
 
-    return _LeaderboardTile(
+    return LeaderboardUserTile(
       index: docs.indexOf(doc),
       name: name,
       metricValue: metricValue,
@@ -481,11 +551,14 @@ class _FloatingMyTile extends StatelessWidget {
       isMe: true,
       metricIcon: metricIcon,
       metricIconColor: metricIconColor,
+      shortenMetric: shortenMetric,
+      onTap: () => onTapDoc(doc),
     );
   }
 }
 
-class _LeaderboardTile extends StatelessWidget {
+/// ✅ Reusable tappable tile widget
+class LeaderboardUserTile extends StatelessWidget {
   final int index;
   final String name;
   final int metricValue;
@@ -494,8 +567,11 @@ class _LeaderboardTile extends StatelessWidget {
 
   final IconData metricIcon;
   final Color metricIconColor;
+  final bool shortenMetric;
 
-  const _LeaderboardTile({
+  final VoidCallback onTap;
+
+  const LeaderboardUserTile({
     super.key,
     required this.index,
     required this.name,
@@ -504,6 +580,8 @@ class _LeaderboardTile extends StatelessWidget {
     required this.isMe,
     required this.metricIcon,
     required this.metricIconColor,
+    required this.shortenMetric,
+    required this.onTap,
   });
 
   Color _rankColor(int rank) {
@@ -519,6 +597,14 @@ class _LeaderboardTile extends StatelessWidget {
     }
   }
 
+  String _shortenCount(int value) {
+    if (value < 1000) return value.toString();
+    if (value < 10000) return "${(value / 1000).toStringAsFixed(1)}k";
+    if (value < 1000000) return "${(value / 1000).floor()}k";
+    if (value < 10000000) return "${(value / 1000000).toStringAsFixed(1)}M";
+    return "${(value / 1000000).floor()}M";
+  }
+
   @override
   Widget build(BuildContext context) {
     final rank = index + 1;
@@ -527,117 +613,336 @@ class _LeaderboardTile extends StatelessWidget {
     final tileColor = isMe ? const Color(0xFFEDD9FF) : Colors.white;
     final borderColor = isMe ? const Color(0xFF9A4DFF) : Colors.transparent;
 
+    final displayMetric =
+    shortenMetric ? _shortenCount(metricValue) : "$metricValue";
+
     return AnimatedScale(
       scale: isMe ? 1.03 : 1.0,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutBack,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: tileColor,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: borderColor,
-            width: isMe ? 2 : 0,
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x142C015D),
-              blurRadius: 14,
-              offset: Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: rankColor.withOpacity(0.1),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: tileColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: borderColor,
+                width: isMe ? 2 : 0,
               ),
-              alignment: Alignment.center,
-              child: Text(
-                "$rank",
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: rankColor,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x142C015D),
+                  blurRadius: 14,
+                  offset: Offset(0, 8),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(width: 10),
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: const Color(0xFF2C015D),
-              backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
-                  ? NetworkImage(photoUrl!)
-                  : null,
-              child: (photoUrl == null || photoUrl!.isEmpty)
-                  ? Text(
-                name.isNotEmpty ? name[0].toUpperCase() : "?",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF2C015D),
-                      ),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: rankColor.withOpacity(0.1),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    "$rank",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: rankColor,
                     ),
                   ),
-                  if (isMe)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
+                ),
+                const SizedBox(width: 10),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: const Color(0xFF2C015D),
+                  backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
+                      ? NetworkImage(photoUrl!)
+                      : null,
+                  child: (photoUrl == null || photoUrl!.isEmpty)
+                      ? Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : "?",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF2C015D),
+                          ),
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF9A4DFF),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        "YOU",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                      if (isMe)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF9A4DFF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            "YOU",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // ✅ Icon stays right next to the number; only number adapts
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(metricIcon, size: 20, color: metricIconColor),
+                    const SizedBox(width: 6),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 72),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          displayMetric,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: Color(0xFF2C015D),
+                          ),
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ Centered dialog (not bottom sheet)
+class _CenteredUserDialog extends StatelessWidget {
+  final String fullName;
+  final String? photoUrl;
+  final int trophies;
+  final int streakDays;
+
+  const _CenteredUserDialog({
+    required this.fullName,
+    required this.photoUrl,
+    required this.trophies,
+    required this.streakDays,
+  });
+
+  String _shortenCount(int value) {
+    if (value < 1000) return value.toString();
+    if (value < 10000) return "${(value / 1000).toStringAsFixed(1)}k";
+    if (value < 1000000) return "${(value / 1000).floor()}k";
+    if (value < 10000000) return "${(value / 1000000).toStringAsFixed(1)}M";
+    return "${(value / 1000000).floor()}M";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const purple = Color(0xFF2C015D);
+
+    return Material(
+      color: Colors.black.withOpacity(0.35),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: purple,
+                        backgroundImage: (photoUrl != null)
+                            ? NetworkImage(photoUrl!)
+                            : null,
+                        child: (photoUrl == null)
+                            ? Text(
+                          fullName.isNotEmpty
+                              ? fullName[0].toUpperCase()
+                              : "?",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          fullName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: purple,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded),
+                        color: purple.withOpacity(0.75),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          title: "Trophies",
+                          value: _shortenCount(trophies),
+                          icon: Icons.emoji_events_rounded,
+                          iconColor: const Color(0xFFFFC107),
+                          bg: const Color(0xFFFFF4E0),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatCard(
+                          title: "Streak",
+                          value: "$streakDays",
+                          icon: Icons.local_fire_department_rounded,
+                          iconColor: const Color(0xFFFF6A00),
+                          bg: const Color(0xFFFFF0E8),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            Row(
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+  final Color bg;
+
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.iconColor,
+    required this.bg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const purple = Color(0xFF2C015D);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black.withOpacity(0.06)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.75),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(metricIcon, size: 20, color: metricIconColor),
-                const SizedBox(width: 4),
                 Text(
-                  "$metricValue",
-                  style: const TextStyle(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: Color(0xFF2C015D),
+                    color: purple.withOpacity(0.70),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: purple,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
