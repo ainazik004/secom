@@ -86,6 +86,7 @@
   "statsCompleted": "Аяктаган тапшырмалар",
   "statsAccuracy": "Тактык",
   "statsTimeSpent": "Окуу убактысы",
+  "average" : "Орточо",
 
   "leaderboardTitle": "Алдыңкы студенттер",
   "noUsers": "Колдонуучулар табылган жок",

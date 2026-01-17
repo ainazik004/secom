@@ -223,6 +223,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsTimeSpent => 'Study time';
 
   @override
+  String get average => 'Average';
+
+  @override
   String get leaderboardTitle => 'Top Students';
 
   @override

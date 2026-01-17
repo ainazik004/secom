@@ -85,6 +85,7 @@
   "statsCompleted": "Completed tasks",
   "statsAccuracy": "Accuracy",
   "statsTimeSpent": "Study time",
+  "average" : "Average",
 
   "leaderboardTitle": "Top Students",
   "noUsers": "No users found",

@@ -223,6 +223,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get statsTimeSpent => 'Время обучения';
 
   @override
+  String get average => 'Среднее';
+
+  @override
   String get leaderboardTitle => 'Лучшие студенты';
 
   @override

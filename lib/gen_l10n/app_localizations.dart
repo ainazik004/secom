@@ -526,6 +526,12 @@ abstract class AppLocalizations {
   /// **'Study time'**
   String get statsTimeSpent;
 
+  /// No description provided for @average.
+  ///
+  /// In en, this message translates to:
+  /// **'Average'**
+  String get average;
+
   /// No description provided for @leaderboardTitle.
   ///
   /// In en, this message translates to:

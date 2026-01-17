@@ -279,7 +279,7 @@ class _PentagonRadarPainter extends CustomPainter {
     const step = 2 * pi / 5;
 
     final labels = [
-      loc.statistics,
+      loc.average,
       loc.math,
       loc.reading,
       loc.analogy,

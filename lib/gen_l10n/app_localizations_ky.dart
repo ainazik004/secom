@@ -223,6 +223,9 @@ class AppLocalizationsKy extends AppLocalizations {
   String get statsTimeSpent => 'Окуу убактысы';
 
   @override
+  String get average => 'Орточо';
+
+  @override
   String get leaderboardTitle => 'Алдыңкы студенттер';
 
   @override

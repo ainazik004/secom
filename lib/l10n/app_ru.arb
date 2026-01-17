@@ -85,6 +85,7 @@
   "statsCompleted": "Выполненные задания",
   "statsAccuracy": "Точность",
   "statsTimeSpent": "Время обучения",
+  "average" : "Среднее",
 
   "leaderboardTitle": "Лучшие студенты",
   "noUsers": "Пользователи не найдены",
