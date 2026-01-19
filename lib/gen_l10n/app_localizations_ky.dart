@@ -12,7 +12,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get home => 'Башкы бет';
 
   @override
-  String get leaderboard => 'Лидерлер таблицасы';
+  String get leaderboard => 'Рейтинг';
 
   @override
   String get settings => 'Жөндөөлөр';
@@ -48,37 +48,37 @@ class AppLocalizationsKy extends AppLocalizations {
   String get email => 'Email';
 
   @override
-  String get enterEmail => 'Email киргизиңиз';
+  String get enterEmail => 'Email жазыңыз';
 
   @override
   String get invalidEmail => 'Туура эмес email';
 
   @override
-  String get invalidPassword => 'Туура эмес сыр сөз';
+  String get invalidPassword => 'Туура эмес сырсөз';
 
   @override
-  String get invalidEmailOrPassword => 'Туура эмес email же сыр сөз';
+  String get invalidEmailOrPassword => 'Email же сырсөз туура эмес';
 
   @override
   String get password => 'Сырсөз';
 
   @override
-  String get enterPassword => 'Сырсөздү киргизиңиз';
+  String get enterPassword => 'Сырсөз жазыңыз';
 
   @override
   String get passwordShort => 'Сырсөз кеминде 6 белгиден турушу керек';
 
   @override
-  String get confirmPassword => 'Сырсөздү тастыктаңыз';
+  String get confirmPassword => 'Сырсөздү кайталаңыз';
 
   @override
-  String get passwordNotMatching => 'Сырсөздөр дал келген жок';
+  String get passwordNotMatching => 'Сырсөздөр дал келбейт';
 
   @override
-  String get enterName => 'Атыңызды киргизиңиз';
+  String get enterName => 'Атыңызды жазыңыз';
 
   @override
-  String get enterPhone => 'Телефон номерин киргизиңиз';
+  String get enterPhone => 'Телефон номерин жазыңыз';
 
   @override
   String get name => 'Аты';
@@ -93,16 +93,16 @@ class AppLocalizationsKy extends AppLocalizations {
   String get confirmEmail => 'Email тастыктоо';
 
   @override
-  String get emailSent => 'Тастыктоо кат жөнөтүлдү.';
+  String get emailSent => 'Тастыктоо каты жөнөтүлдү.';
 
   @override
   String get resend => 'Кайра жөнөтүү';
 
   @override
-  String get iVerified => 'Тастыктадым';
+  String get iVerified => 'Мен тастыктадым';
 
   @override
-  String get verificationRequired => 'Сураныч, email тастыктаңыз.';
+  String get verificationRequired => 'Сураныч, email\'ди тастыктаңыз.';
 
   @override
   String get loginButton => 'КИРҮҮ';
@@ -117,7 +117,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get logout => 'Чыгуу';
 
   @override
-  String get logoutQuestion => 'Чын эле чыгуу керекпи?';
+  String get logoutQuestion => 'Чыгууну каалайсызбы?';
 
   @override
   String get confirmation => 'Тастыктоо';
@@ -126,16 +126,16 @@ class AppLocalizationsKy extends AppLocalizations {
   String get cancel => 'Жокко чыгаруу';
 
   @override
-  String get logoutFailed => 'Чыгуу болбой калды';
+  String get logoutFailed => 'Чыгуу мүмкүн болгон жок';
 
   @override
   String get profile => 'Профиль';
 
   @override
-  String get profileInfo => 'Профиль жөнүндө маалымат';
+  String get profileInfo => 'Профиль маалыматы';
 
   @override
-  String get fullName => 'Толук аты';
+  String get fullName => 'Толук аты-жөнү';
 
   @override
   String get verified => 'Тастыкталган';
@@ -144,26 +144,26 @@ class AppLocalizationsKy extends AppLocalizations {
   String get notVerified => 'Тастыкталган эмес';
 
   @override
-  String get createdAt => 'Катталган күнү';
+  String get createdAt => 'Аккаунт түзүлгөн';
 
   @override
   String get editProfile => 'Профилди түзөтүү';
 
   @override
-  String get changePassword => 'Сырсөздү алмаштыруу';
+  String get changePassword => 'Сырсөздү өзгөртүү';
 
   @override
   String get notifications => 'Билдирмелер';
 
   @override
-  String get noNotifications => 'Азырынча билдирмелер жок';
+  String get noNotifications => 'Азырынча билдирме жок';
 
   @override
   String get educationCenter => 'Билим берүү борбору';
 
   @override
   String get welcomeDescription =>
-      'ОРТга даярдоо боюнча лидер, алтын сертификаттардын рекорддук саны жана 200дөн жогору балл алган абитуриенттердин саны боюнча рекорддо турат.';
+      'ОРТга даярдоодо лидер, алтын сертификаттардын саны боюнча рекордчу, ошондой эле 200дөн жогору балл алган абитуриенттердин саны боюнча алдыңкы орунда.';
 
   @override
   String get forgotPassword => 'Сырсөздү унуттуңузбу?';
@@ -172,10 +172,10 @@ class AppLocalizationsKy extends AppLocalizations {
   String get resetPassword => 'Сырсөздү калыбына келтирүү';
 
   @override
-  String get resetEmailSent => 'Сырсөздү калыбына келтирүү кат жөнөтүлдү';
+  String get resetEmailSent => 'Сырсөздү калыбына келтирүү каты жөнөтүлдү';
 
   @override
-  String get resetFailed => 'Калыбына келтирүү каты жөнөтүлбөдү';
+  String get resetFailed => 'Кат жөнөтүү мүмкүн болгон жок';
 
   @override
   String get send => 'Жөнөтүү';
@@ -211,10 +211,10 @@ class AppLocalizationsKy extends AppLocalizations {
   String get statsTitle => 'Статистика';
 
   @override
-  String get statsSubtitle => 'Жетишкендигиңизди байкаңыз';
+  String get statsSubtitle => 'Прогрессти көзөмөлдөңүз';
 
   @override
-  String get statsCompleted => 'Аяктаган тапшырмалар';
+  String get statsCompleted => 'Аткарылган тапшырмалар';
 
   @override
   String get statsAccuracy => 'Тактык';
@@ -226,7 +226,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get average => 'Орточо';
 
   @override
-  String get leaderboardTitle => 'Алдыңкы студенттер';
+  String get leaderboardTitle => 'Эң мыкты окуучулар';
 
   @override
   String get noUsers => 'Колдонуучулар табылган жок';
@@ -239,26 +239,25 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get welcomeSubtitle =>
-      'Акылдуу даярданып, жеңил окуп, максатыңызга жетиңиз.';
+      'Акылдуу даярдан, кызыгуу менен оку, максатыңа жет.';
 
   @override
   String get welcomeToSecom => 'ZHALBYRAK\'ка кош келиңиз';
 
   @override
-  String get prepSmart =>
-      'Акылдуу даярданып, жеңил окуп, максатыңызга жетиңиз.';
+  String get prepSmart => 'Акылдуу даярдан, кызыгуу менен оку, максатыңа жет.';
 
   @override
-  String get over500questions => '500+ Суроо';
+  String get over500questions => '500+ суроо';
 
   @override
-  String get sharpenReasoning => 'Логикалык ой жүгүртүүнү өнүктүрүңүз';
+  String get sharpenReasoning => 'Ой жүгүртүүнү өнүктүр';
 
   @override
-  String get over400passages => '400+ Тексттер';
+  String get over400passages => '400+ текст';
 
   @override
-  String get over2000questions => '2000+ Суроолор';
+  String get over2000questions => '2000+ суроо';
 
   @override
   String get answered => 'жооп берилди';
@@ -267,13 +266,13 @@ class AppLocalizationsKy extends AppLocalizations {
   String get correct => 'туура';
 
   @override
-  String get resetEmailRequired => 'Email киргизиңиз';
+  String get resetEmailRequired => 'Сураныч, email жазыңыз';
 
   @override
-  String get invalidPhone => 'Туура телефон номер киргизиңиз';
+  String get invalidPhone => 'Туура телефон номерин жазыңыз';
 
   @override
-  String get fieldRequired => 'Бул талаа толтурулушу керек';
+  String get fieldRequired => 'Бул талаа милдеттүү';
 
   @override
   String get quiz_result_title => 'Жыйынтык';
@@ -292,7 +291,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get quiz_close => 'Жабуу';
 
   @override
-  String get quiz_retry => 'Кайра тапшыруу';
+  String get quiz_retry => 'Кайра аракет кылуу';
 
   @override
   String get quiz_empty_title => 'Бош';
@@ -304,14 +303,14 @@ class AppLocalizationsKy extends AppLocalizations {
   String get quiz_back => 'Артка';
 
   @override
-  String get quiz_load_error_title => 'Жүктөөдө ката';
+  String get quiz_load_error_title => 'Жүктөө катасы';
 
   @override
-  String get quiz_retry_btn => 'Кайталоо';
+  String get quiz_retry_btn => 'Кайра';
 
   @override
   String quiz_question_of(Object current, Object total) {
-    return '$current суроо / $total';
+    return 'Суроо $current / $total';
   }
 
   @override
@@ -339,7 +338,7 @@ class AppLocalizationsKy extends AppLocalizations {
   }
 
   @override
-  String get notLoggedIn => 'Сиз системага кирген эмессиз';
+  String get notLoggedIn => 'Кирген жоксуз';
 
   @override
   String get noStatisticsYet => 'Азырынча статистика жок';
@@ -351,19 +350,19 @@ class AppLocalizationsKy extends AppLocalizations {
   String get advancedStatisticsTitle => 'Кеңейтилген статистика';
 
   @override
-  String get overview => 'Жалпы маалымат';
+  String get overview => 'Обзор';
 
   @override
   String get overallAccuracy => 'Жалпы тактык';
 
   @override
-  String get categoryBreakdown => 'Категориялар боюнча бөлүштүрүү';
+  String get categoryBreakdown => 'Категориялар боюнча';
 
   @override
-  String get accuracyPerCategory => 'Категориялар боюнча тактык';
+  String get accuracyPerCategory => 'Категория боюнча тактык';
 
   @override
-  String get recentTestPerformance => 'Акыркы тесттердин жыйынтыгы';
+  String get recentTestPerformance => 'Акыркы тесттердин көрсөткүчү';
 
   @override
   String get recentTests => 'Акыркы тесттер';
@@ -375,7 +374,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get accuracy => 'Тактык';
 
   @override
-  String get avgScore => 'Орточо балл';
+  String get avgScore => 'Орточо упай';
 
   @override
   String get avgTimePerQuestion => 'Орточо убакыт / суроо';
@@ -384,10 +383,10 @@ class AppLocalizationsKy extends AppLocalizations {
   String get studyTime => 'Окуу убактысы';
 
   @override
-  String get testsCompleted => 'Бүткөн тесттер';
+  String get testsCompleted => 'Аяктаган тесттер';
 
   @override
-  String get currentStreak => 'Азыркы серия';
+  String get currentStreak => 'Учурдагы серия';
 
   @override
   String get longestStreak => 'Эң узун серия';
@@ -402,7 +401,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get lastTestDate => 'Акыркы тест күнү';
 
   @override
-  String get appVersion => 'Колдонмонун версиясы';
+  String get appVersion => 'Тиркеменин версиясы';
 
   @override
   String get authProvider => 'Кирүү ыкмасы';
@@ -420,7 +419,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get no => 'Жок';
 
   @override
-  String get notAvailable => 'Маалымат жок';
+  String get notAvailable => 'Жок';
 
   @override
   String get seconds => 'с';
@@ -429,11 +428,39 @@ class AppLocalizationsKy extends AppLocalizations {
   String get minutes => 'мин';
 
   @override
-  String get hours => 'саат';
+  String get hours => 'с';
 
   @override
   String get days => 'күн';
 
   @override
   String get theme => 'Тема';
+
+  @override
+  String get quiz_review => 'Карап чыгуу';
+
+  @override
+  String get quiz_total => 'Жалпы';
+
+  @override
+  String quiz_question_short(int n) {
+    return 'Q$n';
+  }
+
+  @override
+  String get quiz_tap_to_review => 'Көрүү үчүн басыңыз';
+
+  @override
+  String quiz_review_question_title(int n, int total) {
+    return 'Карап чыгуу: $n/$total';
+  }
+
+  @override
+  String get quiz_explanation => 'Түшүндүрмө';
+
+  @override
+  String get quiz_ai_explain => 'AI менен түшүндүр';
+
+  @override
+  String get quiz_progress_saved => 'Илгерилөө сакталды';
 }

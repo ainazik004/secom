@@ -30,7 +30,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get math => 'Математика';
 
   @override
-  String get analogy => 'Аналогия';
+  String get analogy => 'Аналогии';
 
   @override
   String get reading => 'Чтение';
@@ -39,7 +39,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get grammar => 'Грамматика';
 
   @override
-  String get login => 'Вход';
+  String get login => 'Войти';
 
   @override
   String get register => 'Регистрация';
@@ -57,7 +57,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get invalidPassword => 'Неверный пароль';
 
   @override
-  String get invalidEmailOrPassword => 'Неверные email или пароль';
+  String get invalidEmailOrPassword => 'Неверный email или пароль';
 
   @override
   String get password => 'Пароль';
@@ -66,7 +66,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get enterPassword => 'Введите пароль';
 
   @override
-  String get passwordShort => 'Пароль должен быть не менее 6 символов';
+  String get passwordShort => 'Пароль должен содержать минимум 6 символов';
 
   @override
   String get confirmPassword => 'Подтвердите пароль';
@@ -93,16 +93,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get confirmEmail => 'Подтверждение email';
 
   @override
-  String get emailSent => 'Письмо для подтверждения отправлено.';
+  String get emailSent => 'Письмо с подтверждением отправлено.';
 
   @override
   String get resend => 'Отправить снова';
 
   @override
-  String get iVerified => 'Я подтвердил';
+  String get iVerified => 'Я подтвердил(а)';
 
   @override
-  String get verificationRequired => 'Пожалуйста, подтвердите email.';
+  String get verificationRequired => 'Пожалуйста, подтвердите ваш email.';
 
   @override
   String get loginButton => 'ВОЙТИ';
@@ -117,7 +117,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get logout => 'Выйти';
 
   @override
-  String get logoutQuestion => 'Вы действительно хотите выйти?';
+  String get logoutQuestion => 'Вы уверены, что хотите выйти?';
 
   @override
   String get confirmation => 'Подтверждение';
@@ -126,7 +126,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cancel => 'Отмена';
 
   @override
-  String get logoutFailed => 'Ошибка выхода';
+  String get logoutFailed => 'Не удалось выйти';
 
   @override
   String get profile => 'Профиль';
@@ -144,13 +144,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get notVerified => 'Не подтверждён';
 
   @override
-  String get createdAt => 'Дата создания';
+  String get createdAt => 'Аккаунт создан';
 
   @override
   String get editProfile => 'Редактировать профиль';
 
   @override
-  String get changePassword => 'Изменить пароль';
+  String get changePassword => 'Сменить пароль';
 
   @override
   String get notifications => 'Уведомления';
@@ -163,7 +163,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get welcomeDescription =>
-      'Лидер по подготовке к ОРТ, рекордсмен по количеству золотых сертификатов и абитуриентов, набравших более 200 баллов.';
+      'Лидер подготовки к ОРТ, рекордсмен по количеству золотых сертификатов, а также по числу абитуриентов, набравших выше 200 баллов.';
 
   @override
   String get forgotPassword => 'Забыли пароль?';
@@ -172,7 +172,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get resetPassword => 'Сброс пароля';
 
   @override
-  String get resetEmailSent => 'Письмо для восстановления отправлено';
+  String get resetEmailSent => 'Письмо для сброса пароля отправлено';
 
   @override
   String get resetFailed => 'Не удалось отправить письмо';
@@ -181,13 +181,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get send => 'Отправить';
 
   @override
-  String get verifyPhone => 'Подтверждение телефона';
+  String get verifyPhone => 'Подтвердить телефон';
 
   @override
   String get smsCode => 'SMS-код';
 
   @override
-  String get phoneVerificationSent => 'Код отправлен';
+  String get phoneVerificationSent => 'Код подтверждения отправлен';
 
   @override
   String get phoneVerified => 'Телефон подтверждён';
@@ -202,7 +202,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeCategories => 'Категории практики';
 
   @override
-  String get invalidCode => 'Неверный код, попробуйте снова.';
+  String get invalidCode => 'Неверный код, попробуйте ещё раз.';
 
   @override
   String get statistics => 'Статистика';
@@ -211,10 +211,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get statsTitle => 'Статистика';
 
   @override
-  String get statsSubtitle => 'Отслеживайте свой прогресс';
+  String get statsSubtitle => 'Отслеживайте прогресс';
 
   @override
-  String get statsCompleted => 'Выполненные задания';
+  String get statsCompleted => 'Выполнено';
 
   @override
   String get statsAccuracy => 'Точность';
@@ -226,7 +226,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get average => 'Среднее';
 
   @override
-  String get leaderboardTitle => 'Лучшие студенты';
+  String get leaderboardTitle => 'Лучшие ученики';
 
   @override
   String get noUsers => 'Пользователи не найдены';
@@ -239,20 +239,20 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get welcomeSubtitle =>
-      'Учитесь умно, занимайтесь с удовольствием, достигайте целей.';
+      'Готовьтесь умно, учитесь с удовольствием, достигайте целей.';
 
   @override
   String get welcomeToSecom => 'Добро пожаловать в ZHALBYRAK';
 
   @override
   String get prepSmart =>
-      'Учитесь умно, занимайтесь с удовольствием, достигайте целей.';
+      'Готовьтесь умно, учитесь с удовольствием, достигайте целей.';
 
   @override
   String get over500questions => '500+ вопросов';
 
   @override
-  String get sharpenReasoning => 'Развивайте логическое мышление';
+  String get sharpenReasoning => 'Развивайте мышление';
 
   @override
   String get over400passages => '400+ текстов';
@@ -264,41 +264,41 @@ class AppLocalizationsRu extends AppLocalizations {
   String get answered => 'отвечено';
 
   @override
-  String get correct => 'правильно';
+  String get correct => 'верно';
 
   @override
-  String get resetEmailRequired => 'Введите email';
+  String get resetEmailRequired => 'Пожалуйста, введите email';
 
   @override
   String get invalidPhone => 'Введите корректный номер телефона';
 
   @override
-  String get fieldRequired => 'Поле обязательно';
+  String get fieldRequired => 'Это поле обязательно';
 
   @override
   String get quiz_result_title => 'Результат';
 
   @override
   String quiz_correct_out_of(Object correct, Object total) {
-    return 'Правильных: $correct из $total';
+    return 'Правильно: $correct из $total';
   }
 
   @override
   String quiz_score_pct(Object score) {
-    return 'Баллы: $score%';
+    return 'Оценка: $score%';
   }
 
   @override
   String get quiz_close => 'Закрыть';
 
   @override
-  String get quiz_retry => 'Пройти снова';
+  String get quiz_retry => 'Пройти ещё раз';
 
   @override
   String get quiz_empty_title => 'Пусто';
 
   @override
-  String get quiz_empty_subtitle => 'Нет вопросов для этого теста.';
+  String get quiz_empty_subtitle => 'В этом тесте нет вопросов.';
 
   @override
   String get quiz_back => 'Назад';
@@ -339,10 +339,10 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get notLoggedIn => 'Вы не вошли в систему';
+  String get notLoggedIn => 'Вы не вошли';
 
   @override
-  String get noStatisticsYet => 'Статистика пока недоступна';
+  String get noStatisticsYet => 'Статистики пока нет';
 
   @override
   String get advancedStatistics => 'Расширенная статистика';
@@ -357,7 +357,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get overallAccuracy => 'Общая точность';
 
   @override
-  String get categoryBreakdown => 'Разбивка по категориям';
+  String get categoryBreakdown => 'Разделение по категориям';
 
   @override
   String get accuracyPerCategory => 'Точность по категориям';
@@ -378,7 +378,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get avgScore => 'Средний балл';
 
   @override
-  String get avgTimePerQuestion => 'Среднее время / вопрос';
+  String get avgTimePerQuestion => 'Ср. время / вопрос';
 
   @override
   String get studyTime => 'Время обучения';
@@ -420,7 +420,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get no => 'Нет';
 
   @override
-  String get notAvailable => 'Нет данных';
+  String get notAvailable => 'Н/Д';
 
   @override
   String get seconds => 'с';
@@ -436,4 +436,32 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get theme => 'Тема';
+
+  @override
+  String get quiz_review => 'Обзор';
+
+  @override
+  String get quiz_total => 'Всего';
+
+  @override
+  String quiz_question_short(int n) {
+    return 'Q$n';
+  }
+
+  @override
+  String get quiz_tap_to_review => 'Нажмите, чтобы просмотреть';
+
+  @override
+  String quiz_review_question_title(int n, int total) {
+    return 'Обзор: $n/$total';
+  }
+
+  @override
+  String get quiz_explanation => 'Объяснение';
+
+  @override
+  String get quiz_ai_explain => 'Объяснить с помощью AI';
+
+  @override
+  String get quiz_progress_saved => 'Прогресс сохранён';
 }

@@ -927,6 +927,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Theme'**
   String get theme;
+
+  /// No description provided for @quiz_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get quiz_review;
+
+  /// No description provided for @quiz_total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get quiz_total;
+
+  /// Short label for question card in review grid
+  ///
+  /// In en, this message translates to:
+  /// **'Q{n}'**
+  String quiz_question_short(int n);
+
+  /// No description provided for @quiz_tap_to_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to review'**
+  String get quiz_tap_to_review;
+
+  /// Title for single-question review page
+  ///
+  /// In en, this message translates to:
+  /// **'Review: {n}/{total}'**
+  String quiz_review_question_title(int n, int total);
+
+  /// No description provided for @quiz_explanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation'**
+  String get quiz_explanation;
+
+  /// No description provided for @quiz_ai_explain.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain with AI'**
+  String get quiz_ai_explain;
+
+  /// No description provided for @quiz_progress_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress saved'**
+  String get quiz_progress_saved;
 }
 
 class _AppLocalizationsDelegate

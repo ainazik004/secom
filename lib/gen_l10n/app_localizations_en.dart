@@ -434,4 +434,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get theme => 'Theme';
+
+  @override
+  String get quiz_review => 'Review';
+
+  @override
+  String get quiz_total => 'Total';
+
+  @override
+  String quiz_question_short(int n) {
+    return 'Q$n';
+  }
+
+  @override
+  String get quiz_tap_to_review => 'Tap to review';
+
+  @override
+  String quiz_review_question_title(int n, int total) {
+    return 'Review: $n/$total';
+  }
+
+  @override
+  String get quiz_explanation => 'Explanation';
+
+  @override
+  String get quiz_ai_explain => 'Explain with AI';
+
+  @override
+  String get quiz_progress_saved => 'Progress saved';
 }

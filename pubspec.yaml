@@ -46,26 +46,29 @@ flutter:
     - assets/secom_logo.png
     - assets/icon/   # <-- IMPORTANT: include the folder (for splash images etc.)
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/app_icon.png"   # <-- MUST include extension
+  image_path: assets/icon/app_icon.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/icon/app_icon.png
+
 
 flutter_native_splash:
   android: true
   ios: true
 
-  color: "#F6F4FF"
-  color_dark: "#000000"
+  color: "#FFFFFF"
+  color_dark: "#FFFFFF"   # force white in dark mode too
 
-  image: assets/icon/app_icon.png          # <-- MUST include extension
-  image_dark: assets/icon/app_icon.png     # <-- MUST include extension
+  image: assets/icon/app_icon.png
+  image_dark: assets/icon/app_icon.png
 
   android_gravity: center
   ios_content_mode: center
 
   android_12:
-    image: assets/icon/app_icon.png        # <-- MUST include extension
-    image_dark: assets/icon/app_icon.png   # <-- MUST include extension
-    color: "#F6F4FF"
-    color_dark: "#000000"
+    image: assets/icon/app_icon.png
+    image_dark: assets/icon/app_icon.png
+    color: "#FFFFFF"
+    color_dark: "#FFFFFF" # force white for Android 12+ too

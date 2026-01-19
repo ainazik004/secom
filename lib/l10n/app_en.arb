@@ -30,7 +30,7 @@
   "enterName": "Enter name",
   "enterPhone": "Enter phone number",
   "name": "Name",
-  "surname" : "Surname",
+  "surname": "Surname",
   "phone": "Phone",
 
   "confirmEmail": "Email confirmation",
@@ -85,7 +85,7 @@
   "statsCompleted": "Completed tasks",
   "statsAccuracy": "Accuracy",
   "statsTimeSpent": "Study time",
-  "average" : "Average",
+  "average": "Average",
 
   "leaderboardTitle": "Top Students",
   "noUsers": "No users found",
@@ -124,7 +124,6 @@
   "quiz_correct": "Correct ✅ (+1 trophy)",
   "quiz_wrong_correct_answer": "Wrong ❌ (correct answer: {answer})",
   "quiz_difficulty": "Difficulty: {difficulty}",
-
 
   "statsAnsweredOutOf": "{answered} / {total}",
   "@statsAnsweredOutOf": {
@@ -174,8 +173,28 @@
   "minutes": "min",
   "hours": "h",
   "days": "days",
-  "theme": "Theme"
+  "theme": "Theme",
+
+  "quiz_review": "Review",
+
+  "quiz_total": "Total",
+  "quiz_question_short": "Q{n}",
+  "@quiz_question_short": {
+    "description": "Short label for question card in review grid",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "quiz_tap_to_review": "Tap to review",
+  "quiz_review_question_title": "Review: {n}/{total}",
+  "@quiz_review_question_title": {
+    "description": "Title for single-question review page",
+    "placeholders": {
+      "n": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "quiz_explanation": "Explanation",
+  "quiz_ai_explain": "Explain with AI",
+  "quiz_progress_saved": "Progress saved"
 }
-
-
-

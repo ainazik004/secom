@@ -8,113 +8,113 @@
   "chooseLanguage": "Выберите язык",
   "hello": "Здравствуйте",
   "math": "Математика",
-  "analogy": "Аналогия",
+  "analogy": "Аналогии",
   "reading": "Чтение",
   "grammar": "Грамматика",
 
-  "login": "Вход",
+  "login": "Войти",
   "register": "Регистрация",
 
   "email": "Email",
   "enterEmail": "Введите email",
   "invalidEmail": "Неверный email",
   "invalidPassword": "Неверный пароль",
-  "invalidEmailOrPassword": "Неверные email или пароль",
+  "invalidEmailOrPassword": "Неверный email или пароль",
 
   "password": "Пароль",
   "enterPassword": "Введите пароль",
-  "passwordShort": "Пароль должен быть не менее 6 символов",
+  "passwordShort": "Пароль должен содержать минимум 6 символов",
   "confirmPassword": "Подтвердите пароль",
   "passwordNotMatching": "Пароли не совпадают",
 
   "enterName": "Введите имя",
   "enterPhone": "Введите номер телефона",
   "name": "Имя",
-  "surname" : "Фамилия",
+  "surname": "Фамилия",
   "phone": "Телефон",
 
   "confirmEmail": "Подтверждение email",
-  "emailSent": "Письмо для подтверждения отправлено.",
+  "emailSent": "Письмо с подтверждением отправлено.",
   "resend": "Отправить снова",
-  "iVerified": "Я подтвердил",
-  "verificationRequired": "Пожалуйста, подтвердите email.",
+  "iVerified": "Я подтвердил(а)",
+  "verificationRequired": "Пожалуйста, подтвердите ваш email.",
   "loginButton": "ВОЙТИ",
   "registerButton": "ЗАРЕГИСТРИРОВАТЬСЯ",
   "registration": "Регистрация",
 
   "logout": "Выйти",
-  "logoutQuestion": "Вы действительно хотите выйти?",
+  "logoutQuestion": "Вы уверены, что хотите выйти?",
   "confirmation": "Подтверждение",
   "cancel": "Отмена",
-  "logoutFailed": "Ошибка выхода",
+  "logoutFailed": "Не удалось выйти",
 
   "profile": "Профиль",
   "profileInfo": "Информация профиля",
   "fullName": "Полное имя",
   "verified": "Подтверждён",
   "notVerified": "Не подтверждён",
-  "createdAt": "Дата создания",
+  "createdAt": "Аккаунт создан",
   "editProfile": "Редактировать профиль",
-  "changePassword": "Изменить пароль",
+  "changePassword": "Сменить пароль",
 
   "notifications": "Уведомления",
   "noNotifications": "Уведомлений пока нет",
 
   "educationCenter": "Образовательный центр",
-  "welcomeDescription": "Лидер по подготовке к ОРТ, рекордсмен по количеству золотых сертификатов и абитуриентов, набравших более 200 баллов.",
+  "welcomeDescription": "Лидер подготовки к ОРТ, рекордсмен по количеству золотых сертификатов, а также по числу абитуриентов, набравших выше 200 баллов.",
 
   "forgotPassword": "Забыли пароль?",
   "resetPassword": "Сброс пароля",
-  "resetEmailSent": "Письмо для восстановления отправлено",
+  "resetEmailSent": "Письмо для сброса пароля отправлено",
   "resetFailed": "Не удалось отправить письмо",
   "send": "Отправить",
 
-  "verifyPhone": "Подтверждение телефона",
+  "verifyPhone": "Подтвердить телефон",
   "smsCode": "SMS-код",
-  "phoneVerificationSent": "Код отправлен",
+  "phoneVerificationSent": "Код подтверждения отправлен",
   "phoneVerified": "Телефон подтверждён",
   "phoneUpdated": "Телефон обновлён",
   "photoUpdated": "Фото обновлено",
 
   "homeCategories": "Категории практики",
-  "invalidCode": "Неверный код, попробуйте снова.",
+  "invalidCode": "Неверный код, попробуйте ещё раз.",
 
   "statistics": "Статистика",
   "statsTitle": "Статистика",
-  "statsSubtitle": "Отслеживайте свой прогресс",
-  "statsCompleted": "Выполненные задания",
+  "statsSubtitle": "Отслеживайте прогресс",
+  "statsCompleted": "Выполнено",
   "statsAccuracy": "Точность",
   "statsTimeSpent": "Время обучения",
-  "average" : "Среднее",
+  "average": "Среднее",
 
-  "leaderboardTitle": "Лучшие студенты",
+  "leaderboardTitle": "Лучшие ученики",
   "noUsers": "Пользователи не найдены",
 
   "trophies": "Трофеи",
 
   "welcomeTitle": "Добро пожаловать в ZHALBYRAK",
-  "welcomeSubtitle": "Учитесь умно, занимайтесь с удовольствием, достигайте целей.",
+  "welcomeSubtitle": "Готовьтесь умно, учитесь с удовольствием, достигайте целей.",
   "welcomeToSecom": "Добро пожаловать в ZHALBYRAK",
-  "prepSmart": "Учитесь умно, занимайтесь с удовольствием, достигайте целей.",
+  "prepSmart": "Готовьтесь умно, учитесь с удовольствием, достигайте целей.",
   "over500questions": "500+ вопросов",
-  "sharpenReasoning": "Развивайте логическое мышление",
+  "sharpenReasoning": "Развивайте мышление",
   "over400passages": "400+ текстов",
   "over2000questions": "2000+ вопросов",
 
   "answered": "отвечено",
-  "correct": "правильно",
+  "correct": "верно",
 
-  "resetEmailRequired": "Введите email",
+  "resetEmailRequired": "Пожалуйста, введите email",
   "invalidPhone": "Введите корректный номер телефона",
-  "fieldRequired": "Поле обязательно",
+  "fieldRequired": "Это поле обязательно",
 
   "quiz_result_title": "Результат",
-  "quiz_correct_out_of": "Правильных: {correct} из {total}",
-  "quiz_score_pct": "Баллы: {score}%",
+  "quiz_correct_out_of": "Правильно: {correct} из {total}",
+  "quiz_score_pct": "Оценка: {score}%",
   "quiz_close": "Закрыть",
-  "quiz_retry": "Пройти снова",
+  "quiz_retry": "Пройти ещё раз",
   "quiz_empty_title": "Пусто",
-  "quiz_empty_subtitle": "Нет вопросов для этого теста.",
+  "quiz_empty_subtitle": "В этом тесте нет вопросов.",
   "quiz_back": "Назад",
   "quiz_load_error_title": "Ошибка загрузки",
   "quiz_retry_btn": "Повторить",
@@ -134,14 +134,14 @@
     }
   },
 
-  "notLoggedIn": "Вы не вошли в систему",
-  "noStatisticsYet": "Статистика пока недоступна",
+  "notLoggedIn": "Вы не вошли",
+  "noStatisticsYet": "Статистики пока нет",
   "advancedStatistics": "Расширенная статистика",
 
   "advancedStatisticsTitle": "Расширенная статистика",
   "overview": "Обзор",
   "overallAccuracy": "Общая точность",
-  "categoryBreakdown": "Разбивка по категориям",
+  "categoryBreakdown": "Разделение по категориям",
   "accuracyPerCategory": "Точность по категориям",
   "recentTestPerformance": "Результаты последних тестов",
   "recentTests": "Последние тесты",
@@ -149,7 +149,7 @@
 
   "accuracy": "Точность",
   "avgScore": "Средний балл",
-  "avgTimePerQuestion": "Среднее время / вопрос",
+  "avgTimePerQuestion": "Ср. время / вопрос",
   "studyTime": "Время обучения",
   "testsCompleted": "Тестов завершено",
 
@@ -167,13 +167,34 @@
 
   "yes": "Да",
   "no": "Нет",
-  "notAvailable": "Нет данных",
+  "notAvailable": "Н/Д",
 
   "seconds": "с",
   "minutes": "мин",
   "hours": "ч",
   "days": "дн.",
-  "theme": "Тема"
+  "theme": "Тема",
+
+  "quiz_review": "Обзор",
+
+  "quiz_total": "Всего",
+  "quiz_question_short": "Q{n}",
+  "@quiz_question_short": {
+    "description": "Short label for question card in review grid",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "quiz_tap_to_review": "Нажмите, чтобы просмотреть",
+  "quiz_review_question_title": "Обзор: {n}/{total}",
+  "@quiz_review_question_title": {
+    "description": "Title for single-question review page",
+    "placeholders": {
+      "n": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "quiz_explanation": "Объяснение",
+  "quiz_ai_explain": "Объяснить с помощью AI",
+  "quiz_progress_saved": "Прогресс сохранён"
 }
-
-
