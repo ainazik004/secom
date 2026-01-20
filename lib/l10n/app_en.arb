@@ -196,5 +196,35 @@
   },
   "quiz_explanation": "Explanation",
   "quiz_ai_explain": "Explain with AI",
-  "quiz_progress_saved": "Progress saved"
+  "quiz_progress_saved": "Progress saved",
+
+  "mathIntroSubtitle": "Practice with a short test.",
+  "testAboutTitle": "About this test",
+  "mathTestAboutBody": "You will answer a set of mathematics questions. Your results will be used to calculate your score and update your progress.",
+  "testYouWillGetTitle": "What you’ll get",
+  "testYouWillGetBullet1": "A final score in percent",
+  "testYouWillGetBullet2": "A review of correct and incorrect answers",
+  "testYouWillGetBullet3": "Updated statistics for your profile",
+  "startTest": "Start test",
+
+  "createAccountSubtitle": "Create your account to start learning.",
+  "nameHint": "Your name",
+  "surnameHint": "Your surname",
+  "enterSurname": "Please enter your surname",
+  "emailHint": "example@mail.com",
+  "enterValidEmail": "Please enter a valid email",
+  "phoneHint996": "+996XXXXXXXXX",
+  "phoneFormatError": "Phone must be in format +996#########",
+  "passwordHint": "At least 6 characters",
+  "confirmPasswordHint": "Repeat your password",
+  "registerHint": "After registration, you will need to verify your email.",
+
+  "unexpectedError": "An error occurred. Please try again.",
+  "emailVerifiedSuccess": "Email verified.",
+  "notVerifiedYet": "Email has not been verified yet.",
+  "verifyEmailTitle": "Email verification",
+  "verifyEmailSubtitle": "We have sent you an email with a verification link. Open it, verify your email, then return here.",
+  "iVerifiedButton": "I have verified",
+  "resendEmailButton": "Resend email",
+  "verifyEmailHint": "If you do not see the email, check your Spam folder or wait 1–2 minutes."
 }

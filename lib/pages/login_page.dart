@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:zhalbyrak/main.dart';
 import '../services/auth_service.dart';
 import 'register_page.dart';
+import 'home_page.dart';
 import 'verify_email_page.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
@@ -23,11 +23,11 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   bool _loading = false;
-
   bool _emailError = false;
   bool _passwordError = false;
-
   bool _passwordVisible = false;
+
+  DateTime? _lastResendAt;
 
   @override
   void dispose() {
@@ -36,7 +36,17 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // ---------------- Login ----------------
+  ActionCodeSettings _emailActionCodeSettings() {
+    return ActionCodeSettings(
+      url: 'https://zhalbyrak.app/verify.html',
+      handleCodeInApp: false,
+      androidPackageName: 'com.android.zhalbyrak',
+      androidInstallApp: true,
+      androidMinimumVersion: '1',
+      iOSBundleId: 'com.ios.zhalbyrak',
+    );
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -54,41 +64,66 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text.trim(),
       );
 
-      if (user != null && user.emailVerified) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainPage()),
+      if (user == null) {
+        throw Exception('null user');
+      }
+
+      // Refresh auth state
+      await user.reload();
+      final refreshed = FirebaseAuth.instance.currentUser;
+      if (refreshed == null) {
+        throw Exception('null refreshed user');
+      }
+
+      // ✅ Verified → go Home
+      if (refreshed.emailVerified) {
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomePage()),
+              (_) => false,
         );
         return;
       }
 
-      // If email exists but not verified
+      // ✅ Not verified → route to VerifyEmailPage
       Fluttertoast.showToast(msg: loc.verificationRequired);
-      final u = _auth.currentUser;
-      if (u != null) await _auth.sendEmailVerification(u);
 
+      // Optional resend with cooldown (30s)
+      final now = DateTime.now();
+      final canResend = _lastResendAt == null ||
+          now.difference(_lastResendAt!).inSeconds >= 30;
+
+      if (canResend) {
+        final lang = Localizations.localeOf(context).languageCode;
+        try {
+          await _auth.sendEmailVerification(
+            actionCodeSettings: _emailActionCodeSettings(),
+            languageCode: (lang == 'ky') ? 'ky' : (lang == 'ru') ? 'ru' : 'en',
+          );
+          _lastResendAt = now;
+        } catch (_) {
+          // Non-fatal
+        }
+      }
+
+      if (!mounted) return;
+
+      // Important: no pending data here (login flow). Verify page can work without it.
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
       );
-    }
-
-    catch (_) {
-      // Simple non-specific error: mark both fields red
+    } catch (_) {
       setState(() {
         _emailError = true;
         _passwordError = true;
       });
 
-      Fluttertoast.showToast(
-        msg: loc.invalidEmailOrPassword,
-      );
-    }
-
-    finally {
-      setState(() => _loading = false);
+      Fluttertoast.showToast(msg: loc.invalidEmailOrPassword);
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  // --------------- Forgot Password ---------------
   Future<void> _showForgotPasswordDialog(BuildContext rootContext) async {
     final loc = AppLocalizations.of(rootContext)!;
     final emailCtrl = TextEditingController();
@@ -120,15 +155,15 @@ class _LoginPageState extends State<LoginPage> {
                 }
 
                 try {
-                  await FirebaseAuth.instance
-                      .sendPasswordResetEmail(email: email);
+                  await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                  if (dialogContext.mounted) Navigator.of(dialogContext).pop();
 
-                  Navigator.of(dialogContext).pop();
                   ScaffoldMessenger.of(rootContext).showSnackBar(
                     SnackBar(content: Text(loc.resetEmailSent)),
                   );
                 } catch (_) {
-                  Navigator.of(dialogContext).pop();
+                  if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+
                   ScaffoldMessenger.of(rootContext).showSnackBar(
                     SnackBar(content: Text(loc.resetFailed)),
                   );
@@ -145,14 +180,14 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final purple = const Color(0xFF2A1A57);
+    const purple = Color(0xFF2A1A57);
 
-    OutlineInputBorder normalBorder = OutlineInputBorder(
+    final normalBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: Colors.grey.shade400),
     );
 
-    OutlineInputBorder errorBorder = const OutlineInputBorder(
+    const errorBorder = OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(16)),
       borderSide: BorderSide(color: Colors.red, width: 2),
     );
@@ -168,7 +203,6 @@ class _LoginPageState extends State<LoginPage> {
                 child: Image.asset('assets/secom_logo.png', height: 80),
               ),
             ),
-
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -177,34 +211,23 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 36,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
                   child: Column(
                     children: [
                       Text(
                         loc.login,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           color: purple,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 24),
-
                       Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // ---------------- Email ----------------
-                            Text(
-                              loc.email,
-                              style: TextStyle(color: Colors.grey[700]),
-                            ),
+                            Text(loc.email, style: TextStyle(color: Colors.grey[700])),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _emailController,
@@ -223,27 +246,15 @@ class _LoginPageState extends State<LoginPage> {
                                   vertical: 14,
                                 ),
                                 border: normalBorder,
-                                enabledBorder: _emailError
-                                    ? errorBorder
-                                    : normalBorder,
-                                focusedBorder: _emailError
-                                    ? errorBorder
-                                    : normalBorder,
-                                errorText:
-                                _emailError ? loc.invalidEmailOrPassword : null,
+                                enabledBorder: _emailError ? errorBorder : normalBorder,
+                                focusedBorder: _emailError ? errorBorder : normalBorder,
+                                errorText: _emailError ? loc.invalidEmailOrPassword : null,
                               ),
-                              validator: (v) => v == null || v.isEmpty
-                                  ? loc.enterEmail
-                                  : null,
+                              validator: (v) =>
+                              (v == null || v.isEmpty) ? loc.enterEmail : null,
                             ),
-
                             const SizedBox(height: 18),
-
-                            // ---------------- Password + Eye ----------------
-                            Text(
-                              loc.password,
-                              style: TextStyle(color: Colors.grey[700]),
-                            ),
+                            Text(loc.password, style: TextStyle(color: Colors.grey[700])),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _passwordController,
@@ -263,14 +274,9 @@ class _LoginPageState extends State<LoginPage> {
                                   vertical: 14,
                                 ),
                                 border: normalBorder,
-                                enabledBorder: _passwordError
-                                    ? errorBorder
-                                    : normalBorder,
-                                focusedBorder: _passwordError
-                                    ? errorBorder
-                                    : normalBorder,
-                                errorText:
-                                _passwordError ? loc.invalidEmailOrPassword : null,
+                                enabledBorder: _passwordError ? errorBorder : normalBorder,
+                                focusedBorder: _passwordError ? errorBorder : normalBorder,
+                                errorText: _passwordError ? loc.invalidEmailOrPassword : null,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _passwordVisible
@@ -278,23 +284,17 @@ class _LoginPageState extends State<LoginPage> {
                                         : Icons.visibility_off,
                                     color: Colors.grey[700],
                                   ),
-                                  onPressed: () {
-                                    setState(() =>
-                                    _passwordVisible = !_passwordVisible);
-                                  },
+                                  onPressed: () => setState(
+                                          () => _passwordVisible = !_passwordVisible),
                                 ),
                               ),
-                              validator: (v) => v == null || v.isEmpty
-                                  ? loc.enterPassword
-                                  : null,
+                              validator: (v) =>
+                              (v == null || v.isEmpty) ? loc.enterPassword : null,
                             ),
-
                             const SizedBox(height: 8),
-
                             Center(
                               child: TextButton(
-                                onPressed: () =>
-                                    _showForgotPasswordDialog(context),
+                                onPressed: () => _showForgotPasswordDialog(context),
                                 child: Text(
                                   loc.forgotPassword,
                                   style: const TextStyle(
@@ -304,9 +304,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 16),
-
                             Center(
                               child: ElevatedButton(
                                 onPressed: _loading ? null : _login,
@@ -316,12 +314,19 @@ class _LoginPageState extends State<LoginPage> {
                                     borderRadius: BorderRadius.circular(22),
                                   ),
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 40, vertical: 14),
+                                    horizontal: 40,
+                                    vertical: 14,
+                                  ),
                                   elevation: 6,
                                 ),
                                 child: _loading
-                                    ? const CircularProgressIndicator(
-                                  color: Colors.white,
+                                    ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.4,
+                                  ),
                                 )
                                     : Text(
                                   loc.loginButton,
@@ -333,9 +338,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 16),
-
                             Center(
                               child: TextButton(
                                 onPressed: () {

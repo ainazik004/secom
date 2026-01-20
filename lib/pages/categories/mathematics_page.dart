@@ -16,7 +16,7 @@ class MathematicsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // TOP BAR: circular X + title
+            // TOP BAR
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
               child: Row(
@@ -37,7 +37,7 @@ class MathematicsPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Choose a topic to practice.',
+                          loc.mathIntroSubtitle,
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.black.withOpacity(0.6),
@@ -51,45 +51,40 @@ class MathematicsPage extends StatelessWidget {
             ),
             const SizedBox(height: 18),
 
-            // LIST OF TOPICS
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 children: [
-                  _TopicCard(
-                    icon: Icons.functions_rounded,
-                    accentColor: const Color(0xFFFF3D7F),
-                    title: 'Algebra basics',
-                    subtitle: 'Linear equations, inequalities',
+                  _InfoCard(
+                    title: loc.testAboutTitle,
+                    body: loc.mathTestAboutBody,
+                  ),
+                  const SizedBox(height: 14),
+
+                  _BulletsCard(
+                    title: loc.testYouWillGetTitle,
+                    bullets: [
+                      loc.testYouWillGetBullet1,
+                      loc.testYouWillGetBullet2,
+                      loc.testYouWillGetBullet3,
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+
+                  _PrimaryButton(
+                    text: loc.startTest,
+                    icon: Icons.play_arrow_rounded,
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => const TopicQuizPage(
-                            title: 'Math', // or loc.math
+                          builder: (_) => TopicQuizPage(
+                            title: loc.math, // localized title
                             section: 'math',
                             limit: 20,
                           ),
                         ),
                       );
                     },
-                  ),
-                  const _TopicCard(
-                    icon: Icons.ssid_chart_rounded,
-                    accentColor: Color(0xFF7F4BFF),
-                    title: 'Functions & graphs',
-                    subtitle: 'Understand graphs and relations',
-                  ),
-                  const _TopicCard(
-                    icon: Icons.calculate_rounded,
-                    accentColor: Color(0xFFFFB74D),
-                    title: 'Word problems',
-                    subtitle: 'Translate tasks into equations',
-                  ),
-                  const _TopicCard(
-                    icon: Icons.bar_chart_rounded,
-                    accentColor: Color(0xFF26A69A),
-                    title: 'Statistics & probability',
-                    subtitle: 'Mean, median, probability basics',
                   ),
                 ],
               ),
@@ -127,25 +122,15 @@ class _CloseButton extends StatelessWidget {
   }
 }
 
-class _TopicCard extends StatelessWidget {
-  final IconData icon;
-  final Color accentColor;
+class _InfoCard extends StatelessWidget {
   final String title;
-  final String subtitle;
-  final VoidCallback? onTap;
+  final String body;
 
-  const _TopicCard({
-    required this.icon,
-    required this.accentColor,
-    required this.title,
-    required this.subtitle,
-    this.onTap,
-  });
+  const _InfoCard({required this.title, required this.body});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -157,69 +142,193 @@ class _TopicCard extends StatelessWidget {
           ),
         ],
       ),
-      child: InkWell(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7F4BFF).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.info_outline_rounded,
+                    color: Color(0xFF7F4BFF),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2C015D),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              body,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.45,
+                color: Colors.black.withOpacity(0.72),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BulletsCard extends StatelessWidget {
+  final String title;
+  final List<String> bullets;
+
+  const _BulletsCard({required this.title, required this.bullets});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        onTap: onTap ??
-                () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Coming soon'),
-                  behavior: SnackBarBehavior.floating,
-                  duration: Duration(milliseconds: 900),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x132C015D),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF3D7F).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.checklist_rounded,
+                    color: Color(0xFFFF3D7F),
+                    size: 22,
+                  ),
                 ),
-              );
-            },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(11),
-                decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Icon(
-                  icon,
-                  color: accentColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF2C015D),
-                      ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2C015D),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1.3,
-                        color: Colors.black.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...bullets.map((b) => _BulletRow(text: b)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BulletRow extends StatelessWidget {
+  final String text;
+
+  const _BulletRow({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Color(0xFF2C015D),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.4,
+                color: Colors.black.withOpacity(0.72),
               ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.grey.withOpacity(0.6),
-              ),
-            ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  final String text;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _PrimaryButton({
+    required this.text,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 54,
+      child: Material(
+        color: const Color(0xFF2C015D),
+        borderRadius: BorderRadius.circular(18),
+        elevation: 6,
+        shadowColor: const Color(0x332C015D),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white),
+                const SizedBox(width: 10),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15.5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

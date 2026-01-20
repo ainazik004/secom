@@ -196,5 +196,35 @@
   },
   "quiz_explanation": "Объяснение",
   "quiz_ai_explain": "Объяснить с помощью AI",
-  "quiz_progress_saved": "Прогресс сохранён"
+  "quiz_progress_saved": "Прогресс сохранён",
+
+  "mathIntroSubtitle": "Пройдите короткий тест для практики.",
+  "testAboutTitle": "О тесте",
+  "mathTestAboutBody": "Вы ответите на набор вопросов по математике. Результат будет использован для подсчёта процента и обновления вашего прогресса.",
+  "testYouWillGetTitle": "Что вы получите",
+  "testYouWillGetBullet1": "Итоговый результат в процентах",
+  "testYouWillGetBullet2": "Разбор правильных и неправильных ответов",
+  "testYouWillGetBullet3": "Обновлённая статистика профиля",
+  "startTest": "Начать тест",
+
+  "createAccountSubtitle": "Создайте аккаунт, чтобы начать обучение.",
+  "nameHint": "Ваше имя",
+  "surnameHint": "Ваша фамилия",
+  "enterSurname": "Пожалуйста, введите фамилию",
+  "emailHint": "example@mail.com",
+  "enterValidEmail": "Пожалуйста, введите корректный email",
+  "phoneHint996": "+996XXXXXXXXX",
+  "phoneFormatError": "Телефон должен быть в формате +996#########",
+  "passwordHint": "Минимум 6 символов",
+  "confirmPasswordHint": "Повторите пароль",
+  "registerHint": "После регистрации потребуется подтвердить email.",
+
+  "unexpectedError": "Произошла ошибка. Попробуйте снова.",
+  "emailVerifiedSuccess": "Email подтверждён.",
+  "notVerifiedYet": "Email ещё не подтверждён.",
+  "verifyEmailTitle": "Подтверждение email",
+  "verifyEmailSubtitle": "Мы отправили письмо с ссылкой. Откройте его и подтвердите email, затем вернитесь сюда.",
+  "iVerifiedButton": "Я подтвердил(а)",
+  "resendEmailButton": "Отправить письмо ещё раз",
+  "verifyEmailHint": "Если письма нет — проверьте «Спам» или подождите 1–2 минуты."
 }

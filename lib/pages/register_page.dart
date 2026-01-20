@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart';
-import 'verify_email_page.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/auth_service.dart';
+import 'package:zhalbyrak/main.dart'; // for MainPage
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -15,7 +20,6 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-
   final _auth = AuthService();
 
   final _emailCtrl = TextEditingController();
@@ -23,9 +27,69 @@ class _RegisterPageState extends State<RegisterPage> {
   final _confirmPwdCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _surnameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController(text: '+996');
+  final _phoneFocus = FocusNode();
 
   bool _loading = false;
+  bool _pwdVisible = false;
+  bool _confirmPwdVisible = false;
+
+  Locale? _overrideLocale; // RU/KY only
+  static const _prefKeyLocale = 'ui_locale_code';
+
+  ActionCodeSettings _emailActionCodeSettings() {
+    return ActionCodeSettings(
+      // Recommended: keep it EXACT with file name if you host verify.html
+      url: 'https://zhalbyrak.app/verify.html',
+      handleCodeInApp: false,
+      androidPackageName: 'com.android.zhalbyrak',
+      androidInstallApp: true,
+      androidMinimumVersion: '1',
+      iOSBundleId: 'com.ios.zhalbyrak',
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedLocale();
+
+    _phoneFocus.addListener(() {
+      if (_phoneFocus.hasFocus) {
+        if (!_phoneCtrl.text.startsWith('+996')) _phoneCtrl.text = '+996';
+        if (_phoneCtrl.text.length < 4) _phoneCtrl.text = '+996';
+        _phoneCtrl.selection =
+            TextSelection.collapsed(offset: _phoneCtrl.text.length);
+      } else {
+        if (_phoneCtrl.text.trim().isEmpty) _phoneCtrl.text = '+996';
+      }
+      if (mounted) setState(() {});
+    });
+  }
+
+  Future<void> _loadSavedLocale() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final String? code = sp.getString(_prefKeyLocale);
+
+      if (code == 'ru' || code == 'ky') {
+        setState(() => _overrideLocale = Locale(code!));
+      } else {
+        setState(() => _overrideLocale = const Locale('ru'));
+      }
+    } catch (_) {
+      if (mounted) setState(() => _overrideLocale = const Locale('ru'));
+    }
+  }
+
+  Future<void> _setLocale(String code) async {
+    final safe = (code == 'ky') ? 'ky' : 'ru';
+    setState(() => _overrideLocale = Locale(safe));
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(_prefKeyLocale, safe);
+    } catch (_) {}
+  }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -34,141 +98,65 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _loading = true);
 
     try {
-      // Combine name + surname into fullName for AuthService
       final fullName =
       '${_nameCtrl.text.trim()} ${_surnameCtrl.text.trim()}'.trim();
 
+      final langCode = (_overrideLocale?.languageCode == 'ky') ? 'ky' : 'ru';
+
+      // Set Firebase email template language (best effort)
+      try {
+        await FirebaseAuth.instance.setLanguageCode(langCode);
+      } catch (_) {}
+
+      // Create Auth user AND send verification ONCE (branded link)
       final user = await _auth.registerWithEmail(
         email: _emailCtrl.text.trim(),
         password: _pwdCtrl.text.trim(),
         fullName: fullName,
         phoneNumber: _phoneCtrl.text.trim(),
+        actionCodeSettings: _emailActionCodeSettings(),
       );
 
-      if (user != null) {
-        // Create Firestore user document with all initial values
-        await _createUserDocument(user);
-
-        Fluttertoast.showToast(msg: loc.emailSent);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
-        );
+      if (user == null) {
+        Fluttertoast.showToast(msg: loc.unexpectedError);
+        return;
       }
+
+      Fluttertoast.showToast(msg: loc.emailSent);
+
+      if (!mounted) return;
+
+      // Go to verification gate (still signed in)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerifyEmailGatePage(
+            forcedLocale:
+            (langCode == 'ky') ? const Locale('ky') : const Locale('ru'),
+            pendingData: PendingUserData(
+              email: _emailCtrl.text.trim(),
+              displayName: fullName,
+              firstName: _nameCtrl.text.trim(),
+              surname: _surnameCtrl.text.trim(),
+              phoneNumber: _phoneCtrl.text.trim(),
+              languageCode: langCode,
+            ),
+          ),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      Fluttertoast.showToast(
+        msg: e.message ?? e.code,
+        toastLength: Toast.LENGTH_LONG,
+      );
     } catch (e) {
       Fluttertoast.showToast(
         msg: e.toString(),
         toastLength: Toast.LENGTH_LONG,
       );
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
-  }
-
-  Future<void> _createUserDocument(User user) async {
-    final localeCode = Localizations.localeOf(context).languageCode;
-    final now = FieldValue.serverTimestamp();
-    final usersRef =
-    FirebaseFirestore.instance.collection('users').doc(user.uid);
-
-    await usersRef.set({
-      // Identity & auth mirror
-      'uid': user.uid,
-      'email': user.email ?? _emailCtrl.text.trim(),
-      'displayName':
-      '${_nameCtrl.text.trim()} ${_surnameCtrl.text.trim()}'.trim(),
-      'firstName': _nameCtrl.text.trim(),
-      'surname': _surnameCtrl.text.trim(),
-      'phoneNumber': _phoneCtrl.text.trim(),
-      'photoUrl': user.photoURL,
-      'isEmailVerified': user.emailVerified,
-      'authProvider': 'password',
-
-      'createdAt': now,
-      'lastLoginAt': now,
-
-      // Profile / meta
-      'country': null,
-      'birthYear': null,
-      'educationLevel': null,
-      'hasCompletedOnboarding': false,
-      'hasAcceptedTerms': true,
-      'referralCode': null,
-
-      // App settings
-      'languageCode': localeCode,
-      'theme': 'system',
-      'notificationsEnabled': true,
-      'soundEnabled': true,
-      'vibrationEnabled': true,
-      'fcmToken': null,
-
-      // Global stats
-      'totalQuestionsAnswered': 0,
-      'totalCorrectAnswers': 0,
-      'totalTestsCompleted': 0,
-      'totalStudyTimeSeconds': 0,
-      'averageScore': 0.0,
-      'averageTimePerQuestionSeconds': 0.0,
-      'currentStreakDays': 0,
-      'longestStreakDays': 0,
-      'lastTestDate': null,
-
-      // Per-category stats
-      'categoryStats': {
-        'math': {
-          'answered': 0,
-          'correct': 0,
-          'testsCompleted': 0,
-          'avgScore': 0.0,
-        },
-        'analogy': {
-          'answered': 0,
-          'correct': 0,
-          'testsCompleted': 0,
-          'avgScore': 0.0,
-        },
-        'reading': {
-          'answered': 0,
-          'correct': 0,
-          'testsCompleted': 0,
-          'avgScore': 0.0,
-        },
-        'grammar': {
-          'answered': 0,
-          'correct': 0,
-          'testsCompleted': 0,
-          'avgScore': 0.0,
-        },
-      },
-      'weakCategories': [],
-
-      // Leaderboard fields
-      'trophies': 0,
-      'leaderboardScore': 0,
-      'currentRank': null,
-      'bestRank': null,
-      'lastLeaderboardUpdate': now,
-
-      // Testing / quiz preferences
-      'defaultTestDurationMinutes': 60,
-      'defaultQuestionsPerTest': 20,
-      'shuffleQuestions': true,
-      'shuffleAnswers': true,
-      'showExplanationAfterEachQuestion': false,
-      'showExplanationAtEnd': true,
-
-      // Monetization
-      'isPremium': false,
-      'subscriptionPlan': null,
-      'premiumExpiresAt': null,
-
-      // System / technical
-      'appVersion': '1.0.0',
-      'platform': 'mobile',
-      'lastUpdatedAt': now,
-    }, SetOptions(merge: true));
   }
 
   @override
@@ -179,180 +167,763 @@ class _RegisterPageState extends State<RegisterPage> {
     _nameCtrl.dispose();
     _surnameCtrl.dispose();
     _phoneCtrl.dispose();
+    _phoneFocus.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final purple = const Color(0xFF2A1A57);
+    final effectiveLocale =
+    (_overrideLocale?.languageCode == 'ky') ? const Locale('ky') : const Locale('ru');
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ===== PAGE TITLE =====
-              Text(
-                loc.registration,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2A1A57),
-                ),
-              ),
-              const SizedBox(height: 24),
+    return Localizations.override(
+      context: context,
+      locale: effectiveLocale,
+      child: Builder(
+        builder: (context) {
+          final loc = AppLocalizations.of(context)!;
 
-              // ===== FORM CARD =====
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // Name
-                      _inputField(
-                        controller: _nameCtrl,
-                        label: loc.name,
-                        validator: (v) =>
-                        v == null || v.isEmpty ? loc.enterName : null,
-                      ),
-                      const SizedBox(height: 16),
+          const purple = Color(0xFF2C015D);
+          const bg = Color(0xFFF6F4FF);
 
-                      // Surname (using plain text label, you can localize later)
-                      _inputField(
-                        controller: _surnameCtrl,
-                        label: loc.surname,
-                        validator: (v) =>
-                        v == null || v.isEmpty ? loc.surname : null,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Email
-                      _inputField(
-                        controller: _emailCtrl,
-                        label: loc.email,
-                        validator: (v) =>
-                        v == null || v.isEmpty ? loc.enterEmail : null,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Phone
-                      _inputField(
-                        controller: _phoneCtrl,
-                        label: loc.phone,
-                        validator: (v) =>
-                        v == null || v.isEmpty ? loc.enterPhone : null,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Password
-                      _inputField(
-                        controller: _pwdCtrl,
-                        label: loc.password,
-                        obscure: true,
-                        validator: (v) => v == null || v.length < 6
-                            ? loc.enterPassword
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Confirm password
-                      _inputField(
-                        controller: _confirmPwdCtrl,
-                        label: loc.confirmPassword,
-                        obscure: true,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return loc.confirmPassword;
-                          }
-                          if (v != _pwdCtrl.text) {
-                            return loc.passwordNotMatching;
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // ===== DYNAMIC BUTTON =====
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _loading ? null : _register,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: purple,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: _loading
-                              ? const CircularProgressIndicator(
-                            color: Colors.white,
-                          )
-                              : FittedBox(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12),
-                              child: Text(
-                                loc.registerButton,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+          return Scaffold(
+            backgroundColor: bg,
+            body: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            loc.registration,
+                            style: const TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                              color: purple,
+                              height: 1.1,
                             ),
                           ),
                         ),
+                        _LanguageToggle(
+                          current: effectiveLocale.languageCode,
+                          onChanged: (code) => _setLocale(code),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      loc.createAccountSubtitle,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        color: Colors.black.withOpacity(0.68),
+                        height: 1.25,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x14000000),
+                            blurRadius: 18,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            _inputField(
+                              controller: _nameCtrl,
+                              label: loc.name,
+                              hint: loc.nameHint,
+                              prefixIcon: Icons.person_outline,
+                              validator: (v) =>
+                              (v == null || v.trim().isEmpty) ? loc.enterName : null,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: 14),
+
+                            _inputField(
+                              controller: _surnameCtrl,
+                              label: loc.surname,
+                              hint: loc.surnameHint,
+                              prefixIcon: Icons.badge_outlined,
+                              validator: (v) =>
+                              (v == null || v.trim().isEmpty) ? loc.enterSurname : null,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: 14),
+
+                            _inputField(
+                              controller: _emailCtrl,
+                              label: loc.email,
+                              hint: loc.emailHint,
+                              prefixIcon: Icons.alternate_email,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (v) {
+                                final t = (v ?? '').trim();
+                                if (t.isEmpty) return loc.enterEmail;
+                                if (!t.contains('@') || !t.contains('.')) return loc.enterValidEmail;
+                                return null;
+                              },
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: 14),
+
+                            _phoneField(loc),
+                            const SizedBox(height: 14),
+
+                            _passwordField(
+                              controller: _pwdCtrl,
+                              label: loc.password,
+                              hint: loc.passwordHint,
+                              visible: _pwdVisible,
+                              onToggle: () => setState(() => _pwdVisible = !_pwdVisible),
+                              validator: (v) {
+                                final t = v ?? '';
+                                if (t.length < 6) return loc.enterPassword;
+                                return null;
+                              },
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: 14),
+
+                            _passwordField(
+                              controller: _confirmPwdCtrl,
+                              label: loc.confirmPassword,
+                              hint: loc.confirmPasswordHint,
+                              visible: _confirmPwdVisible,
+                              onToggle: () => setState(() => _confirmPwdVisible = !_confirmPwdVisible),
+                              validator: (v) {
+                                final t = v ?? '';
+                                if (t.isEmpty) return loc.confirmPassword;
+                                if (t != _pwdCtrl.text) return loc.passwordNotMatching;
+                                return null;
+                              },
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _loading ? null : _register(),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _loading ? null : _register,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: purple,
+                                  disabledBackgroundColor: purple.withOpacity(0.6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: _loading
+                                    ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.6,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                    : Text(
+                                  loc.registerButton,
+                                  style: const TextStyle(
+                                    fontSize: 16.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    Text(
+                      loc.registerHint,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.black.withOpacity(0.60),
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _phoneField(AppLocalizations loc) {
+    const maxLen = 13; // +996 + 9 digits
+
+    return TextFormField(
+      controller: _phoneCtrl,
+      focusNode: _phoneFocus,
+      keyboardType: TextInputType.phone,
+      textInputAction: TextInputAction.next,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\+?\d*$')),
+        LengthLimitingTextInputFormatter(maxLen),
+        _KgPhoneFormatter(),
+      ],
+      validator: (v) {
+        final t = (v ?? '').trim();
+        if (t.isEmpty || t == '+996') return loc.enterPhone;
+        final ok = RegExp(r'^\+996\d{9}$').hasMatch(t);
+        if (!ok) return loc.phoneFormatError;
+        return null;
+      },
+      decoration: _decoration(
+        label: loc.phone,
+        hint: loc.phoneHint996,
+        prefixIcon: Icons.phone_outlined,
+      ),
+    );
+  }
+
+  Widget _inputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData prefixIcon,
+    required String? Function(String?) validator,
+    TextInputType? keyboardType,
+    TextInputAction? textInputAction,
+    void Function(String)? onSubmitted,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      decoration: _decoration(
+        label: label,
+        hint: hint,
+        prefixIcon: prefixIcon,
+      ),
+    );
+  }
+
+  Widget _passwordField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required String? Function(String?) validator,
+    required bool visible,
+    required VoidCallback onToggle,
+    TextInputAction? textInputAction,
+    void Function(String)? onSubmitted,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: !visible,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      decoration: _decoration(
+        label: label,
+        hint: hint,
+        prefixIcon: Icons.lock_outline,
+        suffix: IconButton(
+          onPressed: onToggle,
+          icon: Icon(visible ? Icons.visibility_off : Icons.visibility),
         ),
       ),
     );
   }
 
-  /// Modern rounded input field builder
-  Widget _inputField({
-    required TextEditingController controller,
+  InputDecoration _decoration({
     required String label,
-    required String? Function(String?) validator,
-    bool obscure = false,
+    required String hint,
+    required IconData prefixIcon,
+    Widget? suffix,
   }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: const Color(0xFFF5F5F7),
-        contentPadding:
-        const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      filled: true,
+      fillColor: const Color(0xFFF3F1FA),
+      prefixIcon: Icon(prefixIcon, color: const Color(0xFF2C015D)),
+      suffixIcon: suffix,
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0x332C015D), width: 1.2),
+      ),
+    );
+  }
+}
+
+/// After verification: create Firestore doc, then go Home and clear stack.
+class VerifyEmailGatePage extends StatefulWidget {
+  final Locale forcedLocale; // RU/KY only
+  final PendingUserData pendingData;
+
+  const VerifyEmailGatePage({
+    super.key,
+    required this.forcedLocale,
+    required this.pendingData,
+  });
+
+  @override
+  State<VerifyEmailGatePage> createState() => _VerifyEmailGatePageState();
+}
+
+class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
+  Timer? _timer;
+  bool _checking = false;
+  bool _creating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Immediate check first
+    _checkVerified(silent: true);
+    // Poll
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _checkVerified(silent: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _resend() async {
+    final loc = AppLocalizations.of(context)!;
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      Fluttertoast.showToast(msg: loc.unexpectedError);
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.setLanguageCode(widget.forcedLocale.languageCode);
+    } catch (_) {}
+
+    try {
+      await user.sendEmailVerification(ActionCodeSettings(
+        url: 'https://zhalbyrak.app/verify.html',
+        handleCodeInApp: false,
+        androidPackageName: 'com.android.zhalbyrak',
+        androidInstallApp: true,
+        androidMinimumVersion: '1',
+        iOSBundleId: 'com.ios.zhalbyrak',
+      ));
+
+      Fluttertoast.showToast(msg: loc.emailSent);
+    } on FirebaseAuthException catch (e) {
+      Fluttertoast.showToast(msg: e.message ?? e.code, toastLength: Toast.LENGTH_LONG);
+    }
+  }
+
+  Future<void> _checkVerified({required bool silent}) async {
+    if (_checking) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    // Prevent infinite pending if session is gone
+    if (user == null) {
+      _timer?.cancel();
+      if (!silent) {
+        final loc = AppLocalizations.of(context)!;
+        Fluttertoast.showToast(msg: loc.unexpectedError, toastLength: Toast.LENGTH_LONG);
+      }
+      return;
+    }
+
+    setState(() => _checking = true);
+
+    try {
+      await user.reload();
+      final refreshed = FirebaseAuth.instance.currentUser;
+
+      final isVerified = refreshed?.emailVerified == true;
+
+      if (isVerified && refreshed != null) {
+        _timer?.cancel();
+
+        await _createUserDocumentAfterVerification(refreshed);
+
+        if (!mounted) return;
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MainPage()),
+              (_) => false,
+        );
+      }
+
+      if (!silent) {
+        final loc = AppLocalizations.of(context)!;
+        Fluttertoast.showToast(msg: loc.notVerifiedYet);
+      }
+    } catch (e) {
+      if (!silent) {
+        Fluttertoast.showToast(msg: e.toString(), toastLength: Toast.LENGTH_LONG);
+      }
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
+  }
+
+  Future<void> _createUserDocumentAfterVerification(User user) async {
+    if (_creating) return;
+
+    setState(() => _creating = true);
+
+    final usersRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    await FirebaseFirestore.instance.runTransaction((tx) async {
+      final snap = await tx.get(usersRef);
+
+      final now = FieldValue.serverTimestamp();
+
+      if (snap.exists) {
+        // Do NOT overwrite existing user data.
+        tx.set(usersRef, {
+          'isEmailVerified': true,
+          'emailVerified': true,
+          'lastLoginAt': now,
+        }, SetOptions(merge: true));
+        return;
+      }
+
+      // Create full initial document ONLY after verified
+      tx.set(usersRef, {
+        'uid': user.uid,
+        'email': user.email ?? widget.pendingData.email,
+        'displayName': widget.pendingData.displayName,
+        'firstName': widget.pendingData.firstName,
+        'surname': widget.pendingData.surname,
+        'phoneNumber': widget.pendingData.phoneNumber,
+        'photoUrl': user.photoURL,
+        'isEmailVerified': true,
+        'emailVerified': true,
+        'authProvider': 'password',
+
+        'createdAt': now,
+        'lastLoginAt': now,
+
+        'country': null,
+        'birthYear': null,
+        'educationLevel': null,
+        'hasCompletedOnboarding': false,
+        'hasAcceptedTerms': true,
+        'referralCode': null,
+
+        'languageCode': widget.pendingData.languageCode,
+        'theme': 'system',
+        'notificationsEnabled': true,
+        'soundEnabled': true,
+        'vibrationEnabled': true,
+        'fcmToken': null,
+
+        'totalQuestionsAnswered': 0,
+        'totalCorrectAnswers': 0,
+        'totalTestsCompleted': 0,
+        'totalStudyTimeSeconds': 0,
+        'averageScore': 0.0,
+        'averageTimePerQuestionSeconds': 0.0,
+        'currentStreakDays': 0,
+        'longestStreakDays': 0,
+        'lastTestDate': null,
+
+        'categoryStats': {
+          'math': {'answered': 0, 'correct': 0, 'testsCompleted': 0, 'avgScore': 0.0},
+          'analogy': {'answered': 0, 'correct': 0, 'testsCompleted': 0, 'avgScore': 0.0},
+          'reading': {'answered': 0, 'correct': 0, 'testsCompleted': 0, 'avgScore': 0.0},
+          'grammar': {'answered': 0, 'correct': 0, 'testsCompleted': 0, 'avgScore': 0.0},
+        },
+        'weakCategories': [],
+
+        'trophies': 0,
+        'leaderboardScore': 0,
+        'currentRank': null,
+        'bestRank': null,
+        'lastLeaderboardUpdate': now,
+
+        'defaultTestDurationMinutes': 60,
+        'defaultQuestionsPerTest': 20,
+        'shuffleQuestions': true,
+        'shuffleAnswers': true,
+        'showExplanationAfterEachQuestion': false,
+        'showExplanationAtEnd': true,
+
+        'isPremium': false,
+        'subscriptionPlan': null,
+        'premiumExpiresAt': null,
+
+        'appVersion': '1.0.0',
+        'platform': 'mobile',
+        'lastUpdatedAt': now,
+      }, SetOptions(merge: true));
+    });
+
+    if (mounted) setState(() => _creating = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Localizations.override(
+      context: context,
+      locale: widget.forcedLocale,
+      child: Builder(
+        builder: (context) {
+          final loc = AppLocalizations.of(context)!;
+
+          const purple = Color(0xFF2C015D);
+          const bg = Color(0xFFF6F4FF);
+
+          return WillPopScope(
+            onWillPop: () async => false, // Prevent back to register
+            child: Scaffold(
+              backgroundColor: bg,
+              appBar: AppBar(
+                backgroundColor: bg,
+                elevation: 0,
+                automaticallyImplyLeading: false,
+                title: Text(
+                  loc.verifyEmailTitle,
+                  style: const TextStyle(
+                    color: purple,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              body: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.verifyEmailSubtitle,
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        color: Colors.black.withOpacity(0.70),
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      widget.pendingData.email,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: purple,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _creating ? null : () => _checkVerified(silent: false),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: purple,
+                          disabledBackgroundColor: purple.withOpacity(0.6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: (_checking || _creating)
+                            ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.6,
+                            color: Colors.white,
+                          ),
+                        )
+                            : Text(
+                          loc.iVerifiedButton,
+                          style: const TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    TextButton(
+                      onPressed: _creating ? null : _resend,
+                      child: Text(
+                        loc.resendEmailButton,
+                        style: const TextStyle(
+                          color: purple,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    Text(
+                      loc.verifyEmailHint,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.black.withOpacity(0.60),
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class PendingUserData {
+  final String email;
+  final String displayName;
+  final String firstName;
+  final String surname;
+  final String phoneNumber;
+  final String languageCode; // 'ru' or 'ky'
+
+  PendingUserData({
+    required this.email,
+    required this.displayName,
+    required this.firstName,
+    required this.surname,
+    required this.phoneNumber,
+    required this.languageCode,
+  });
+}
+
+/// Keeps phone always starting with +996 and prevents deleting prefix.
+class _KgPhoneFormatter extends TextInputFormatter {
+  static const _prefix = '+996';
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    var text = newValue.text;
+
+    if (text.isEmpty) {
+      text = _prefix;
+    } else {
+      if (!text.startsWith('+')) text = '+$text';
+
+      if (!text.startsWith(_prefix)) {
+        final digits = text.replaceAll(RegExp(r'[^\d]'), '');
+        if (digits.startsWith('996')) {
+          text = '+$digits';
+        } else {
+          final tail = digits.replaceFirst(RegExp(r'^996'), '');
+          text = _prefix + tail;
+        }
+      }
+    }
+
+    var selectionIndex = newValue.selection.end;
+    if (selectionIndex < _prefix.length) selectionIndex = _prefix.length;
+    if (selectionIndex > text.length) selectionIndex = text.length;
+
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: selectionIndex),
+    );
+  }
+}
+
+class _LanguageToggle extends StatelessWidget {
+  final String current; // 'ru' or 'ky'
+  final ValueChanged<String> onChanged;
+
+  const _LanguageToggle({
+    required this.current,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = (current == 'ky') ? 'ky' : 'ru';
+
+    Widget chip(String code, String label, bool active) {
+      return InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: () => onChanged(code),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: active ? const Color(0xFF2C015D) : Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: active ? const Color(0xFF2C015D) : const Color(0x332C015D),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: active ? Colors.white : const Color(0xFF2C015D),
+            ),
+          ),
         ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: const Color(0x222C015D)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          chip('ru', 'RU', selected == 'ru'),
+          const SizedBox(width: 6),
+          chip('ky', 'KY', selected == 'ky'),
+        ],
       ),
     );
   }

@@ -464,4 +464,90 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get quiz_progress_saved => 'Прогресс сохранён';
+
+  @override
+  String get mathIntroSubtitle => 'Пройдите короткий тест для практики.';
+
+  @override
+  String get testAboutTitle => 'О тесте';
+
+  @override
+  String get mathTestAboutBody =>
+      'Вы ответите на набор вопросов по математике. Результат будет использован для подсчёта процента и обновления вашего прогресса.';
+
+  @override
+  String get testYouWillGetTitle => 'Что вы получите';
+
+  @override
+  String get testYouWillGetBullet1 => 'Итоговый результат в процентах';
+
+  @override
+  String get testYouWillGetBullet2 =>
+      'Разбор правильных и неправильных ответов';
+
+  @override
+  String get testYouWillGetBullet3 => 'Обновлённая статистика профиля';
+
+  @override
+  String get startTest => 'Начать тест';
+
+  @override
+  String get createAccountSubtitle =>
+      'Создайте аккаунт, чтобы начать обучение.';
+
+  @override
+  String get nameHint => 'Ваше имя';
+
+  @override
+  String get surnameHint => 'Ваша фамилия';
+
+  @override
+  String get enterSurname => 'Пожалуйста, введите фамилию';
+
+  @override
+  String get emailHint => 'example@mail.com';
+
+  @override
+  String get enterValidEmail => 'Пожалуйста, введите корректный email';
+
+  @override
+  String get phoneHint996 => '+996XXXXXXXXX';
+
+  @override
+  String get phoneFormatError => 'Телефон должен быть в формате +996#########';
+
+  @override
+  String get passwordHint => 'Минимум 6 символов';
+
+  @override
+  String get confirmPasswordHint => 'Повторите пароль';
+
+  @override
+  String get registerHint => 'После регистрации потребуется подтвердить email.';
+
+  @override
+  String get unexpectedError => 'Произошла ошибка. Попробуйте снова.';
+
+  @override
+  String get emailVerifiedSuccess => 'Email подтверждён.';
+
+  @override
+  String get notVerifiedYet => 'Email ещё не подтверждён.';
+
+  @override
+  String get verifyEmailTitle => 'Подтверждение email';
+
+  @override
+  String get verifyEmailSubtitle =>
+      'Мы отправили письмо с ссылкой. Откройте его и подтвердите email, затем вернитесь сюда.';
+
+  @override
+  String get iVerifiedButton => 'Я подтвердил(а)';
+
+  @override
+  String get resendEmailButton => 'Отправить письмо ещё раз';
+
+  @override
+  String get verifyEmailHint =>
+      'Если письма нет — проверьте «Спам» или подождите 1–2 минуты.';
 }

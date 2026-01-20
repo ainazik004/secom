@@ -462,4 +462,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quiz_progress_saved => 'Progress saved';
+
+  @override
+  String get mathIntroSubtitle => 'Practice with a short test.';
+
+  @override
+  String get testAboutTitle => 'About this test';
+
+  @override
+  String get mathTestAboutBody =>
+      'You will answer a set of mathematics questions. Your results will be used to calculate your score and update your progress.';
+
+  @override
+  String get testYouWillGetTitle => 'What you’ll get';
+
+  @override
+  String get testYouWillGetBullet1 => 'A final score in percent';
+
+  @override
+  String get testYouWillGetBullet2 =>
+      'A review of correct and incorrect answers';
+
+  @override
+  String get testYouWillGetBullet3 => 'Updated statistics for your profile';
+
+  @override
+  String get startTest => 'Start test';
+
+  @override
+  String get createAccountSubtitle => 'Create your account to start learning.';
+
+  @override
+  String get nameHint => 'Your name';
+
+  @override
+  String get surnameHint => 'Your surname';
+
+  @override
+  String get enterSurname => 'Please enter your surname';
+
+  @override
+  String get emailHint => 'example@mail.com';
+
+  @override
+  String get enterValidEmail => 'Please enter a valid email';
+
+  @override
+  String get phoneHint996 => '+996XXXXXXXXX';
+
+  @override
+  String get phoneFormatError => 'Phone must be in format +996#########';
+
+  @override
+  String get passwordHint => 'At least 6 characters';
+
+  @override
+  String get confirmPasswordHint => 'Repeat your password';
+
+  @override
+  String get registerHint =>
+      'After registration, you will need to verify your email.';
+
+  @override
+  String get unexpectedError => 'An error occurred. Please try again.';
+
+  @override
+  String get emailVerifiedSuccess => 'Email verified.';
+
+  @override
+  String get notVerifiedYet => 'Email has not been verified yet.';
+
+  @override
+  String get verifyEmailTitle => 'Email verification';
+
+  @override
+  String get verifyEmailSubtitle =>
+      'We have sent you an email with a verification link. Open it, verify your email, then return here.';
+
+  @override
+  String get iVerifiedButton => 'I have verified';
+
+  @override
+  String get resendEmailButton => 'Resend email';
+
+  @override
+  String get verifyEmailHint =>
+      'If you do not see the email, check your Spam folder or wait 1–2 minutes.';
 }

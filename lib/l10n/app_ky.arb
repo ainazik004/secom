@@ -196,5 +196,35 @@
   },
   "quiz_explanation": "Түшүндүрмө",
   "quiz_ai_explain": "AI менен түшүндүр",
-  "quiz_progress_saved": "Илгерилөө сакталды"
+  "quiz_progress_saved": "Илгерилөө сакталды",
+
+  "mathIntroSubtitle": "Кыска тест менен машыгыңыз.",
+  "testAboutTitle": "Тест жөнүндө",
+  "mathTestAboutBody": "Сиз математика боюнча суроолорго жооп бересиз. Жыйынтык пайыздык упайды эсептеп, прогрессти жаңыртуу үчүн колдонулат.",
+  "testYouWillGetTitle": "Эмне аласыз",
+  "testYouWillGetBullet1": "Акыркы жыйынтык пайыз менен",
+  "testYouWillGetBullet2": "Туура жана туура эмес жоопторду карап чыгуу",
+  "testYouWillGetBullet3": "Профилдеги статистиканын жаңыртылышы",
+  "startTest": "Тестти баштоо",
+
+  "createAccountSubtitle": "Окууну баштоо үчүн аккаунт түзүңүз.",
+  "nameHint": "Атыңыз",
+  "surnameHint": "Фамилияңыз",
+  "enterSurname": "Сураныч, фамилияңызды жазыңыз",
+  "emailHint": "example@mail.com",
+  "enterValidEmail": "Сураныч, туура email жазыңыз",
+  "phoneHint996": "+996XXXXXXXXX",
+  "phoneFormatError": "Телефон +996######### форматында болушу керек",
+  "passwordHint": "Кеминде 6 белги",
+  "confirmPasswordHint": "Паролду кайталаңыз",
+  "registerHint": "Катталгандан кийин email'ди тастыктоо керек.",
+
+  "unexpectedError": "Ката кетти. Кайра аракет кылыңыз.",
+  "emailVerifiedSuccess": "Email тастыкталды.",
+  "notVerifiedYet": "Email азырынча тастыктала элек.",
+  "verifyEmailTitle": "Email тастыктоо",
+  "verifyEmailSubtitle": "Биз шилтемеси бар кат жөнөттүк. Аны ачып, email'ди тастыктаңыз, анан бул жерге кайтыңыз.",
+  "iVerifiedButton": "Мен тастыктадым",
+  "resendEmailButton": "Катты кайра жөнөтүү",
+  "verifyEmailHint": "Кат келбесе — «Спамды» текшериңиз же 1–2 мүнөт күтүңүз."
 }

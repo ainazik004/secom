@@ -46,17 +46,27 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _userFuture,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return _HomeShimmer(onRefresh: _onRefresh);
-        }
-        return _HomeContent(
-          data: snapshot.data!,
-          onRefresh: _onRefresh,
-        );
-      },
+    // ✅ IMPORTANT: Provide Material/Scaffold ancestor for InkWell/InkResponse
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F4FF),
+      body: SafeArea(
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _userFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return _HomeShimmer(onRefresh: _onRefresh);
+            }
+
+            // If error or no user doc yet, still show UI (avoid crash)
+            final data = snapshot.data ?? <String, dynamic>{};
+
+            return _HomeContent(
+              data: data,
+              onRefresh: _onRefresh,
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -74,9 +84,9 @@ class _HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
-    final fullName = (data['fullName'] ?? '') as String? ?? '';
-    final greeting =
-    fullName.isNotEmpty ? "${loc.hello}, $fullName!" : loc.hello;
+    // Support both possible keys to avoid blank name:
+    final fullName = (data['fullName'] ?? data['displayName'] ?? '') as String? ?? '';
+    final greeting = fullName.isNotEmpty ? "${loc.hello}, $fullName!" : loc.hello;
 
     final categories = [
       _CategoryData(
@@ -159,8 +169,7 @@ class _HomeContent extends StatelessWidget {
 
                     // Greeting
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(24),
@@ -168,14 +177,16 @@ class _HomeContent extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.waving_hand_rounded,
-                              color: Colors.white),
+                          const Icon(Icons.waving_hand_rounded, color: Colors.white),
                           const SizedBox(width: 10),
-                          Text(
-                            greeting,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
+                          Flexible(
+                            child: Text(
+                              greeting,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -241,64 +252,70 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 170,
-      child: InkWell(
+      // ✅ InkWell should have Material ancestor for ripple
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => data.page),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x142C015D),
-                blurRadius: 16,
-                offset: Offset(0, 10),
-              ),
-            ],
+        elevation: 0,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => data.page),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon bubble
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: data.accentColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              // keep the shadow in Container, Material stays transparent-ish visually
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x142C015D),
+                  blurRadius: 16,
+                  offset: Offset(0, 10),
                 ),
-                child: Icon(data.icon, size: 28, color: data.accentColor),
-              ),
-              const SizedBox(height: 12),
-
-              Text(
-                data.title,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2C015D),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon bubble
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: data.accentColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(data.icon, size: 28, color: data.accentColor),
                 ),
-              ),
+                const SizedBox(height: 12),
 
-              const SizedBox(height: 4),
-
-              Expanded(
-                child: Text(
-                  data.subtitle,
-                  maxLines: 2,
+                Text(
+                  data.title,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.55),
-                    fontSize: 13,
-                    height: 1.3,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2C015D),
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 4),
+
+                Expanded(
+                  child: Text(
+                    data.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.black.withOpacity(0.55),
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

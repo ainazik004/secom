@@ -463,4 +463,90 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get quiz_progress_saved => 'Илгерилөө сакталды';
+
+  @override
+  String get mathIntroSubtitle => 'Кыска тест менен машыгыңыз.';
+
+  @override
+  String get testAboutTitle => 'Тест жөнүндө';
+
+  @override
+  String get mathTestAboutBody =>
+      'Сиз математика боюнча суроолорго жооп бересиз. Жыйынтык пайыздык упайды эсептеп, прогрессти жаңыртуу үчүн колдонулат.';
+
+  @override
+  String get testYouWillGetTitle => 'Эмне аласыз';
+
+  @override
+  String get testYouWillGetBullet1 => 'Акыркы жыйынтык пайыз менен';
+
+  @override
+  String get testYouWillGetBullet2 =>
+      'Туура жана туура эмес жоопторду карап чыгуу';
+
+  @override
+  String get testYouWillGetBullet3 => 'Профилдеги статистиканын жаңыртылышы';
+
+  @override
+  String get startTest => 'Тестти баштоо';
+
+  @override
+  String get createAccountSubtitle => 'Окууну баштоо үчүн аккаунт түзүңүз.';
+
+  @override
+  String get nameHint => 'Атыңыз';
+
+  @override
+  String get surnameHint => 'Фамилияңыз';
+
+  @override
+  String get enterSurname => 'Сураныч, фамилияңызды жазыңыз';
+
+  @override
+  String get emailHint => 'example@mail.com';
+
+  @override
+  String get enterValidEmail => 'Сураныч, туура email жазыңыз';
+
+  @override
+  String get phoneHint996 => '+996XXXXXXXXX';
+
+  @override
+  String get phoneFormatError =>
+      'Телефон +996######### форматында болушу керек';
+
+  @override
+  String get passwordHint => 'Кеминде 6 белги';
+
+  @override
+  String get confirmPasswordHint => 'Паролду кайталаңыз';
+
+  @override
+  String get registerHint => 'Катталгандан кийин email\'ди тастыктоо керек.';
+
+  @override
+  String get unexpectedError => 'Ката кетти. Кайра аракет кылыңыз.';
+
+  @override
+  String get emailVerifiedSuccess => 'Email тастыкталды.';
+
+  @override
+  String get notVerifiedYet => 'Email азырынча тастыктала элек.';
+
+  @override
+  String get verifyEmailTitle => 'Email тастыктоо';
+
+  @override
+  String get verifyEmailSubtitle =>
+      'Биз шилтемеси бар кат жөнөттүк. Аны ачып, email\'ди тастыктаңыз, анан бул жерге кайтыңыз.';
+
+  @override
+  String get iVerifiedButton => 'Мен тастыктадым';
+
+  @override
+  String get resendEmailButton => 'Катты кайра жөнөтүү';
+
+  @override
+  String get verifyEmailHint =>
+      'Кат келбесе — «Спамды» текшериңиз же 1–2 мүнөт күтүңүз.';
 }

@@ -975,6 +975,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Progress saved'**
   String get quiz_progress_saved;
+
+  /// No description provided for @mathIntroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice with a short test.'**
+  String get mathIntroSubtitle;
+
+  /// No description provided for @testAboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About this test'**
+  String get testAboutTitle;
+
+  /// No description provided for @mathTestAboutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You will answer a set of mathematics questions. Your results will be used to calculate your score and update your progress.'**
+  String get mathTestAboutBody;
+
+  /// No description provided for @testYouWillGetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What you’ll get'**
+  String get testYouWillGetTitle;
+
+  /// No description provided for @testYouWillGetBullet1.
+  ///
+  /// In en, this message translates to:
+  /// **'A final score in percent'**
+  String get testYouWillGetBullet1;
+
+  /// No description provided for @testYouWillGetBullet2.
+  ///
+  /// In en, this message translates to:
+  /// **'A review of correct and incorrect answers'**
+  String get testYouWillGetBullet2;
+
+  /// No description provided for @testYouWillGetBullet3.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated statistics for your profile'**
+  String get testYouWillGetBullet3;
+
+  /// No description provided for @startTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Start test'**
+  String get startTest;
+
+  /// No description provided for @createAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your account to start learning.'**
+  String get createAccountSubtitle;
+
+  /// No description provided for @nameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get nameHint;
+
+  /// No description provided for @surnameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your surname'**
+  String get surnameHint;
+
+  /// No description provided for @enterSurname.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your surname'**
+  String get enterSurname;
+
+  /// No description provided for @emailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'example@mail.com'**
+  String get emailHint;
+
+  /// No description provided for @enterValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email'**
+  String get enterValidEmail;
+
+  /// No description provided for @phoneHint996.
+  ///
+  /// In en, this message translates to:
+  /// **'+996XXXXXXXXX'**
+  String get phoneHint996;
+
+  /// No description provided for @phoneFormatError.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone must be in format +996#########'**
+  String get phoneFormatError;
+
+  /// No description provided for @passwordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 6 characters'**
+  String get passwordHint;
+
+  /// No description provided for @confirmPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat your password'**
+  String get confirmPasswordHint;
+
+  /// No description provided for @registerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'After registration, you will need to verify your email.'**
+  String get registerHint;
+
+  /// No description provided for @unexpectedError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred. Please try again.'**
+  String get unexpectedError;
+
+  /// No description provided for @emailVerifiedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified.'**
+  String get emailVerifiedSuccess;
+
+  /// No description provided for @notVerifiedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Email has not been verified yet.'**
+  String get notVerifiedYet;
+
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verification'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @verifyEmailSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We have sent you an email with a verification link. Open it, verify your email, then return here.'**
+  String get verifyEmailSubtitle;
+
+  /// No description provided for @iVerifiedButton.
+  ///
+  /// In en, this message translates to:
+  /// **'I have verified'**
+  String get iVerifiedButton;
+
+  /// No description provided for @resendEmailButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend email'**
+  String get resendEmailButton;
+
+  /// No description provided for @verifyEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'If you do not see the email, check your Spam folder or wait 1–2 minutes.'**
+  String get verifyEmailHint;
 }
 
 class _AppLocalizationsDelegate
