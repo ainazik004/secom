@@ -1137,6 +1137,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If you do not see the email, check your Spam folder or wait 1–2 minutes.'**
   String get verifyEmailHint;
+
+  /// No description provided for @jinny.
+  ///
+  /// In en, this message translates to:
+  /// **'Jinny'**
+  String get jinny;
 }
 
 class _AppLocalizationsDelegate

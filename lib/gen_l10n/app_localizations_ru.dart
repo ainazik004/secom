@@ -550,4 +550,7 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get verifyEmailHint =>
       'Если письма нет — проверьте «Спам» или подождите 1–2 минуты.';
+
+  @override
+  String get jinny => 'Джинни';
 }

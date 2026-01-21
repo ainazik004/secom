@@ -226,5 +226,7 @@
   "verifyEmailSubtitle": "We have sent you an email with a verification link. Open it, verify your email, then return here.",
   "iVerifiedButton": "I have verified",
   "resendEmailButton": "Resend email",
-  "verifyEmailHint": "If you do not see the email, check your Spam folder or wait 1–2 minutes."
+  "verifyEmailHint": "If you do not see the email, check your Spam folder or wait 1–2 minutes.",
+
+  "jinny": "Jinny"
 }

@@ -548,4 +548,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get verifyEmailHint =>
       'If you do not see the email, check your Spam folder or wait 1–2 minutes.';
+
+  @override
+  String get jinny => 'Jinny';
 }

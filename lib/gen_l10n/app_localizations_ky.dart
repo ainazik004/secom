@@ -549,4 +549,7 @@ class AppLocalizationsKy extends AppLocalizations {
   @override
   String get verifyEmailHint =>
       'Кат келбесе — «Спамды» текшериңиз же 1–2 мүнөт күтүңүз.';
+
+  @override
+  String get jinny => 'Джинни';
 }
