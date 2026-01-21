@@ -1143,6 +1143,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Jinny'**
   String get jinny;
+
+  /// No description provided for @jinny_firstPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain this question step-by-step. My answer: {picked}. Correct answer: {correct}. Also explain why the other options are wrong.'**
+  String jinny_firstPrompt(Object correct, Object picked);
 }
 
 class _AppLocalizationsDelegate

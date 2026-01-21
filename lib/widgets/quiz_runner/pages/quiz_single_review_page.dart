@@ -87,8 +87,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
+                        padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: pickedCorrect ? ZTheme.greenBg : ZTheme.redBg,
                           borderRadius: BorderRadius.circular(999),
@@ -224,12 +224,10 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed:
-                          _i < widget.questions.length - 1 ? _next : null,
+                          onPressed: _i < widget.questions.length - 1 ? _next : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: ZTheme.purple,
-                            disabledBackgroundColor:
-                            ZTheme.purple.withOpacity(0.35),
+                            disabledBackgroundColor: ZTheme.purple.withOpacity(0.35),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -250,7 +248,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
               ],
             ),
 
-            // ===== Explanation + Jinny chat =====
+            // ===== Explanation + Jinny chat button =====
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -272,31 +270,20 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                             style: const TextStyle(fontWeight: FontWeight.w900),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            expl,
-                            style: const TextStyle(height: 1.35),
-                          ),
+                          Text(expl, style: const TextStyle(height: 1.35)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 10),
                   ],
-
                   OutlinedButton(
-                    onPressed: () => _openJinnyChat(
-                      loc: loc,
-                      q: q,
-                      picked: picked,
-                    ),
+                    onPressed: () => _openJinnyChat(context, loc, q, picked),
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       side: BorderSide(color: ZTheme.purple.withOpacity(0.30)),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 14,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -309,14 +296,12 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          // feel like “Jinny explains”
                           loc.quiz_ai_explain,
                           style: const TextStyle(fontWeight: FontWeight.w900),
                         ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 14),
                   const SafeArea(top: false, child: SizedBox()),
                 ],
@@ -328,77 +313,70 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     );
   }
 
-  Future<void> _openJinnyChat({
-    required AppLocalizations loc,
-    required Question q,
-    required String? picked,
-  }) async {
+  Future<void> _openJinnyChat(
+      BuildContext context,
+      AppLocalizations loc,
+      Question q,
+      String? picked,
+      ) async {
     final lang = Localizations.localeOf(context).languageCode.toLowerCase();
     final language = lang.startsWith('ky') ? 'ky' : 'ru';
 
-    // Initial user prompt (explicit, better than just “Explain”)
-    final initialUserMessage = _buildInitialUserPrompt(
-      loc: loc,
-      q: q,
-      picked: picked,
-    );
+    final pickedText = (picked == null || picked.isEmpty)
+        ? '—'
+        : '$picked. ${q.options[picked] ?? ''}';
+    final correctText = '${q.answer}. ${q.options[q.answer] ?? ''}';
+    final initialUserMessage = loc.jinny_firstPrompt(pickedText, correctText);
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.35),
+      enableDrag: false, // ✅ ONLY handle controls size/close
       builder: (_) {
-        return _JinnyChatSheet(
-          loc: loc,
-          language: language,
-          question: q,
-          picked: picked,
-          initialUserMessage: initialUserMessage,
+        return _BottomSheetSurface(
+          child: _JinnyChatSheet(
+            loc: loc,
+            language: language,
+            question: q,
+            picked: picked ?? '',
+            initialUserMessage: initialUserMessage,
+          ),
         );
       },
     );
   }
+}
 
-  String _buildInitialUserPrompt({
-    required AppLocalizations loc,
-    required Question q,
-    required String? picked,
-  }) {
-    final pickedText = (picked == null || picked.isEmpty)
-        ? '—'
-        : '${picked}. ${q.options[picked] ?? ''}';
+class _BottomSheetSurface extends StatelessWidget {
+  final Widget child;
+  const _BottomSheetSurface({required this.child});
 
-    final correctText = '${q.answer}. ${q.options[q.answer] ?? ''}';
-
-    // Keep it short but informative.
-    // You can localize later; for now this works in both RU/KY because Jinny responds in `language`.
-    return 'Explain this question step-by-step. '
-        'My answer: $pickedText. '
-        'Correct answer: $correctText. '
-        'Also explain why the other options are wrong.';
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+      child: Material(
+        color: Colors.white, // ✅ removes transparency
+        child: child,
+      ),
+    );
   }
 }
 
 class _ChatMsg {
   final bool fromJinny;
   final String text;
-  final DateTime ts;
-  const _ChatMsg({
-    required this.fromJinny,
-    required this.text,
-    required this.ts,
-  });
+  const _ChatMsg({required this.fromJinny, required this.text});
 }
 
 class _JinnyChatSheet extends StatefulWidget {
   final AppLocalizations loc;
   final String language; // 'ru' or 'ky'
   final Question question;
-  final String? picked;
+  final String picked;
   final String initialUserMessage;
 
   const _JinnyChatSheet({
@@ -413,48 +391,158 @@ class _JinnyChatSheet extends StatefulWidget {
   State<_JinnyChatSheet> createState() => _JinnyChatSheetState();
 }
 
-class _JinnyChatSheetState extends State<_JinnyChatSheet> {
-  final _inputCtrl = TextEditingController();
-  final _focus = FocusNode();
+class _JinnyChatSheetState extends State<_JinnyChatSheet>
+    with WidgetsBindingObserver {
+  static const double _minSize = 0.40;
+  static const double _halfSize = 0.60;
+  static const double _maxSize = 1.00;
 
-  // reverse: true list => controller at 0.0 is bottom (latest)
-  final _scrollCtrl = ScrollController();
+  final DraggableScrollableController _sheetCtrl = DraggableScrollableController();
+  double _extent = _halfSize;
+
+  double _dismissDragPx = 0.0;
+  static const double _dismissThresholdPx = 90.0;
 
   final List<_ChatMsg> _messages = [];
   bool _sending = false;
 
+  final ScrollController _listCtrl = ScrollController();
+  final TextEditingController _inputCtrl = TextEditingController();
+  final FocusNode _focus = FocusNode();
+
+  bool _requestedFullOnKeyboard = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
-    // Seed conversation with an initial user message and auto-answer.
-    _messages.add(_ChatMsg(
-      fromJinny: false,
-      text: widget.initialUserMessage,
-      ts: DateTime.now(),
-    ));
+    _messages.add(_ChatMsg(fromJinny: false, text: widget.initialUserMessage));
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _sendToJinny(widget.initialUserMessage, isInitial: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await _sendToJinny(widget.initialUserMessage);
+      _scrollToBottom();
+    });
+
+    _focus.addListener(() {
+      if (_focus.hasFocus) {
+        _requestedFullOnKeyboard = true;
+        _expandToFull();
+      }
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _sheetCtrl.dispose();
+    _listCtrl.dispose();
     _inputCtrl.dispose();
     _focus.dispose();
-    _scrollCtrl.dispose();
     super.dispose();
   }
 
+  @override
+  void didChangeMetrics() {
+    if (!mounted) return;
+    final inset = MediaQuery.of(context).viewInsets.bottom;
+    if (inset > 0) {
+      _requestedFullOnKeyboard = true;
+      _expandToFull();
+    }
+  }
+
+  Future<void> _animateToWhenAttached(double target) async {
+    // ✅ fixes: "controller not attached" and ensures the expand happens
+    for (int i = 0; i < 10; i++) {
+      if (!mounted) return;
+      if (_sheetCtrl.isAttached) {
+        try {
+          await _sheetCtrl.animateTo(
+            target,
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+          );
+        } catch (_) {}
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 16));
+    }
+  }
+
+  void _jumpToWhenAttached(double target) {
+    if (!mounted) return;
+    if (!_sheetCtrl.isAttached) return;
+    try {
+      _sheetCtrl.jumpTo(target);
+    } catch (_) {}
+  }
+
+  void _expandToFull() {
+    if (!mounted) return;
+    if (_extent >= _maxSize) return;
+    _extent = _maxSize;
+    _animateToWhenAttached(_maxSize);
+  }
+
+  Future<void> _closeSheet() async {
+    if (!mounted) return;
+    Navigator.of(context).pop();
+  }
+
+  void _onHandleDragUpdate(DragUpdateDetails d) {
+    final screenH = MediaQuery.of(context).size.height;
+    if (screenH <= 1) return;
+
+    final dy = d.delta.dy;
+    final deltaExtent = (-dy / screenH);
+    final rawNext = _extent + deltaExtent;
+
+    if (rawNext <= _minSize) {
+      _extent = _minSize;
+      _jumpToWhenAttached(_minSize);
+
+      if (dy > 0) {
+        _dismissDragPx += dy;
+      } else {
+        _dismissDragPx = 0.0;
+      }
+      return;
+    }
+
+    _dismissDragPx = 0.0;
+    final next = rawNext.clamp(_minSize, _maxSize);
+    _extent = next;
+    _jumpToWhenAttached(next);
+  }
+
+  Future<void> _onHandleDragEnd(DragEndDetails d) async {
+    if (_dismissDragPx >= _dismissThresholdPx) {
+      await _closeSheet();
+      return;
+    }
+
+    final target = (_extent >= 0.85)
+        ? _maxSize
+        : (_extent <= 0.52)
+        ? _minSize
+        : _halfSize;
+
+    _extent = target;
+    await _animateToWhenAttached(target);
+  }
+
   void _scrollToBottom() {
-    if (!_scrollCtrl.hasClients) return;
-    // reverse: true => bottom is offset 0
-    _scrollCtrl.animateTo(
-      0,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOut,
-    );
+    if (!_listCtrl.hasClients) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_listCtrl.hasClients) return;
+      _listCtrl.animateTo(
+        _listCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   Widget _avatar() {
@@ -469,95 +557,121 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> {
     );
   }
 
-  Widget _bubble({
-    required String text,
-    required bool fromJinny,
-    bool isTyping = false,
-  }) {
-    final bg = fromJinny ? const Color(0xFFF3F4F6) : ZTheme.selectedFill;
-    final border = fromJinny ? const Color(0xFFE5E7EB) : ZTheme.border;
-    final align = fromJinny ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+  Widget _userAvatar() {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: ZTheme.pillBg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: ZTheme.border),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.person_rounded,
+        size: 18,
+        color: Color(0xFF6B7280),
+      ),
+    );
+  }
 
-    Widget content;
-    if (isTyping) {
-      content = Row(
+  Widget _typingBubble() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           _Dot(),
           SizedBox(width: 4),
           _Dot(delayMs: 140),
           SizedBox(width: 4),
           _Dot(delayMs: 280),
         ],
-      );
-    } else {
-      content = Text(
-        text,
-        style: const TextStyle(
-          height: 1.35,
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF111827),
-        ),
-      );
-    }
+      ),
+    );
+  }
 
-    return Column(
-      crossAxisAlignment: align,
-      children: [
-        Container(
-          constraints: const BoxConstraints(maxWidth: 520),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: border),
-          ),
-          child: content,
+  Widget _messageBubble({
+    required String text,
+    required bool fromJinny,
+  }) {
+    final bg = fromJinny ? const Color(0xFFF3F4F6) : ZTheme.selectedFill;
+    final border = fromJinny ? const Color(0xFFE5E7EB) : ZTheme.border;
+
+    // ✅ bubble size = text size (like messengers), with max width
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.72,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border),
         ),
-      ],
+        child: Text(
+          text,
+          style: const TextStyle(
+            height: 1.35,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
+          ),
+        ),
+      ),
     );
   }
 
   Widget _chatRow({
-    required Widget leading,
+    required bool isUser,
     required Widget bubble,
-    required bool alignRight,
   }) {
+    const avatarSize = 34.0;
+    const gap = 10.0;
+
+    final leftAvatar =
+    isUser ? const SizedBox(width: avatarSize, height: avatarSize) : _avatar();
+    final rightAvatar = isUser
+        ? _userAvatar()
+        : const SizedBox(width: avatarSize, height: avatarSize);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment:
-        alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: alignRight
-            ? [
-          Flexible(child: bubble),
-          const SizedBox(width: 10),
-          leading,
-        ]
-            : [
-          leading,
-          const SizedBox(width: 10),
-          Flexible(child: bubble),
+        children: [
+          SizedBox(width: avatarSize, height: avatarSize, child: leftAvatar),
+          const SizedBox(width: gap),
+
+          // ✅ alignment per side, bubble fits content
+          Expanded(
+            child: Align(
+              alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+              child: bubble,
+            ),
+          ),
+
+          const SizedBox(width: gap),
+          SizedBox(width: avatarSize, height: avatarSize, child: rightAvatar),
         ],
       ),
     );
   }
 
-  Future<void> _sendToJinny(String userText, {bool isInitial = false}) async {
+  Future<void> _sendToJinny(String userText) async {
     if (_sending) return;
     setState(() => _sending = true);
-
-    // Show typing bubble immediately
-    setState(() {});
-    _scrollToBottom();
 
     try {
       final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
           .httpsCallable('aiExplainQuestion');
 
-      // We send: question context + picked + user's message + short chat history
       final history = _messages
           .take(14)
           .map((m) => {
@@ -568,36 +682,30 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> {
 
       final res = await callable.call({
         'language': widget.language,
-        'userMessage': userText, // ✅ new: enables real “chat”
-        'history': history, // ✅ new: keeps context between turns
+        'userMessage': userText,
+        'history': history,
         'question': {
           'stem': widget.question.stem,
           'options': widget.question.options,
           'answer': widget.question.answer,
-          'picked': widget.picked ?? '',
+          'picked': widget.picked,
         }
       });
 
       final data = res.data;
-      final text = (data is Map && data['text'] != null)
-          ? data['text'].toString()
-          : '—';
+      final text =
+      (data is Map && data['text'] != null) ? data['text'].toString() : '—';
 
       if (!mounted) return;
-
       setState(() {
-        _messages.add(_ChatMsg(fromJinny: true, text: text, ts: DateTime.now()));
+        _messages.add(_ChatMsg(fromJinny: true, text: text));
         _sending = false;
       });
       _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _messages.add(_ChatMsg(
-          fromJinny: true,
-          text: 'Ошибка: $e',
-          ts: DateTime.now(),
-        ));
+        _messages.add(_ChatMsg(fromJinny: true, text: 'Ошибка: $e'));
         _sending = false;
       });
       _scrollToBottom();
@@ -609,7 +717,7 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> {
     if (text.isEmpty || _sending) return;
 
     setState(() {
-      _messages.add(_ChatMsg(fromJinny: false, text: text, ts: DateTime.now()));
+      _messages.add(_ChatMsg(fromJinny: false, text: text));
       _inputCtrl.clear();
     });
 
@@ -619,183 +727,184 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // To make typing comfortable and the sheet "go to top",
-    // we combine DraggableScrollableSheet + AnimatedPadding(viewInsets).
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    if (bottomInset > 0 && _requestedFullOnKeyboard) {
+      // ensure we keep full while typing
+      WidgetsBinding.instance.addPostFrameCallback((_) => _expandToFull());
+    }
+
     return DraggableScrollableSheet(
+      controller: _sheetCtrl,
       expand: false,
-      initialChildSize: 0.70,
-      minChildSize: 0.40,
-      maxChildSize: 0.98, // ✅ roll almost full screen
-      builder: (ctx, dragCtrl) {
-        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+      initialChildSize: _halfSize,
+      minChildSize: _minSize,
+      maxChildSize: _maxSize,
+      builder: (ctx, sheetScrollController) {
+        // ✅ IMPORTANT: attach the provided controller to a dummy scroll view,
+        // so the sheet stays properly "wired", but scrolling won't resize it.
+        final dummy = SingleChildScrollView(
+          controller: sheetScrollController,
+          physics: const NeverScrollableScrollPhysics(),
+          child: const SizedBox(height: 1),
+        );
 
         return AnimatedPadding(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOut,
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: Column(
+          child: Stack(
             children: [
-              const SizedBox(height: 10),
-              Container(
-                width: 44,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E7EB),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 10),
+              // invisible, but keeps the draggable sheet attached
+              Positioned.fill(child: dummy),
 
-              // Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                child: Row(
+              // real UI
+              Positioned.fill(
+                child: Column(
                   children: [
-                    _avatar(),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.loc.jinny,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
+                    const SizedBox(height: 10),
+
+                    // ✅ THE ONLY RESIZE/CLOSE HANDLE
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragUpdate: _onHandleDragUpdate,
+                      onVerticalDragEnd: _onHandleDragEnd,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: Container(
+                            width: 44,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE5E7EB),
+                              borderRadius: BorderRadius.circular(999),
                             ),
                           ),
-                          Text(
-                            _sending ? 'typing…' : 'online',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                      child: Row(
+                        children: [
+                          _avatar(),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.loc.jinny,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                Text(
+                                  _sending ? 'typing…' : 'online',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                          IconButton(
+                            onPressed: _closeSheet,
+                            icon: const Icon(Icons.close_rounded),
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-                  ],
-                ),
-              ),
 
-              const Divider(height: 1),
+                    const Divider(height: 1),
 
-              // Chat list (reverse => newest near bottom, easier to keep input visible)
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollCtrl,
-                  reverse: true,
-                  padding: const EdgeInsets.only(top: 8, bottom: 12),
-                  itemCount: _messages.length + (_sending ? 1 : 0),
-                  itemBuilder: (ctx, index) {
-                    // index 0 is "latest" because reverse: true
-                    if (_sending && index == 0) {
-                      return _chatRow(
-                        leading: _avatar(),
-                        bubble: _bubble(
-                          text: '',
-                          fromJinny: true,
-                          isTyping: true,
-                        ),
-                        alignRight: false,
-                      );
-                    }
-
-                    final msgIndex = _sending ? index - 1 : index;
-                    final m = _messages[_messages.length - 1 - msgIndex];
-
-                    final isUser = !m.fromJinny;
-                    return _chatRow(
-                      alignRight: isUser,
-                      leading: isUser
-                          ? Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: ZTheme.pillBg,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: ZTheme.border),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.person_rounded,
-                          size: 18,
-                          color: Color(0xFF6B7280),
-                        ),
-                      )
-                          : _avatar(),
-                      bubble: _bubble(
-                        text: m.text,
-                        fromJinny: !isUser,
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // Input bar
-              Container(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(top: BorderSide(color: ZTheme.border)),
-                ),
-                child: Row(
-                  children: [
                     Expanded(
-                      child: TextField(
-                        controller: _inputCtrl,
-                        focusNode: _focus,
-                        textInputAction: TextInputAction.send,
-                        minLines: 1,
-                        maxLines: 4,
-                        onSubmitted: (_) => _onSendPressed(),
-                        decoration: InputDecoration(
-                          hintText: widget.loc.quiz_ai_explain,
-                          filled: true,
-                          fillColor: const Color(0xFFF3F4F6),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(999),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
+                      child: ListView.builder(
+                        controller: _listCtrl,
+                        padding: const EdgeInsets.only(top: 8, bottom: 12),
+                        itemCount: _messages.length + (_sending ? 1 : 0),
+                        itemBuilder: (ctx, index) {
+                          if (_sending && index == _messages.length) {
+                            return _chatRow(isUser: false, bubble: _typingBubble());
+                          }
+
+                          final m = _messages[index];
+                          final isUser = !m.fromJinny;
+
+                          return _chatRow(
+                            isUser: isUser,
+                            bubble: _messageBubble(
+                              text: m.text,
+                              fromJinny: !isUser,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: _sending ? null : _onSendPressed,
+
+                    // ✅ SafeArea to avoid bottom overflow with keyboard/navigation bar
+                    SafeArea(
+                      top: false,
                       child: Container(
-                        width: 44,
-                        height: 44,
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                         decoration: BoxDecoration(
-                          color: _sending
-                              ? ZTheme.purple.withOpacity(0.35)
-                              : ZTheme.purple,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Icon(
-                          Icons.send_rounded,
                           color: Colors.white,
-                          size: 20,
+                          border: Border(top: BorderSide(color: ZTheme.border)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _inputCtrl,
+                                focusNode: _focus,
+                                textInputAction: TextInputAction.send,
+                                minLines: 1,
+                                maxLines: 4,
+                                onSubmitted: (_) => _onSendPressed(),
+                                decoration: InputDecoration(
+                                  hintText: widget.loc.quiz_ai_explain,
+                                  filled: true,
+                                  fillColor: const Color(0xFFF3F4F6),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            GestureDetector(
+                              onTap: _sending ? null : _onSendPressed,
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: _sending
+                                      ? ZTheme.purple.withOpacity(0.35)
+                                      : ZTheme.purple,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: const Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // This makes the drag controller used (so you can drag scroll all the way)
-              // by connecting to something; no visible UI impact.
-              SizedBox(height: 0, child: SingleChildScrollView(controller: dragCtrl)),
             ],
           ),
         );
@@ -804,7 +913,6 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> {
   }
 }
 
-// Animated typing dots
 class _Dot extends StatefulWidget {
   final int delayMs;
   const _Dot({this.delayMs = 0});
@@ -824,7 +932,6 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
-
     _a = Tween<double>(begin: 0.25, end: 1.0).animate(
       CurvedAnimation(parent: _c, curve: Curves.easeInOut),
     );

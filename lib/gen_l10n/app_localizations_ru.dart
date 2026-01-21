@@ -553,4 +553,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get jinny => 'Джинни';
+
+  @override
+  String jinny_firstPrompt(Object correct, Object picked) {
+    return 'Объясни этот вопрос пошагово. Мой ответ: $picked. Правильный ответ: $correct. Также объясни, почему другие варианты неверны.';
+  }
 }

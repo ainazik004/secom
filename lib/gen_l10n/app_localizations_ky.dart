@@ -552,4 +552,9 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get jinny => 'Джинни';
+
+  @override
+  String jinny_firstPrompt(Object correct, Object picked) {
+    return 'Бул суроону кадам-кадам менен түшүндүр. Менин жообум: $picked. Туура жооп: $correct. Калган варианттар эмне үчүн туура эмес экенин да түшүндүр.';
+  }
 }
