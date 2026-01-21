@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:174257410842:android:a5c350df2407bb8ed252a3",
+        "mobilesdk_app_id": "1:174257410842:android:b9f9b4c9d67edd5ad252a3",
         "android_client_info": {
-          "package_name": "com.example.secom"
+          "package_name": "com.android.zhalbyrak"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "174257410842-e707fbf88imdff6tukmuvcbjksgd6puq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAJKDIb9fsfs3vSHEJ8qkPhMtq6mhVJf-8"
@@ -20,7 +25,63 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "174257410842-e707fbf88imdff6tukmuvcbjksgd6puq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "174257410842-3d2umqjdabkj85ep8nfcusmep6o2o7fe.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.secom"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:174257410842:android:a5c350df2407bb8ed252a3",
+        "android_client_info": {
+          "package_name": "com.example.secom"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "174257410842-qael25get9t1vmqi2elg6erb0oni0coe.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.secom",
+            "certificate_hash": "bfaef27ab6cfab6cd840633eaebec9001609d48d"
+          }
+        },
+        {
+          "client_id": "174257410842-e707fbf88imdff6tukmuvcbjksgd6puq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJKDIb9fsfs3vSHEJ8qkPhMtq6mhVJf-8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "174257410842-e707fbf88imdff6tukmuvcbjksgd6puq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "174257410842-3d2umqjdabkj85ep8nfcusmep6o2o7fe.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.secom"
+              }
+            }
+          ]
         }
       }
     }

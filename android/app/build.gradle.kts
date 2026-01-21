@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {1
-    namespace = "com.example.secom"
+    namespace = "com.android.zhalbyrak"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,7 +29,7 @@ android {1
     }
 
     defaultConfig {
-        applicationId = "com.example.secom"
+        applicationId = "com.android.zhalbyrak"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

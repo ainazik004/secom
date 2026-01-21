@@ -1057,7 +1057,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterValidEmail.
   ///
   /// In en, this message translates to:
-  /// **'Please enter a valid email'**
+  /// **'Please enter a val9id email'**
   String get enterValidEmail;
 
   /// No description provided for @phoneHint996.

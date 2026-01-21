@@ -212,7 +212,7 @@
   "surnameHint": "Your surname",
   "enterSurname": "Please enter your surname",
   "emailHint": "example@mail.com",
-  "enterValidEmail": "Please enter a valid email",
+  "enterValidEmail": "Please enter a val9id email",
   "phoneHint996": "+996XXXXXXXXX",
   "phoneFormatError": "Phone must be in format +996#########",
   "passwordHint": "At least 6 characters",

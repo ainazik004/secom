@@ -195,7 +195,7 @@
     }
   },
   "quiz_explanation": "Объяснение",
-  "quiz_ai_explain": "Объяснить с помощью AI",
+  "quiz_ai_explain": "Спросить у Джини",
   "quiz_progress_saved": "Прогресс сохранён",
 
   "mathIntroSubtitle": "Пройдите короткий тест для практики.",

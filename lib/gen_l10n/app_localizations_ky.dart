@@ -459,7 +459,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get quiz_explanation => 'Түшүндүрмө';
 
   @override
-  String get quiz_ai_explain => 'AI менен түшүндүр';
+  String get quiz_ai_explain => 'Джиниден суроо';
 
   @override
   String get quiz_progress_saved => 'Илгерилөө сакталды';

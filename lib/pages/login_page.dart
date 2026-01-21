@@ -7,6 +7,8 @@ import 'register_page.dart';
 import 'home_page.dart';
 import 'verify_email_page.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/main.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -79,7 +81,7 @@ class _LoginPageState extends State<LoginPage> {
       if (refreshed.emailVerified) {
         if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomePage()),
+          MaterialPageRoute(builder: (_) => const MainPage()),
               (_) => false,
         );
         return;

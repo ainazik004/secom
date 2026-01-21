@@ -460,7 +460,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get quiz_explanation => 'Объяснение';
 
   @override
-  String get quiz_ai_explain => 'Объяснить с помощью AI';
+  String get quiz_ai_explain => 'Спросить у Джини';
 
   @override
   String get quiz_progress_saved => 'Прогресс сохранён';

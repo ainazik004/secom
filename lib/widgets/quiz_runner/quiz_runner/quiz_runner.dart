@@ -388,8 +388,8 @@ class _QuizRunnerState extends State<QuizRunner> {
                 brand: 'ZHALBYRAK',
                 percent: pct,
                 correctText: loc.quiz_correct_out_of(correct, total),
-                correctCountLabel: loc.quiz_correct,
-                correctCount: '$correct',
+                trophiesLabel: loc.trophies, // if you add this key; otherwise use a literal
+                trophiesCount: '$correct',
                 totalLabel: loc.quiz_total,
                 totalCount: '$total',
                 reviewText: loc.quiz_review,

@@ -505,7 +505,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailHint => 'example@mail.com';
 
   @override
-  String get enterValidEmail => 'Please enter a valid email';
+  String get enterValidEmail => 'Please enter a val9id email';
 
   @override
   String get phoneHint996 => '+996XXXXXXXXX';

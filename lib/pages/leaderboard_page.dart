@@ -70,8 +70,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
     if (user == null) return [];
 
-    final field =
-    type == _BoardType.trophies ? 'trophies' : 'currentStreakDays';
+    final field = type == _BoardType.trophies ? 'trophies' : 'currentStreakDays';
 
     final top50snap = await db
         .collection('users')
@@ -121,8 +120,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     final offset = sc.offset.clamp(0.0, double.infinity);
 
     final first = (offset / _itemExtent).floor().clamp(0, 1000000);
-    final last =
-    ((offset + viewport) / _itemExtent).floor().clamp(first, 1000000);
+    final last = ((offset + viewport) / _itemExtent).floor().clamp(first, 1000000);
 
     setState(() {
       if (type == _BoardType.trophies) {
@@ -145,16 +143,34 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     });
   }
 
+  // ✅ Prefer displayName (your Firestore field), fallback to fullName, then others.
+  String _readDisplayName(Map<String, dynamic> data) {
+    String pick(dynamic v) => (v ?? '').toString().trim();
+
+    final displayName = pick(data['displayName']);
+    if (displayName.isNotEmpty) return displayName;
+
+    final fullName = pick(data['fullName']);
+    if (fullName.isNotEmpty) return fullName;
+
+    final firstName = pick(data['firstName']);
+    final surname = pick(data['surname']);
+    final combined = ('$firstName $surname').trim();
+    if (combined.isNotEmpty) return combined;
+
+    final name = pick(data['name']);
+    if (name.isNotEmpty) return name;
+
+    return '—';
+  }
+
   void _openUserDialog(
       BuildContext context,
       DocumentSnapshot<Map<String, dynamic>> doc,
       ) {
     final data = doc.data() ?? {};
 
-    final fullNameRaw = data['fullName'];
-    final fullName = (fullNameRaw is String && fullNameRaw.trim().isNotEmpty)
-        ? fullNameRaw.trim()
-        : '—';
+    final fullName = _readDisplayName(data);
 
     final photoUrlRaw = data['photoUrl'];
     final photoUrl =
@@ -235,9 +251,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                   ),
                 ),
               ),
-
               const SizedBox(height: 12),
-
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -365,6 +379,32 @@ class _LeaderboardTab extends StatelessWidget {
     return int.tryParse('$v') ?? 0;
   }
 
+  String _readDisplayName(Map<String, dynamic> data) {
+    String pick(dynamic v) => (v ?? '').toString().trim();
+
+    final displayName = pick(data['displayName']);
+    if (displayName.isNotEmpty) return displayName;
+
+    final fullName = pick(data['fullName']);
+    if (fullName.isNotEmpty) return fullName;
+
+    final firstName = pick(data['firstName']);
+    final surname = pick(data['surname']);
+    final combined = ('$firstName $surname').trim();
+    if (combined.isNotEmpty) return combined;
+
+    final name = pick(data['name']);
+    if (name.isNotEmpty) return name;
+
+    return '—';
+  }
+
+  String? _readPhotoUrl(Map<String, dynamic> data) {
+    final raw = data['photoUrl'];
+    if (raw is String && raw.trim().isNotEmpty) return raw.trim();
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -420,20 +460,9 @@ class _LeaderboardTab extends StatelessWidget {
                       final doc = docs[index];
                       final data = doc.data() ?? {};
 
-                      final nameRaw = data['fullName'];
-                      final String name =
-                      (nameRaw is String && nameRaw.trim().isNotEmpty)
-                          ? nameRaw.trim()
-                          : '—';
-
-                      final photoUrlRaw = data['photoUrl'];
-                      final String? photoUrl =
-                      (photoUrlRaw is String && photoUrlRaw.trim().isNotEmpty)
-                          ? photoUrlRaw
-                          : null;
-
+                      final String name = _readDisplayName(data);
+                      final String? photoUrl = _readPhotoUrl(data);
                       final int metricValue = _readInt(data[metricField]);
-
                       final bool isMe = doc.id == userId;
 
                       final tile = LeaderboardUserTile(
@@ -462,7 +491,6 @@ class _LeaderboardTab extends StatelessWidget {
                       return tile;
                     },
                   ),
-
                   if (showTop || showBottom)
                     Positioned(
                       left: 0,
@@ -526,21 +554,39 @@ class _FloatingMyTile extends StatelessWidget {
     return int.tryParse('$v') ?? 0;
   }
 
+  String _readDisplayName(Map<String, dynamic> data) {
+    String pick(dynamic v) => (v ?? '').toString().trim();
+
+    final displayName = pick(data['displayName']);
+    if (displayName.isNotEmpty) return displayName;
+
+    final fullName = pick(data['fullName']);
+    if (fullName.isNotEmpty) return fullName;
+
+    final firstName = pick(data['firstName']);
+    final surname = pick(data['surname']);
+    final combined = ('$firstName $surname').trim();
+    if (combined.isNotEmpty) return combined;
+
+    final name = pick(data['name']);
+    if (name.isNotEmpty) return name;
+
+    return '—';
+  }
+
+  String? _readPhotoUrl(Map<String, dynamic> data) {
+    final raw = data['photoUrl'];
+    if (raw is String && raw.trim().isNotEmpty) return raw.trim();
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final doc = docs.firstWhere((d) => d.id == userId);
     final data = doc.data() ?? {};
 
-    final nameRaw = data['fullName'];
-    final String name =
-    (nameRaw is String && nameRaw.trim().isNotEmpty) ? nameRaw.trim() : '—';
-
-    final photoUrlRaw = data['photoUrl'];
-    final String? photoUrl =
-    (photoUrlRaw is String && photoUrlRaw.trim().isNotEmpty)
-        ? photoUrlRaw
-        : null;
-
+    final String name = _readDisplayName(data);
+    final String? photoUrl = _readPhotoUrl(data);
     final int metricValue = _readInt(data[metricField]);
 
     return LeaderboardUserTile(
@@ -613,8 +659,7 @@ class LeaderboardUserTile extends StatelessWidget {
     final tileColor = isMe ? const Color(0xFFEDD9FF) : Colors.white;
     final borderColor = isMe ? const Color(0xFF9A4DFF) : Colors.transparent;
 
-    final displayMetric =
-    shortenMetric ? _shortenCount(metricValue) : "$metricValue";
+    final displayMetric = shortenMetric ? _shortenCount(metricValue) : "$metricValue";
 
     return AnimatedScale(
       scale: isMe ? 1.03 : 1.0,
@@ -716,8 +761,6 @@ class LeaderboardUserTile extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // ✅ Icon stays right next to the number; only number adapts
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -804,14 +847,11 @@ class _CenteredUserDialog extends StatelessWidget {
                       CircleAvatar(
                         radius: 30,
                         backgroundColor: purple,
-                        backgroundImage: (photoUrl != null)
-                            ? NetworkImage(photoUrl!)
-                            : null,
-                        child: (photoUrl == null)
+                        backgroundImage:
+                        (photoUrl != null && photoUrl!.isNotEmpty) ? NetworkImage(photoUrl!) : null,
+                        child: (photoUrl == null || photoUrl!.isEmpty)
                             ? Text(
-                          fullName.isNotEmpty
-                              ? fullName[0].toUpperCase()
-                              : "?",
+                          fullName.isNotEmpty ? fullName[0].toUpperCase() : "?",
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,

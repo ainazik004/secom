@@ -9,8 +9,12 @@ class ResultPopup extends StatelessWidget {
   final int percent;
   final String correctText;
 
-  final String correctCountLabel;
-  final String correctCount;
+  // REPLACE these two with trophies:
+  // final String correctCountLabel;
+  // final String correctCount;
+
+  final String trophiesLabel;
+  final String trophiesCount; // e.g. "2" or "2/5"
 
   final String totalLabel;
   final String totalCount;
@@ -29,8 +33,8 @@ class ResultPopup extends StatelessWidget {
     required this.brand,
     required this.percent,
     required this.correctText,
-    required this.correctCountLabel,
-    required this.correctCount,
+    required this.trophiesLabel,
+    required this.trophiesCount,
     required this.totalLabel,
     required this.totalCount,
     required this.reviewText,
@@ -81,8 +85,7 @@ class ResultPopup extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.white.withOpacity(0.20)),
                     ),
-                    child: const Icon(Icons.emoji_events_outlined,
-                        color: Colors.white),
+                    child: const Icon(Icons.emoji_events_outlined, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -149,9 +152,9 @@ class ResultPopup extends StatelessWidget {
                     children: [
                       Expanded(
                         child: StatTile(
-                          label: correctCountLabel,
-                          value: correctCount,
-                          icon: Icons.check_circle_outline,
+                          label: trophiesLabel,
+                          value: trophiesCount,
+                          icon: Icons.emoji_events_outlined, // trophy icon
                         ),
                       ),
                       const SizedBox(width: 10),
