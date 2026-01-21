@@ -1,10 +1,11 @@
-import 'package:cloud_functions/cloud_functions.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 import '../models/question.dart';
 import '../theme/z_theme.dart';
 import '../widgets/round_x_button.dart';
+import '../services/ai_explain_service.dart';
 
 class QuizSingleReviewPage extends StatefulWidget {
   final List<Question> questions;
@@ -69,7 +70,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // ===== Question card =====
+            // Question card
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -87,14 +88,12 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                   Row(
                     children: [
                       Container(
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: pickedCorrect ? ZTheme.greenBg : ZTheme.redBg,
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
-                            color: (pickedCorrect ? ZTheme.green : ZTheme.red)
-                                .withOpacity(0.25),
+                            color: (pickedCorrect ? ZTheme.green : ZTheme.red).withOpacity(0.25),
                           ),
                         ),
                         child: Text(
@@ -129,7 +128,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
 
             const SizedBox(height: 12),
 
-            // ===== Options =====
+            // Options + nav
             Column(
               children: [
                 ...q.optionKeys.map((key) {
@@ -191,7 +190,6 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                   );
                 }),
 
-                // ===== Navigation buttons =====
                 Padding(
                   padding: const EdgeInsets.only(top: 2, bottom: 10),
                   child: Row(
@@ -204,9 +202,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             side: BorderSide(
-                              color: _i > 0
-                                  ? ZTheme.purple
-                                  : ZTheme.purple.withOpacity(0.25),
+                              color: _i > 0 ? ZTheme.purple : ZTheme.purple.withOpacity(0.25),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
@@ -214,9 +210,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                             loc.quiz_back,
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
-                              color: _i > 0
-                                  ? ZTheme.purple
-                                  : ZTheme.purple.withOpacity(0.35),
+                              color: _i > 0 ? ZTheme.purple : ZTheme.purple.withOpacity(0.35),
                             ),
                           ),
                         ),
@@ -248,7 +242,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
               ],
             ),
 
-            // ===== Explanation + Jinny chat button =====
+            // Explanation + Jinny
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -277,7 +271,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                     const SizedBox(height: 10),
                   ],
                   OutlinedButton(
-                    onPressed: () => _openJinnyChat(context, loc, q, picked),
+                    onPressed: () => _openJinnyChat(context),
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -313,36 +307,34 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     );
   }
 
-  Future<void> _openJinnyChat(
-      BuildContext context,
-      AppLocalizations loc,
-      Question q,
-      String? picked,
-      ) async {
+  Future<void> _openJinnyChat(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+
+    final q = widget.questions[_i];
+    final picked = widget.answers[_i] ?? '';
+
     final lang = Localizations.localeOf(context).languageCode.toLowerCase();
     final language = lang.startsWith('ky') ? 'ky' : 'ru';
 
-    final pickedText = (picked == null || picked.isEmpty)
-        ? '—'
-        : '$picked. ${q.options[picked] ?? ''}';
+    final pickedText = picked.isEmpty ? '—' : '$picked. ${q.options[picked] ?? ''}';
     final correctText = '${q.answer}. ${q.options[q.answer] ?? ''}';
-    final initialUserMessage = loc.jinny_firstPrompt(pickedText, correctText);
+    final hiddenInitial = loc.jinny_firstPrompt(pickedText, correctText);
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent, // ✅ keep outside transparent
       barrierColor: Colors.black.withOpacity(0.35),
-      enableDrag: false, // ✅ ONLY handle controls size/close
+      enableDrag: true, // allow default drag too
       builder: (_) {
         return _BottomSheetSurface(
           child: _JinnyChatSheet(
             loc: loc,
             language: language,
             question: q,
-            picked: picked ?? '',
-            initialUserMessage: initialUserMessage,
+            picked: picked,
+            hiddenInitialUserMessage: hiddenInitial,
           ),
         );
       },
@@ -350,94 +342,93 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
   }
 }
 
+// ✅ IMPORTANT: keep this transparent, do NOT paint fullscreen white
 class _BottomSheetSurface extends StatelessWidget {
   final Widget child;
   const _BottomSheetSurface({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-      child: Material(
-        color: Colors.white, // ✅ removes transparency
-        child: child,
-      ),
-    );
+    return child;
   }
 }
 
 class _ChatMsg {
   final bool fromJinny;
-  final String text;
-  const _ChatMsg({required this.fromJinny, required this.text});
+  final String fullText;
+  int shown;
+
+  _ChatMsg({
+    required this.fromJinny,
+    required this.fullText,
+    this.shown = 0,
+  });
+
+  bool get done => shown >= fullText.length;
+
+  String get visibleText {
+    final end = shown.clamp(0, fullText.length);
+    return fullText.substring(0, end);
+  }
 }
 
 class _JinnyChatSheet extends StatefulWidget {
   final AppLocalizations loc;
-  final String language; // 'ru' or 'ky'
+  final String language;
   final Question question;
   final String picked;
-  final String initialUserMessage;
+  final String hiddenInitialUserMessage;
 
   const _JinnyChatSheet({
     required this.loc,
     required this.language,
     required this.question,
     required this.picked,
-    required this.initialUserMessage,
+    required this.hiddenInitialUserMessage,
   });
 
   @override
   State<_JinnyChatSheet> createState() => _JinnyChatSheetState();
 }
 
-class _JinnyChatSheetState extends State<_JinnyChatSheet>
-    with WidgetsBindingObserver {
+class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObserver {
   static const double _minSize = 0.40;
   static const double _halfSize = 0.60;
   static const double _maxSize = 1.00;
 
   final DraggableScrollableController _sheetCtrl = DraggableScrollableController();
-  double _extent = _halfSize;
-
-  double _dismissDragPx = 0.0;
-  static const double _dismissThresholdPx = 90.0;
 
   final List<_ChatMsg> _messages = [];
   bool _sending = false;
+  bool _initialSent = false;
 
-  final ScrollController _listCtrl = ScrollController();
   final TextEditingController _inputCtrl = TextEditingController();
   final FocusNode _focus = FocusNode();
 
-  bool _requestedFullOnKeyboard = false;
+  final Map<int, Timer> _typeTimers = {};
+
+  bool _userInteracted = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    _messages.add(_ChatMsg(fromJinny: false, text: widget.initialUserMessage));
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      await _sendToJinny(widget.initialUserMessage);
-      _scrollToBottom();
-    });
-
-    _focus.addListener(() {
-      if (_focus.hasFocus) {
-        _requestedFullOnKeyboard = true;
-        _expandToFull();
-      }
+      FocusScope.of(context).unfocus();
+      await _sendHiddenInitialPromptOnce();
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    for (final t in _typeTimers.values) {
+      t.cancel();
+    }
+    _typeTimers.clear();
     _sheetCtrl.dispose();
-    _listCtrl.dispose();
     _inputCtrl.dispose();
     _focus.dispose();
     super.dispose();
@@ -446,103 +437,216 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
   @override
   void didChangeMetrics() {
     if (!mounted) return;
-    final inset = MediaQuery.of(context).viewInsets.bottom;
-    if (inset > 0) {
-      _requestedFullOnKeyboard = true;
-      _expandToFull();
-    }
-  }
-
-  Future<void> _animateToWhenAttached(double target) async {
-    // ✅ fixes: "controller not attached" and ensures the expand happens
-    for (int i = 0; i < 10; i++) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (_sheetCtrl.isAttached) {
-        try {
-          await _sheetCtrl.animateTo(
-            target,
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-          );
-        } catch (_) {}
-        return;
+      final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+      if (bottomInset > 0 && _userInteracted) {
+        _goFullscreen();
       }
-      await Future.delayed(const Duration(milliseconds: 16));
-    }
+    });
+    super.didChangeMetrics();
   }
 
-  void _jumpToWhenAttached(double target) {
-    if (!mounted) return;
+  Future<void> _goFullscreen() async {
     if (!_sheetCtrl.isAttached) return;
     try {
-      _sheetCtrl.jumpTo(target);
+      await _sheetCtrl.animateTo(
+        _maxSize,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+      );
     } catch (_) {}
   }
 
-  void _expandToFull() {
-    if (!mounted) return;
-    if (_extent >= _maxSize) return;
-    _extent = _maxSize;
-    _animateToWhenAttached(_maxSize);
+  List<Map<String, String>> _buildHistory({String? userTextBeingSent}) {
+    const maxHistory = 14;
+    final msgs = List<_ChatMsg>.from(_messages);
+
+    if (userTextBeingSent != null &&
+        msgs.isNotEmpty &&
+        msgs.last.fromJinny == false &&
+        msgs.last.fullText.trim() == userTextBeingSent.trim()) {
+      msgs.removeLast();
+    }
+
+    final start = (msgs.length > maxHistory) ? (msgs.length - maxHistory) : 0;
+    final recent = msgs.sublist(start);
+
+    return recent
+        .where((m) => m.fullText.trim().isNotEmpty)
+        .map((m) => {
+      'role': m.fromJinny ? 'assistant' : 'user',
+      'content': m.fullText,
+    })
+        .toList();
   }
 
-  Future<void> _closeSheet() async {
-    if (!mounted) return;
-    Navigator.of(context).pop();
+  String _sanitize(String input) {
+    var s = input;
+    s = s.replaceAll(r'\[', '');
+    s = s.replaceAll(r'\]', '');
+    s = s.replaceAll(r'$$', '');
+    s = s.replaceAll(r'$', '');
+    s = s.replaceAll(r'\times', '×');
+    s = s.replaceAll(r'\cdot', '·');
+    s = s.replaceAll(r'\pi', 'π');
+    s = s.replaceAll(r'\approx', '≈');
+    s = s.replaceAll(r'\quad', ' ');
+    s = s.replaceAll(r'\,', ' ');
+    s = s.replaceAll(r'\%', '%');
+
+    s = s.replaceAllMapped(
+      RegExp(r'\\frac\{([^{}]+)\}\{([^{}]+)\}'),
+          (m) => '${m.group(1)}/${m.group(2)}',
+    );
+
+    s = s.replaceAllMapped(
+      RegExp(r'\\text\{([^{}]*)\}'),
+          (m) => m.group(1) ?? '',
+    );
+
+    s = s.replaceAll('\\', '');
+    s = s.replaceAll(RegExp(r'[ \t]+\n'), '\n');
+    s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    s = s.replaceAll(RegExp(r'[ \t]{2,}'), ' ');
+    s = s.trim();
+    return s.isEmpty ? '—' : s;
   }
 
-  void _onHandleDragUpdate(DragUpdateDetails d) {
-    final screenH = MediaQuery.of(context).size.height;
-    if (screenH <= 1) return;
+  void _startTypewriterForIndex(int idx, ScrollController listCtrl) {
+    _typeTimers[idx]?.cancel();
+    _typeTimers.remove(idx);
 
-    final dy = d.delta.dy;
-    final deltaExtent = (-dy / screenH);
-    final rawNext = _extent + deltaExtent;
+    if (idx < 0 || idx >= _messages.length) return;
+    final msg = _messages[idx];
 
-    if (rawNext <= _minSize) {
-      _extent = _minSize;
-      _jumpToWhenAttached(_minSize);
-
-      if (dy > 0) {
-        _dismissDragPx += dy;
-      } else {
-        _dismissDragPx = 0.0;
-      }
+    if (!msg.fromJinny) {
+      msg.shown = msg.fullText.length;
       return;
     }
 
-    _dismissDragPx = 0.0;
-    final next = rawNext.clamp(_minSize, _maxSize);
-    _extent = next;
-    _jumpToWhenAttached(next);
+    msg.shown = 0;
+
+    Future.delayed(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+      if (idx < 0 || idx >= _messages.length) return;
+
+      final t = Timer.periodic(const Duration(milliseconds: 16), (_) {
+        if (!mounted) return;
+        if (idx < 0 || idx >= _messages.length) {
+          _typeTimers[idx]?.cancel();
+          _typeTimers.remove(idx);
+          return;
+        }
+
+        final m = _messages[idx];
+        final next = (m.shown + 2).clamp(0, m.fullText.length);
+        if (next == m.shown) return;
+
+        setState(() => m.shown = next);
+
+        if (listCtrl.hasClients) {
+          listCtrl.animateTo(
+            listCtrl.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+          );
+        }
+
+        if (m.done) {
+          _typeTimers[idx]?.cancel();
+          _typeTimers.remove(idx);
+        }
+      });
+
+      _typeTimers[idx] = t;
+    });
   }
 
-  Future<void> _onHandleDragEnd(DragEndDetails d) async {
-    if (_dismissDragPx >= _dismissThresholdPx) {
-      await _closeSheet();
-      return;
+  Future<void> _sendHiddenInitialPromptOnce() async {
+    if (_initialSent) return;
+    _initialSent = true;
+
+    final text = widget.hiddenInitialUserMessage.trim();
+    if (text.isEmpty) return;
+
+    setState(() => _sending = true);
+    try {
+      final history = _buildHistory();
+
+      final raw = await AiExplainService.chat(
+        language: widget.language,
+        q: widget.question,
+        picked: widget.picked,
+        userMessage: text,
+        history: history,
+      );
+
+      if (!mounted) return;
+
+      final cleaned = _sanitize(raw);
+
+      setState(() {
+        _sending = false;
+        _messages.add(_ChatMsg(fromJinny: true, fullText: cleaned, shown: 0));
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sending = false;
+        _messages.add(_ChatMsg(fromJinny: true, fullText: 'Ошибка: $e', shown: 999999));
+      });
     }
-
-    final target = (_extent >= 0.85)
-        ? _maxSize
-        : (_extent <= 0.52)
-        ? _minSize
-        : _halfSize;
-
-    _extent = target;
-    await _animateToWhenAttached(target);
   }
 
-  void _scrollToBottom() {
-    if (!_listCtrl.hasClients) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_listCtrl.hasClients) return;
-      _listCtrl.animateTo(
-        _listCtrl.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 220),
+  Future<void> _sendUserMessage(String userText, ScrollController listCtrl) async {
+    final t = userText.trim();
+    if (t.isEmpty || _sending) return;
+
+    _userInteracted = true;
+    await _goFullscreen();
+
+    setState(() {
+      _sending = true;
+      _messages.add(_ChatMsg(fromJinny: false, fullText: t, shown: t.length));
+    });
+
+    if (listCtrl.hasClients) {
+      listCtrl.animateTo(
+        listCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 160),
         curve: Curves.easeOut,
       );
-    });
+    }
+
+    try {
+      final history = _buildHistory(userTextBeingSent: t);
+
+      final raw = await AiExplainService.chat(
+        language: widget.language,
+        q: widget.question,
+        picked: widget.picked,
+        userMessage: t,
+        history: history,
+      );
+
+      if (!mounted) return;
+
+      final cleaned = _sanitize(raw);
+
+      setState(() {
+        _sending = false;
+        _messages.add(_ChatMsg(fromJinny: true, fullText: cleaned, shown: 0));
+      });
+
+      _startTypewriterForIndex(_messages.length - 1, listCtrl);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sending = false;
+        _messages.add(_ChatMsg(fromJinny: true, fullText: 'Ошибка: $e', shown: 999999));
+      });
+    }
   }
 
   Widget _avatar() {
@@ -596,18 +700,12 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
     );
   }
 
-  Widget _messageBubble({
-    required String text,
-    required bool fromJinny,
-  }) {
+  Widget _messageBubble({required String text, required bool fromJinny}) {
     final bg = fromJinny ? const Color(0xFFF3F4F6) : ZTheme.selectedFill;
     final border = fromJinny ? const Color(0xFFE5E7EB) : ZTheme.border;
 
-    // ✅ bubble size = text size (like messengers), with max width
     return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.72,
-      ),
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
@@ -628,18 +726,12 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
     );
   }
 
-  Widget _chatRow({
-    required bool isUser,
-    required Widget bubble,
-  }) {
+  Widget _chatRow({required bool isUser, required Widget bubble}) {
     const avatarSize = 34.0;
     const gap = 10.0;
 
-    final leftAvatar =
-    isUser ? const SizedBox(width: avatarSize, height: avatarSize) : _avatar();
-    final rightAvatar = isUser
-        ? _userAvatar()
-        : const SizedBox(width: avatarSize, height: avatarSize);
+    final leftAvatar = isUser ? const SizedBox(width: avatarSize, height: avatarSize) : _avatar();
+    final rightAvatar = isUser ? _userAvatar() : const SizedBox(width: avatarSize, height: avatarSize);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -648,15 +740,12 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
         children: [
           SizedBox(width: avatarSize, height: avatarSize, child: leftAvatar),
           const SizedBox(width: gap),
-
-          // ✅ alignment per side, bubble fits content
           Expanded(
             child: Align(
               alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
               child: bubble,
             ),
           ),
-
           const SizedBox(width: gap),
           SizedBox(width: avatarSize, height: avatarSize, child: rightAvatar),
         ],
@@ -664,120 +753,41 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
     );
   }
 
-  Future<void> _sendToJinny(String userText) async {
-    if (_sending) return;
-    setState(() => _sending = true);
-
-    try {
-      final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
-          .httpsCallable('aiExplainQuestion');
-
-      final history = _messages
-          .take(14)
-          .map((m) => {
-        'role': m.fromJinny ? 'assistant' : 'user',
-        'content': m.text,
-      })
-          .toList();
-
-      final res = await callable.call({
-        'language': widget.language,
-        'userMessage': userText,
-        'history': history,
-        'question': {
-          'stem': widget.question.stem,
-          'options': widget.question.options,
-          'answer': widget.question.answer,
-          'picked': widget.picked,
-        }
-      });
-
-      final data = res.data;
-      final text =
-      (data is Map && data['text'] != null) ? data['text'].toString() : '—';
-
-      if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMsg(fromJinny: true, text: text));
-        _sending = false;
-      });
-      _scrollToBottom();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMsg(fromJinny: true, text: 'Ошибка: $e'));
-        _sending = false;
-      });
-      _scrollToBottom();
-    }
-  }
-
-  void _onSendPressed() {
-    final text = _inputCtrl.text.trim();
-    if (text.isEmpty || _sending) return;
-
-    setState(() {
-      _messages.add(_ChatMsg(fromJinny: false, text: text));
-      _inputCtrl.clear();
-    });
-
-    _scrollToBottom();
-    _sendToJinny(text);
-  }
-
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    if (bottomInset > 0 && _requestedFullOnKeyboard) {
-      // ensure we keep full while typing
-      WidgetsBinding.instance.addPostFrameCallback((_) => _expandToFull());
-    }
 
     return DraggableScrollableSheet(
       controller: _sheetCtrl,
-      expand: false,
+      expand: false, // ✅ crucial: stops fullscreen white painting
       initialChildSize: _halfSize,
       minChildSize: _minSize,
       maxChildSize: _maxSize,
       builder: (ctx, sheetScrollController) {
-        // ✅ IMPORTANT: attach the provided controller to a dummy scroll view,
-        // so the sheet stays properly "wired", but scrolling won't resize it.
-        final dummy = SingleChildScrollView(
-          controller: sheetScrollController,
-          physics: const NeverScrollableScrollPhysics(),
-          child: const SizedBox(height: 1),
-        );
+        final listCtrl = sheetScrollController; // ✅ makes dragging work immediately
 
-        return AnimatedPadding(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
+        return Padding(
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: Stack(
-            children: [
-              // invisible, but keeps the draggable sheet attached
-              Positioned.fill(child: dummy),
-
-              // real UI
-              Positioned.fill(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+              child: Material(
+                color: Colors.white,
                 child: Column(
                   children: [
                     const SizedBox(height: 10),
 
-                    // ✅ THE ONLY RESIZE/CLOSE HANDLE
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onVerticalDragUpdate: _onHandleDragUpdate,
-                      onVerticalDragEnd: _onHandleDragEnd,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Center(
-                          child: Container(
-                            width: 44,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE5E7EB),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
+                    // Handle
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Center(
+                        child: Container(
+                          width: 44,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE5E7EB),
+                            borderRadius: BorderRadius.circular(999),
                           ),
                         ),
                       ),
@@ -795,10 +805,7 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
                               children: [
                                 Text(
                                   widget.loc.jinny,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
                                 ),
                                 Text(
                                   _sending ? 'typing…' : 'online',
@@ -812,7 +819,7 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
                             ),
                           ),
                           IconButton(
-                            onPressed: _closeSheet,
+                            onPressed: () => Navigator.of(context).pop(),
                             icon: const Icon(Icons.close_rounded),
                           ),
                         ],
@@ -823,7 +830,7 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
 
                     Expanded(
                       child: ListView.builder(
-                        controller: _listCtrl,
+                        controller: listCtrl, // ✅ important
                         padding: const EdgeInsets.only(top: 8, bottom: 12),
                         itemCount: _messages.length + (_sending ? 1 : 0),
                         itemBuilder: (ctx, index) {
@@ -834,10 +841,18 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
                           final m = _messages[index];
                           final isUser = !m.fromJinny;
 
+                          // Start typewriter once per assistant message when it appears
+                          if (!isUser && m.shown == 0 && m.fullText.isNotEmpty) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (!mounted) return;
+                              _startTypewriterForIndex(index, listCtrl);
+                            });
+                          }
+
                           return _chatRow(
                             isUser: isUser,
                             bubble: _messageBubble(
-                              text: m.text,
+                              text: isUser ? m.fullText : m.visibleText,
                               fromJinny: !isUser,
                             ),
                           );
@@ -845,7 +860,6 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
                       ),
                     ),
 
-                    // ✅ SafeArea to avoid bottom overflow with keyboard/navigation bar
                     SafeArea(
                       top: false,
                       child: Container(
@@ -860,10 +874,19 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
                               child: TextField(
                                 controller: _inputCtrl,
                                 focusNode: _focus,
+                                autofocus: false,
                                 textInputAction: TextInputAction.send,
                                 minLines: 1,
                                 maxLines: 4,
-                                onSubmitted: (_) => _onSendPressed(),
+                                onTap: () {
+                                  _userInteracted = true;
+                                  _goFullscreen();
+                                },
+                                onSubmitted: (_) {
+                                  final text = _inputCtrl.text;
+                                  _inputCtrl.clear();
+                                  _sendUserMessage(text, listCtrl);
+                                },
                                 decoration: InputDecoration(
                                   hintText: widget.loc.quiz_ai_explain,
                                   filled: true,
@@ -881,14 +904,18 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
                             ),
                             const SizedBox(width: 10),
                             GestureDetector(
-                              onTap: _sending ? null : _onSendPressed,
+                              onTap: _sending
+                                  ? null
+                                  : () {
+                                final text = _inputCtrl.text;
+                                _inputCtrl.clear();
+                                _sendUserMessage(text, listCtrl);
+                              },
                               child: Container(
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: _sending
-                                      ? ZTheme.purple.withOpacity(0.35)
-                                      : ZTheme.purple,
+                                  color: _sending ? ZTheme.purple.withOpacity(0.35) : ZTheme.purple,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: const Icon(
@@ -905,7 +932,7 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet>
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         );
       },

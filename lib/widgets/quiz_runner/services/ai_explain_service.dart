@@ -7,7 +7,6 @@ class AiExplainService {
   static final _fn = FirebaseFunctions.instanceFor(region: 'europe-west1')
       .httpsCallable('aiExplainQuestion');
 
-  /// Old behavior (single explanation). Kept for backwards compatibility.
   static Future<String> explain({
     required String language, // 'ru' or 'ky'
     required Question q,
@@ -24,18 +23,10 @@ class AiExplainService {
     });
 
     final data = res.data;
-    if (data is Map && data['text'] != null) {
-      return data['text'].toString();
-    }
+    if (data is Map && data['text'] != null) return data['text'].toString();
     return '—';
   }
 
-  /// New behavior: Jinny "chat".
-  /// - userMessage: what user asks now (follow-up questions supported)
-  /// - history: last messages to keep context (messenger feel)
-  ///
-  /// history item format:
-  /// { "role": "user" | "assistant", "content": "..." }
   static Future<String> chat({
     required String language, // 'ru' or 'ky'
     required Question q,
@@ -47,6 +38,8 @@ class AiExplainService {
       'language': language,
       'userMessage': userMessage,
       'history': history,
+      // Extra hint for backend (harmless if unused)
+      'mode': 'chat',
       'question': {
         'stem': q.stem,
         'options': q.options,
@@ -56,9 +49,7 @@ class AiExplainService {
     });
 
     final data = res.data;
-    if (data is Map && data['text'] != null) {
-      return data['text'].toString();
-    }
+    if (data is Map && data['text'] != null) return data['text'].toString();
     return '—';
   }
 }
