@@ -39,7 +39,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   ActionCodeSettings _emailActionCodeSettings() {
     return ActionCodeSettings(
-      // Recommended: keep it EXACT with file name if you host verify.html
       url: 'https://zhalbyrak.app/verify.html',
       handleCodeInApp: false,
       androidPackageName: 'com.android.zhalbyrak',
@@ -103,12 +102,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
       final langCode = (_overrideLocale?.languageCode == 'ky') ? 'ky' : 'ru';
 
-      // Set Firebase email template language (best effort)
       try {
         await FirebaseAuth.instance.setLanguageCode(langCode);
       } catch (_) {}
 
-      // Create Auth user AND send verification ONCE (branded link)
       final user = await _auth.registerWithEmail(
         email: _emailCtrl.text.trim(),
         password: _pwdCtrl.text.trim(),
@@ -126,7 +123,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (!mounted) return;
 
-      // Go to verification gate (still signed in)
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -173,8 +169,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveLocale =
-    (_overrideLocale?.languageCode == 'ky') ? const Locale('ky') : const Locale('ru');
+    final effectiveLocale = (_overrideLocale?.languageCode == 'ky')
+        ? const Locale('ky')
+        : const Locale('ru');
 
     return Localizations.override(
       context: context,
@@ -182,12 +179,10 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Builder(
         builder: (context) {
           final loc = AppLocalizations.of(context)!;
-
-          const purple = Color(0xFF2C015D);
-          const bg = Color(0xFFF6F4FF);
+          final cs = Theme.of(context).colorScheme;
 
           return Scaffold(
-            backgroundColor: bg,
+            backgroundColor: cs.background,
             body: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -200,10 +195,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         Expanded(
                           child: Text(
                             loc.registration,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 30,
                               fontWeight: FontWeight.w800,
-                              color: purple,
+                              color: cs.onBackground,
                               height: 1.1,
                             ),
                           ),
@@ -219,7 +214,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       loc.createAccountSubtitle,
                       style: TextStyle(
                         fontSize: 14.5,
-                        color: Colors.black.withOpacity(0.68),
+                        color: cs.onBackground.withOpacity(0.72),
                         height: 1.25,
                       ),
                     ),
@@ -228,15 +223,16 @@ class _RegisterPageState extends State<RegisterPage> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cs.surface,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: Color(0x14000000),
+                            color: cs.shadow.withOpacity(0.14),
                             blurRadius: 18,
-                            offset: Offset(0, 8),
+                            offset: const Offset(0, 8),
                           ),
                         ],
+                        border: Border.all(color: cs.outlineVariant),
                       ),
                       child: Form(
                         key: _formKey,
@@ -247,8 +243,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               label: loc.name,
                               hint: loc.nameHint,
                               prefixIcon: Icons.person_outline,
-                              validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? loc.enterName : null,
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? loc.enterName
+                                  : null,
                               textInputAction: TextInputAction.next,
                             ),
                             const SizedBox(height: 14),
@@ -258,8 +255,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               label: loc.surname,
                               hint: loc.surnameHint,
                               prefixIcon: Icons.badge_outlined,
-                              validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? loc.enterSurname : null,
+                              validator: (v) => (v == null || v.trim().isEmpty)
+                                  ? loc.enterSurname
+                                  : null,
                               textInputAction: TextInputAction.next,
                             ),
                             const SizedBox(height: 14),
@@ -273,7 +271,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               validator: (v) {
                                 final t = (v ?? '').trim();
                                 if (t.isEmpty) return loc.enterEmail;
-                                if (!t.contains('@') || !t.contains('.')) return loc.enterValidEmail;
+                                if (!t.contains('@') || !t.contains('.')) {
+                                  return loc.enterValidEmail;
+                                }
                                 return null;
                               },
                               textInputAction: TextInputAction.next,
@@ -288,7 +288,8 @@ class _RegisterPageState extends State<RegisterPage> {
                               label: loc.password,
                               hint: loc.passwordHint,
                               visible: _pwdVisible,
-                              onToggle: () => setState(() => _pwdVisible = !_pwdVisible),
+                              onToggle: () =>
+                                  setState(() => _pwdVisible = !_pwdVisible),
                               validator: (v) {
                                 final t = v ?? '';
                                 if (t.length < 6) return loc.enterPassword;
@@ -303,11 +304,14 @@ class _RegisterPageState extends State<RegisterPage> {
                               label: loc.confirmPassword,
                               hint: loc.confirmPasswordHint,
                               visible: _confirmPwdVisible,
-                              onToggle: () => setState(() => _confirmPwdVisible = !_confirmPwdVisible),
+                              onToggle: () => setState(() =>
+                              _confirmPwdVisible = !_confirmPwdVisible),
                               validator: (v) {
                                 final t = v ?? '';
                                 if (t.isEmpty) return loc.confirmPassword;
-                                if (t != _pwdCtrl.text) return loc.passwordNotMatching;
+                                if (t != _pwdCtrl.text) {
+                                  return loc.passwordNotMatching;
+                                }
                                 return null;
                               },
                               textInputAction: TextInputAction.done,
@@ -319,23 +323,25 @@ class _RegisterPageState extends State<RegisterPage> {
                             SizedBox(
                               width: double.infinity,
                               height: 52,
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 onPressed: _loading ? null : _register,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: purple,
-                                  disabledBackgroundColor: purple.withOpacity(0.6),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: cs.primary,
+                                  foregroundColor: cs.onPrimary,
+                                  disabledBackgroundColor:
+                                  cs.primary.withOpacity(0.6),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   elevation: 0,
                                 ),
                                 child: _loading
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                   height: 22,
                                   width: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.6,
-                                    color: Colors.white,
+                                    color: cs.onPrimary,
                                   ),
                                 )
                                     : Text(
@@ -343,7 +349,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                   style: const TextStyle(
                                     fontSize: 16.5,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -359,7 +364,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       loc.registerHint,
                       style: TextStyle(
                         fontSize: 12.5,
-                        color: Colors.black.withOpacity(0.60),
+                        color: cs.onBackground.withOpacity(0.64),
                         height: 1.25,
                       ),
                     ),
@@ -459,21 +464,27 @@ class _RegisterPageState extends State<RegisterPage> {
     required IconData prefixIcon,
     Widget? suffix,
   }) {
+    final cs = Theme.of(context).colorScheme;
+
     return InputDecoration(
       labelText: label,
       hintText: hint,
       filled: true,
-      fillColor: const Color(0xFFF3F1FA),
-      prefixIcon: Icon(prefixIcon, color: const Color(0xFF2C015D)),
+      fillColor: cs.surfaceVariant,
+      prefixIcon: Icon(prefixIcon, color: cs.primary),
       suffixIcon: suffix,
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: cs.outlineVariant),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: cs.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0x332C015D), width: 1.2),
+        borderSide: BorderSide(color: cs.outline, width: 1.2),
       ),
     );
   }
@@ -502,9 +513,7 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
   @override
   void initState() {
     super.initState();
-    // Immediate check first
     _checkVerified(silent: true);
-    // Poll
     _timer = Timer.periodic(const Duration(seconds: 3), (_) {
       _checkVerified(silent: true);
     });
@@ -526,7 +535,8 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
     }
 
     try {
-      await FirebaseAuth.instance.setLanguageCode(widget.forcedLocale.languageCode);
+      await FirebaseAuth.instance
+          .setLanguageCode(widget.forcedLocale.languageCode);
     } catch (_) {}
 
     try {
@@ -541,7 +551,10 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
 
       Fluttertoast.showToast(msg: loc.emailSent);
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? e.code, toastLength: Toast.LENGTH_LONG);
+      Fluttertoast.showToast(
+        msg: e.message ?? e.code,
+        toastLength: Toast.LENGTH_LONG,
+      );
     }
   }
 
@@ -550,12 +563,14 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
 
     final user = FirebaseAuth.instance.currentUser;
 
-    // Prevent infinite pending if session is gone
     if (user == null) {
       _timer?.cancel();
       if (!silent) {
         final loc = AppLocalizations.of(context)!;
-        Fluttertoast.showToast(msg: loc.unexpectedError, toastLength: Toast.LENGTH_LONG);
+        Fluttertoast.showToast(
+          msg: loc.unexpectedError,
+          toastLength: Toast.LENGTH_LONG,
+        );
       }
       return;
     }
@@ -608,7 +623,6 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
       final now = FieldValue.serverTimestamp();
 
       if (snap.exists) {
-        // Do NOT overwrite existing user data.
         tx.set(usersRef, {
           'isEmailVerified': true,
           'emailVerified': true,
@@ -617,7 +631,6 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
         return;
       }
 
-      // Create full initial document ONLY after verified
       tx.set(usersRef, {
         'uid': user.uid,
         'email': user.email ?? widget.pendingData.email,
@@ -629,24 +642,20 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
         'isEmailVerified': true,
         'emailVerified': true,
         'authProvider': 'password',
-
         'createdAt': now,
         'lastLoginAt': now,
-
         'country': null,
         'birthYear': null,
         'educationLevel': null,
         'hasCompletedOnboarding': false,
         'hasAcceptedTerms': true,
         'referralCode': null,
-
         'languageCode': widget.pendingData.languageCode,
         'theme': 'system',
         'notificationsEnabled': true,
         'soundEnabled': true,
         'vibrationEnabled': true,
         'fcmToken': null,
-
         'totalQuestionsAnswered': 0,
         'totalCorrectAnswers': 0,
         'totalTestsCompleted': 0,
@@ -656,7 +665,6 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
         'currentStreakDays': 0,
         'longestStreakDays': 0,
         'lastTestDate': null,
-
         'categoryStats': {
           'math': {'answered': 0, 'correct': 0, 'testsCompleted': 0, 'avgScore': 0.0},
           'analogy': {'answered': 0, 'correct': 0, 'testsCompleted': 0, 'avgScore': 0.0},
@@ -664,24 +672,20 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
           'grammar': {'answered': 0, 'correct': 0, 'testsCompleted': 0, 'avgScore': 0.0},
         },
         'weakCategories': [],
-
         'trophies': 0,
         'leaderboardScore': 0,
         'currentRank': null,
         'bestRank': null,
         'lastLeaderboardUpdate': now,
-
         'defaultTestDurationMinutes': 60,
         'defaultQuestionsPerTest': 20,
         'shuffleQuestions': true,
         'shuffleAnswers': true,
         'showExplanationAfterEachQuestion': false,
         'showExplanationAtEnd': true,
-
         'isPremium': false,
         'subscriptionPlan': null,
         'premiumExpiresAt': null,
-
         'appVersion': '1.0.0',
         'platform': 'mobile',
         'lastUpdatedAt': now,
@@ -699,22 +703,21 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
       child: Builder(
         builder: (context) {
           final loc = AppLocalizations.of(context)!;
-
-          const purple = Color(0xFF2C015D);
-          const bg = Color(0xFFF6F4FF);
+          final cs = Theme.of(context).colorScheme;
 
           return WillPopScope(
-            onWillPop: () async => false, // Prevent back to register
+            onWillPop: () async => false,
             child: Scaffold(
-              backgroundColor: bg,
+              backgroundColor: cs.background,
               appBar: AppBar(
-                backgroundColor: bg,
+                backgroundColor: cs.background,
                 elevation: 0,
+                surfaceTintColor: cs.background,
                 automaticallyImplyLeading: false,
                 title: Text(
                   loc.verifyEmailTitle,
-                  style: const TextStyle(
-                    color: purple,
+                  style: TextStyle(
+                    color: cs.onBackground,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -728,17 +731,17 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
                       loc.verifyEmailSubtitle,
                       style: TextStyle(
                         fontSize: 14.5,
-                        color: Colors.black.withOpacity(0.70),
+                        color: cs.onBackground.withOpacity(0.72),
                         height: 1.3,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       widget.pendingData.email,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: purple,
+                        color: cs.primary,
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -746,23 +749,25 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
                     SizedBox(
                       width: double.infinity,
                       height: 52,
-                      child: ElevatedButton(
-                        onPressed: _creating ? null : () => _checkVerified(silent: false),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: purple,
-                          disabledBackgroundColor: purple.withOpacity(0.6),
+                      child: FilledButton(
+                        onPressed:
+                        _creating ? null : () => _checkVerified(silent: false),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: cs.primary,
+                          foregroundColor: cs.onPrimary,
+                          disabledBackgroundColor: cs.primary.withOpacity(0.6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                           elevation: 0,
                         ),
                         child: (_checking || _creating)
-                            ? const SizedBox(
+                            ? SizedBox(
                           height: 22,
                           width: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.6,
-                            color: Colors.white,
+                            color: cs.onPrimary,
                           ),
                         )
                             : Text(
@@ -770,7 +775,6 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
                           style: const TextStyle(
                             fontSize: 16.5,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -782,8 +786,8 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
                       onPressed: _creating ? null : _resend,
                       child: Text(
                         loc.resendEmailButton,
-                        style: const TextStyle(
-                          color: purple,
+                        style: TextStyle(
+                          color: cs.secondary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -795,7 +799,7 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
                       loc.verifyEmailHint,
                       style: TextStyle(
                         fontSize: 12.5,
-                        color: Colors.black.withOpacity(0.60),
+                        color: cs.onBackground.withOpacity(0.64),
                         height: 1.25,
                       ),
                     ),
@@ -833,7 +837,10 @@ class _KgPhoneFormatter extends TextInputFormatter {
   static const _prefix = '+996';
 
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue,
+      TextEditingValue newValue,
+      ) {
     var text = newValue.text;
 
     if (text.isEmpty) {
@@ -874,6 +881,7 @@ class _LanguageToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final selected = (current == 'ky') ? 'ky' : 'ru';
 
     Widget chip(String code, String label, bool active) {
@@ -884,10 +892,10 @@ class _LanguageToggle extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: active ? const Color(0xFF2C015D) : Colors.white,
+            color: active ? cs.primary : cs.surface,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: active ? const Color(0xFF2C015D) : const Color(0x332C015D),
+              color: active ? cs.primary : cs.outlineVariant,
               width: 1,
             ),
           ),
@@ -896,7 +904,7 @@ class _LanguageToggle extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              color: active ? Colors.white : const Color(0xFF2C015D),
+              color: active ? cs.onPrimary : cs.onSurface,
             ),
           ),
         ),
@@ -906,16 +914,16 @@ class _LanguageToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(999),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x12000000),
+            color: cs.shadow.withOpacity(0.12),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: const Color(0x222C015D)),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -6,6 +6,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/foundation.dart';
+
 
 // Localization
 import 'gen_l10n/app_localizations.dart';
@@ -36,6 +39,16 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // ✅ App Check (debug in dev, real provider in release)
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: kReleaseMode
+        ? AndroidProvider.playIntegrity
+        : AndroidProvider.debug,
+    appleProvider: kReleaseMode
+        ? AppleProvider.deviceCheck
+        : AppleProvider.debug,
   );
 
   final themeProvider = ThemeProvider();

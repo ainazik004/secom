@@ -4,11 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/auth_service.dart';
 import 'register_page.dart';
-import 'home_page.dart';
 import 'verify_email_page.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 import 'package:zhalbyrak/main.dart';
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -70,14 +68,12 @@ class _LoginPageState extends State<LoginPage> {
         throw Exception('null user');
       }
 
-      // Refresh auth state
       await user.reload();
       final refreshed = FirebaseAuth.instance.currentUser;
       if (refreshed == null) {
         throw Exception('null refreshed user');
       }
 
-      // ✅ Verified → go Home
       if (refreshed.emailVerified) {
         if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
@@ -87,10 +83,8 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // ✅ Not verified → route to VerifyEmailPage
       Fluttertoast.showToast(msg: loc.verificationRequired);
 
-      // Optional resend with cooldown (30s)
       final now = DateTime.now();
       final canResend = _lastResendAt == null ||
           now.difference(_lastResendAt!).inSeconds >= 30;
@@ -104,13 +98,12 @@ class _LoginPageState extends State<LoginPage> {
           );
           _lastResendAt = now;
         } catch (_) {
-          // Non-fatal
+          // non-fatal
         }
       }
 
       if (!mounted) return;
 
-      // Important: no pending data here (login flow). Verify page can work without it.
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
       );
@@ -133,8 +126,11 @@ class _LoginPageState extends State<LoginPage> {
     await showDialog(
       context: rootContext,
       builder: (dialogContext) {
+        final cs = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
-          title: Text(loc.resetPassword),
+          backgroundColor: cs.surface,
+          surfaceTintColor: cs.surface,
+          title: Text(loc.resetPassword, style: TextStyle(color: cs.onSurface)),
           content: TextField(
             controller: emailCtrl,
             decoration: InputDecoration(
@@ -148,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(loc.cancel),
             ),
-            ElevatedButton(
+            FilledButton(
               onPressed: () async {
                 final email = emailCtrl.text.trim();
                 if (email.isEmpty) {
@@ -182,20 +178,23 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    const purple = Color(0xFF2A1A57);
+    final cs = Theme.of(context).colorScheme;
+
+    // Brand purple for the header panel (uses your scheme, works in both modes)
+    final headerPurple = cs.primaryContainer; // dark: zPurple, light: light container
 
     final normalBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(color: Colors.grey.shade400),
+      borderSide: BorderSide(color: cs.outlineVariant),
     );
 
-    const errorBorder = OutlineInputBorder(
-      borderRadius: BorderRadius.all(Radius.circular(16)),
-      borderSide: BorderSide(color: Colors.red, width: 2),
+    final errorBorder = OutlineInputBorder(
+      borderRadius: const BorderRadius.all(Radius.circular(16)),
+      borderSide: BorderSide(color: cs.error, width: 2),
     );
 
     return Scaffold(
-      backgroundColor: purple,
+      backgroundColor: headerPurple,
       body: SafeArea(
         child: Column(
           children: [
@@ -208,9 +207,9 @@ class _LoginPageState extends State<LoginPage> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
@@ -219,7 +218,7 @@ class _LoginPageState extends State<LoginPage> {
                       Text(
                         loc.login,
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: purple,
+                          color: cs.onSurface,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -229,7 +228,10 @@ class _LoginPageState extends State<LoginPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(loc.email, style: TextStyle(color: Colors.grey[700])),
+                            Text(
+                              loc.email,
+                              style: TextStyle(color: cs.onSurfaceVariant),
+                            ),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _emailController,
@@ -248,15 +250,21 @@ class _LoginPageState extends State<LoginPage> {
                                   vertical: 14,
                                 ),
                                 border: normalBorder,
-                                enabledBorder: _emailError ? errorBorder : normalBorder,
-                                focusedBorder: _emailError ? errorBorder : normalBorder,
-                                errorText: _emailError ? loc.invalidEmailOrPassword : null,
+                                enabledBorder:
+                                _emailError ? errorBorder : normalBorder,
+                                focusedBorder:
+                                _emailError ? errorBorder : normalBorder,
+                                errorText:
+                                _emailError ? loc.invalidEmailOrPassword : null,
                               ),
                               validator: (v) =>
                               (v == null || v.isEmpty) ? loc.enterEmail : null,
                             ),
                             const SizedBox(height: 18),
-                            Text(loc.password, style: TextStyle(color: Colors.grey[700])),
+                            Text(
+                              loc.password,
+                              style: TextStyle(color: cs.onSurfaceVariant),
+                            ),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _passwordController,
@@ -276,22 +284,27 @@ class _LoginPageState extends State<LoginPage> {
                                   vertical: 14,
                                 ),
                                 border: normalBorder,
-                                enabledBorder: _passwordError ? errorBorder : normalBorder,
-                                focusedBorder: _passwordError ? errorBorder : normalBorder,
-                                errorText: _passwordError ? loc.invalidEmailOrPassword : null,
+                                enabledBorder:
+                                _passwordError ? errorBorder : normalBorder,
+                                focusedBorder:
+                                _passwordError ? errorBorder : normalBorder,
+                                errorText: _passwordError
+                                    ? loc.invalidEmailOrPassword
+                                    : null,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _passwordVisible
                                         ? Icons.visibility
                                         : Icons.visibility_off,
-                                    color: Colors.grey[700],
+                                    color: cs.onSurfaceVariant,
                                   ),
                                   onPressed: () => setState(
                                           () => _passwordVisible = !_passwordVisible),
                                 ),
                               ),
-                              validator: (v) =>
-                              (v == null || v.isEmpty) ? loc.enterPassword : null,
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? loc.enterPassword
+                                  : null,
                             ),
                             const SizedBox(height: 8),
                             Center(
@@ -299,8 +312,8 @@ class _LoginPageState extends State<LoginPage> {
                                 onPressed: () => _showForgotPasswordDialog(context),
                                 child: Text(
                                   loc.forgotPassword,
-                                  style: const TextStyle(
-                                    color: Colors.blue,
+                                  style: TextStyle(
+                                    color: cs.secondary,
                                     decoration: TextDecoration.underline,
                                   ),
                                 ),
@@ -308,10 +321,11 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 16),
                             Center(
-                              child: ElevatedButton(
+                              child: FilledButton(
                                 onPressed: _loading ? null : _login,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: purple,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: cs.primary,
+                                  foregroundColor: cs.onPrimary,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(22),
                                   ),
@@ -319,14 +333,13 @@ class _LoginPageState extends State<LoginPage> {
                                     horizontal: 40,
                                     vertical: 14,
                                   ),
-                                  elevation: 6,
                                 ),
                                 child: _loading
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
-                                    color: Colors.white,
+                                    color: cs.onPrimary,
                                     strokeWidth: 2.4,
                                   ),
                                 )
@@ -334,7 +347,6 @@ class _LoginPageState extends State<LoginPage> {
                                   loc.loginButton,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
                                     fontSize: 16,
                                   ),
                                 ),
@@ -352,7 +364,8 @@ class _LoginPageState extends State<LoginPage> {
                                 },
                                 child: Text(
                                   loc.register,
-                                  style: const TextStyle(
+                                  style: TextStyle(
+                                    color: cs.onSurface,
                                     decoration: TextDecoration.underline,
                                   ),
                                 ),
