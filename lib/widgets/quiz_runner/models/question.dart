@@ -21,23 +21,38 @@ class Question {
     this.section,
   });
 
+  static String? _readNonEmptyString(dynamic v) {
+    if (v == null) return null;
+
+    // Accept strings and "string-like" values safely
+    final s = v.toString().trim();
+    if (s.isEmpty) return null;
+
+    // Optionally ignore "null"/"undefined" strings if your dataset has them
+    if (s.toLowerCase() == 'null' || s.toLowerCase() == 'undefined') return null;
+
+    return s;
+  }
+
   factory Question.fromMap(Map<String, dynamic> map) {
+    final rawOptions = map['options'];
+    final options = (rawOptions is Map)
+        ? rawOptions.map((k, v) => MapEntry(k.toString(), v))
+        : <String, dynamic>{};
+
     return Question(
       id: (map['id'] ?? '').toString(),
       stem: (map['stem'] ?? '').toString(),
-      options: (map['options'] as Map<String, dynamic>? ?? const {}),
+      options: options,
       answer: (map['answer'] ?? '').toString(),
 
-      // 👇 THIS is the line you care about
-      explanation: (map['explanation'] is String &&
-          (map['explanation'] as String).trim().isNotEmpty)
-          ? (map['explanation'] as String).trim()
-          : null,
+      // ✅ robust explanation parsing
+      explanation: _readNonEmptyString(map['explanation']),
 
-      difficulty: map['difficulty']?.toString(),
-      topic: map['topic']?.toString(),
-      language: map['language']?.toString(),
-      section: map['section']?.toString(),
+      difficulty: _readNonEmptyString(map['difficulty']),
+      topic: _readNonEmptyString(map['topic']),
+      language: _readNonEmptyString(map['language']),
+      section: _readNonEmptyString(map['section']),
     );
   }
 

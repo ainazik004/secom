@@ -2,6 +2,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+// ✅ Use EXACT same hero gradients as Home banner (identical colors + direction)
+const LinearGradient zHeroGradientLight = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [
+    Color(0xFFFF5FA2), // light hero pink
+    Color(0xFF9B7CFF), // light hero purple
+  ],
+);
+
+const LinearGradient zHeroGradientDark = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [
+    Color(0xFFFF3D7F), // dark hero pink (brand pink)
+    Color(0xFF2C015D), // dark hero purple (brand purple)
+  ],
+);
+
 class MainAppHeader extends StatelessWidget {
   final VoidCallback? onTapTrophy;
   final VoidCallback onTapProfile;
@@ -35,7 +54,7 @@ class MainAppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF2C015D);
+    final cs = Theme.of(context).colorScheme;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: _userStream(),
@@ -47,18 +66,16 @@ class MainAppHeader extends StatelessWidget {
         final photoUrl = _readString(data, 'photoUrl');
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6), // ↓ less tall
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              // Base design tuned for ~360px wide phones.
-              // Scale gently down on smaller widths, and do not scale up.
               final width = constraints.maxWidth;
               final s = (width / 360.0).clamp(0.82, 1.0);
 
-              final logoH = 34.0 * s; // was 38
-              final avatarR = 19.0 * s; // was 21
-              final containerVPad = 8.0 * s; // was 10
-              final containerHPad = 14.0 * s; // was 16
+              final logoH = 34.0 * s;
+              final avatarR = 19.0 * s;
+              final containerVPad = 8.0 * s;
+              final containerHPad = 14.0 * s;
 
               return Container(
                 padding: EdgeInsets.symmetric(
@@ -66,19 +83,18 @@ class MainAppHeader extends StatelessWidget {
                   vertical: containerVPad,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22 * s), // slightly smaller
-                  boxShadow: const [
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(22 * s),
+                  boxShadow: [
                     BoxShadow(
-                      color: Color(0x182C015D),
+                      color: cs.shadow.withOpacity(0.12),
                       blurRadius: 15,
-                      offset: Offset(0, 8),
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    // Logo: constrained + scaleDown so it never forces overflow
                     ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: 140 * s),
                       child: FittedBox(
@@ -91,10 +107,7 @@ class MainAppHeader extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     SizedBox(width: 10 * s),
-
-                    // Right side takes remaining width and scales as needed
                     Expanded(
                       child: Align(
                         alignment: Alignment.centerRight,
@@ -105,7 +118,6 @@ class MainAppHeader extends StatelessWidget {
                           onTapTrophy: onTapTrophy,
                           onTapProfile: onTapProfile,
                           photoUrl: photoUrl,
-                          purple: purple,
                           avatarRadius: avatarR,
                         ),
                       ),
@@ -128,7 +140,6 @@ class _RightClusterAdaptive extends StatelessWidget {
   final VoidCallback? onTapTrophy;
   final VoidCallback onTapProfile;
   final String? photoUrl;
-  final Color purple;
   final double avatarRadius;
 
   const _RightClusterAdaptive({
@@ -138,18 +149,18 @@ class _RightClusterAdaptive extends StatelessWidget {
     required this.onTapTrophy,
     required this.onTapProfile,
     required this.photoUrl,
-    required this.purple,
     required this.avatarRadius,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final avatarDiameter = avatarRadius * 2.0;
-        final gapBeforeAvatar = 12.0 * scale; // was 14
+        final gapBeforeAvatar = 12.0 * scale;
 
-        // Available width for pills row
         final pillsMaxWidth =
         (constraints.maxWidth - avatarDiameter - gapBeforeAvatar)
             .clamp(0.0, constraints.maxWidth);
@@ -157,7 +168,6 @@ class _RightClusterAdaptive extends StatelessWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Pills area: scales down as a whole if needed (no overflow)
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: pillsMaxWidth),
               child: FittedBox(
@@ -186,20 +196,18 @@ class _RightClusterAdaptive extends StatelessWidget {
                 ),
               ),
             ),
-
             SizedBox(width: gapBeforeAvatar),
-
-            // Avatar: also scales down
             GestureDetector(
               onTap: onTapProfile,
               child: CircleAvatar(
                 radius: avatarRadius,
-                backgroundColor: purple,
+                backgroundColor: cs.primary,
+                foregroundColor: cs.onPrimary,
                 backgroundImage: (photoUrl != null) ? NetworkImage(photoUrl!) : null,
                 child: (photoUrl == null)
                     ? Icon(
                   Icons.person,
-                  color: Colors.white,
+                  color: cs.onPrimary,
                   size: 18 * scale,
                 )
                     : null,
@@ -233,26 +241,31 @@ class _TrophyPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     final pill = Container(
       constraints: BoxConstraints(minHeight: 30 * scale),
       padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4E0),
+        color: cs.tertiaryContainer,
         borderRadius: BorderRadius.circular(22 * scale),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x1A000000),
+            color: cs.shadow.withOpacity(0.10),
             blurRadius: 5,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.emoji_events, size: 17 * scale, color: Colors.amber[700]),
+          Icon(
+            Icons.emoji_events,
+            size: 17 * scale,
+            color: cs.tertiary,
+          ),
           SizedBox(width: 6 * scale),
-          // Scale down the number if needed
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
@@ -260,7 +273,7 @@ class _TrophyPill extends StatelessWidget {
               maxLines: 1,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF2C015D),
+                color: cs.onTertiaryContainer,
                 fontSize: 14.5 * scale,
               ),
             ),
@@ -290,6 +303,7 @@ class _StreakPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final hasStreak = streakDays > 0;
 
     if (!hasStreak) {
@@ -297,7 +311,7 @@ class _StreakPill extends StatelessWidget {
         constraints: BoxConstraints(minHeight: 30 * scale),
         padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F7),
+          color: cs.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(22 * scale),
         ),
         child: Row(
@@ -306,7 +320,7 @@ class _StreakPill extends StatelessWidget {
             Icon(
               Icons.local_fire_department_rounded,
               size: 17 * scale,
-              color: const Color(0xFFB0B0B5),
+              color: cs.onSurfaceVariant.withOpacity(0.55),
             ),
             SizedBox(width: 6 * scale),
             Text(
@@ -314,7 +328,7 @@ class _StreakPill extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14.5 * scale,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF7E7E86),
+                color: cs.onSurfaceVariant.withOpacity(0.75),
               ),
             ),
           ],
@@ -322,21 +336,25 @@ class _StreakPill extends StatelessWidget {
       );
     }
 
+    // ✅ FIX: no flipping, no cs.secondary/cs.primary guesswork.
+    // Use the SAME gradients as the Home hero banner.
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final grad = isDark ? zHeroGradientDark : zHeroGradientLight;
+
+    // On these hero gradients, white is always the correct readable foreground
+    const fg = Colors.white;
+
     return Container(
       constraints: BoxConstraints(minHeight: 30 * scale),
       padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        gradient: grad,
         borderRadius: BorderRadius.circular(22 * scale),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x22000000),
+            color: cs.shadow.withOpacity(0.14),
             blurRadius: 6,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -346,7 +364,7 @@ class _StreakPill extends StatelessWidget {
           Icon(
             Icons.local_fire_department_rounded,
             size: 17 * scale,
-            color: Colors.white,
+            color: fg,
           ),
           SizedBox(width: 6 * scale),
           FittedBox(
@@ -357,7 +375,7 @@ class _StreakPill extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14.5 * scale,
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
+                color: fg,
               ),
             ),
           ),

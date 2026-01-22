@@ -229,5 +229,19 @@
   "verifyEmailHint": "Если письма нет — проверьте «Спам» или подождите 1–2 минуты.",
 
   "jinny": "Джинни",
-  "jinny_firstPrompt": "Объясни этот вопрос пошагово. Мой ответ: {picked}. Правильный ответ: {correct}. Также объясни, почему другие варианты неверны."
+  "jinny_firstPrompt": "Объясни этот вопрос пошагово. Мой ответ: {picked}. Правильный ответ: {correct}. Также объясни, почему другие варианты неверны.",
+
+  "chooseTheme": "Выберите тему",
+  "themeSystem": "Системная",
+  "themeLight": "Светлая",
+  "themeDark": "Тёмная",
+  "themeCurrentValue": "{value}",
+  "@themeCurrentValue": {
+    "description": "Shows the currently selected theme mode label (System/Light/Dark).",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
 }

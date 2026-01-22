@@ -557,4 +557,21 @@ class AppLocalizationsKy extends AppLocalizations {
   String jinny_firstPrompt(Object correct, Object picked) {
     return 'Бул суроону кадам-кадам менен түшүндүр. Менин жообум: $picked. Туура жооп: $correct. Калган варианттар эмне үчүн туура эмес экенин да түшүндүр.';
   }
+
+  @override
+  String get chooseTheme => 'Теманы тандаңыз';
+
+  @override
+  String get themeSystem => 'Системалык';
+
+  @override
+  String get themeLight => 'Жарык';
+
+  @override
+  String get themeDark => 'Караңгы';
+
+  @override
+  String themeCurrentValue(String value) {
+    return '$value';
+  }
 }

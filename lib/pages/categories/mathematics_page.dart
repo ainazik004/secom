@@ -8,10 +8,11 @@ class MathematicsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    const purple = Color(0xFF2C015D);
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F4FF),
+      backgroundColor: cs.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,18 +30,18 @@ class MathematicsPage extends StatelessWidget {
                       children: [
                         Text(
                           loc.math,
-                          style: const TextStyle(
+                          style: tt.titleLarge?.copyWith(
                             fontSize: 21,
                             fontWeight: FontWeight.w700,
-                            color: purple,
+                            color: cs.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           loc.mathIntroSubtitle,
-                          style: TextStyle(
+                          style: tt.bodySmall?.copyWith(
                             fontSize: 13,
-                            color: Colors.black.withOpacity(0.6),
+                            color: cs.onSurface.withOpacity(0.60),
                           ),
                         ),
                       ],
@@ -101,20 +102,22 @@ class _CloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Material(
-      color: Colors.white,
+      color: cs.surfaceContainerHighest,
       shape: const CircleBorder(),
       elevation: 4,
-      shadowColor: const Color(0x22000000),
+      shadowColor: cs.shadow.withOpacity(0.18),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: () => Navigator.of(context).pop(),
-        child: const Padding(
-          padding: EdgeInsets.all(10),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
           child: Icon(
             Icons.close_rounded,
             size: 20,
-            color: Color(0xFF2C015D),
+            color: cs.onSurface,
           ),
         ),
       ),
@@ -130,15 +133,24 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    final card = cs.surfaceContainerHighest;
+    final shadow = cs.shadow.withOpacity(0.10);
+
+    // Accent derived from theme (no hard-coded colors)
+    final accent = cs.primary;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: card,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x132C015D),
+            color: shadow,
             blurRadius: 18,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -152,12 +164,12 @@ class _InfoCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7F4BFF).withOpacity(0.12),
+                    color: accent.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.info_outline_rounded,
-                    color: Color(0xFF7F4BFF),
+                    color: accent,
                     size: 22,
                   ),
                 ),
@@ -165,10 +177,10 @@ class _InfoCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
+                    style: tt.titleSmall?.copyWith(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF2C015D),
+                      color: cs.onSurface,
                     ),
                   ),
                 ),
@@ -177,10 +189,10 @@ class _InfoCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               body,
-              style: TextStyle(
+              style: tt.bodyMedium?.copyWith(
                 fontSize: 13.5,
                 height: 1.45,
-                color: Colors.black.withOpacity(0.72),
+                color: cs.onSurface.withOpacity(0.72),
               ),
             ),
           ],
@@ -198,15 +210,24 @@ class _BulletsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    final card = cs.surfaceContainerHighest;
+    final shadow = cs.shadow.withOpacity(0.10);
+
+    // Accent derived from theme (no hard-coded colors)
+    final accent = cs.secondary;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: card,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x132C015D),
+            color: shadow,
             blurRadius: 18,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -220,12 +241,12 @@ class _BulletsCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF3D7F).withOpacity(0.12),
+                    color: accent.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.checklist_rounded,
-                    color: Color(0xFFFF3D7F),
+                    color: accent,
                     size: 22,
                   ),
                 ),
@@ -233,10 +254,10 @@ class _BulletsCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
+                    style: tt.titleSmall?.copyWith(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF2C015D),
+                      color: cs.onSurface,
                     ),
                   ),
                 ),
@@ -258,6 +279,9 @@ class _BulletRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -267,8 +291,8 @@ class _BulletRow extends StatelessWidget {
             margin: const EdgeInsets.only(top: 6),
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(
-              color: Color(0xFF2C015D),
+            decoration: BoxDecoration(
+              color: cs.primary,
               shape: BoxShape.circle,
             ),
           ),
@@ -276,10 +300,10 @@ class _BulletRow extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
+              style: tt.bodyMedium?.copyWith(
                 fontSize: 13.5,
                 height: 1.4,
-                color: Colors.black.withOpacity(0.72),
+                color: cs.onSurface.withOpacity(0.72),
               ),
             ),
           ),
@@ -302,13 +326,26 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ Dark mode: slightly muted primary (less “neon”), light mode unchanged
+    final btnColor = isDark
+        ? Color.alphaBlend(Colors.black.withOpacity(0.18), cs.primary)
+        : cs.primary;
+
+    // ✅ Dark mode: reduce shadow so it doesn’t glow
+    final shadowOpacity = isDark ? 0.12 : 0.22;
+    final elevation = isDark ? 2.0 : 6.0;
+
     return SizedBox(
       height: 54,
       child: Material(
-        color: const Color(0xFF2C015D),
+        color: btnColor,
         borderRadius: BorderRadius.circular(18),
-        elevation: 6,
-        shadowColor: const Color(0x332C015D),
+        elevation: elevation,
+        shadowColor: cs.shadow.withOpacity(shadowOpacity),
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap: onTap,
@@ -317,12 +354,12 @@ class _PrimaryButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, color: Colors.white),
+                Icon(icon, color: cs.onPrimary),
                 const SizedBox(width: 10),
                 Text(
                   text,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: tt.titleSmall?.copyWith(
+                    color: cs.onPrimary,
                     fontWeight: FontWeight.w800,
                     fontSize: 15.5,
                   ),

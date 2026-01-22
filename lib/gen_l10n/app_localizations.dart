@@ -1149,6 +1149,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Explain this question step-by-step. My answer: {picked}. Correct answer: {correct}. Also explain why the other options are wrong.'**
   String jinny_firstPrompt(Object correct, Object picked);
+
+  /// No description provided for @chooseTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose theme'**
+  String get chooseTheme;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// Shows the currently selected theme mode label (System/Light/Dark).
+  ///
+  /// In en, this message translates to:
+  /// **'{value}'**
+  String themeCurrentValue(String value);
 }
 
 class _AppLocalizationsDelegate

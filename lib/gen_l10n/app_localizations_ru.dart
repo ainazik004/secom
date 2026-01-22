@@ -558,4 +558,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String jinny_firstPrompt(Object correct, Object picked) {
     return 'Объясни этот вопрос пошагово. Мой ответ: $picked. Правильный ответ: $correct. Также объясни, почему другие варианты неверны.';
   }
+
+  @override
+  String get chooseTheme => 'Выберите тему';
+
+  @override
+  String get themeSystem => 'Системная';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String themeCurrentValue(String value) {
+    return '$value';
+  }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 import '../models/question.dart';
-import '../theme/z_theme.dart';
 import '../widgets/round_x_button.dart';
 import 'quiz_single_review_page.dart';
 
@@ -28,18 +27,36 @@ class QuizReviewGridPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ Background darker, tiles lighter (both themes)
+    final pageBg = cs.surface; // good base for both
+    final tileBg = isDark ? cs.surfaceContainerHighest : cs.surfaceContainerHigh;
+
+    // Status colors (consistent, but still readable on both themes)
+    const ok = Color(0xFF22C55E); // green
+    const bad = Color(0xFFEF4444); // red
 
     return Scaffold(
-      backgroundColor: ZTheme.bg,
+      backgroundColor: pageBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: pageBg,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: Padding(
           padding: const EdgeInsets.only(left: 10),
           child: RoundXButton(onTap: () => _goHome(context)),
         ),
-        title: Text(loc.quiz_review, style: const TextStyle(fontSize: 14)),
+        title: Text(
+          loc.quiz_review,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: cs.onSurface,
+          ),
+        ),
       ),
       body: LayoutBuilder(
         builder: (context, c) {
@@ -61,9 +78,15 @@ class QuizReviewGridPage extends StatelessWidget {
             ),
             itemBuilder: (context, i) {
               final correct = _isCorrect(i);
-              final border = correct ? ZTheme.green : ZTheme.red;
-              final pillBg = correct ? ZTheme.greenBg : ZTheme.redBg;
+              final accent = correct ? ok : bad;
               final icon = correct ? Icons.check_circle : Icons.cancel;
+
+              // ✅ No borderlines + visible shadow in both themes
+              final shadow = BoxShadow(
+                color: cs.shadow.withOpacity(isDark ? 0.35 : 0.12),
+                blurRadius: isDark ? 18 : 16,
+                offset: const Offset(0, 10),
+              );
 
               return InkWell(
                 borderRadius: BorderRadius.circular(18),
@@ -80,10 +103,9 @@ class QuizReviewGridPage extends StatelessWidget {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: tileBg,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: border, width: 1.3),
-                    boxShadow: ZTheme.softShadow,
+                    boxShadow: [shadow],
                   ),
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -91,26 +113,31 @@ class QuizReviewGridPage extends StatelessWidget {
                     children: [
                       Row(
                         children: [
+                          // ✅ status pill (no border)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
-                              color: pillBg,
+                              color: accent.withOpacity(isDark ? 0.22 : 0.14),
                               borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                  color: border.withOpacity(0.25)),
                             ),
                             child: Text(
                               'Q${i + 1}',
                               style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 12,
-                                color: border,
+                                color: isDark ? Colors.white : accent,
                               ),
                             ),
                           ),
                           const Spacer(),
-                          Icon(icon, color: border, size: 18),
+                          Icon(
+                            icon,
+                            color: accent,
+                            size: 18,
+                          ),
                         ],
                       ),
                       const Spacer(),
@@ -121,15 +148,18 @@ class QuizReviewGridPage extends StatelessWidget {
                               loc.quiz_tap_to_review,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF6B7280),
+                                color: cs.onSurfaceVariant.withOpacity(0.85),
                               ),
                             ),
                           ),
-                          const Icon(Icons.chevron_right,
-                              size: 18, color: Color(0xFF6B7280)),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: cs.onSurfaceVariant.withOpacity(0.85),
+                          ),
                         ],
                       ),
                     ],

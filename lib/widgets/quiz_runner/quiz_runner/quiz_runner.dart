@@ -7,11 +7,9 @@ import 'package:flutter/material.dart';
 
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
-// ✅ split files (based on your folder structure screenshot)
 import '../models/question.dart';
 import '../pages/quiz_review_grid_page.dart';
 
-import '../services/ai_explain_service.dart';
 import '../theme/z_theme.dart';
 
 import '../widgets/empty_state.dart';
@@ -119,8 +117,8 @@ class _QuizRunnerState extends State<QuizRunner> {
 
   String _yesterdayKeyUtcPlus6(DateTime utcNow) {
     final local = utcNow.toUtc().add(_tzOffset);
-    final yest =
-    DateTime(local.year, local.month, local.day).subtract(const Duration(days: 1));
+    final yest = DateTime(local.year, local.month, local.day)
+        .subtract(const Duration(days: 1));
     final y = yest.year.toString().padLeft(4, '0');
     final m = yest.month.toString().padLeft(2, '0');
     final d = yest.day.toString().padLeft(2, '0');
@@ -154,7 +152,8 @@ class _QuizRunnerState extends State<QuizRunner> {
     final nowUtc = DateTime.now().toUtc();
     final spent = nowUtc.difference(_questionStartedUtc).inSeconds;
     final clamped = spent.clamp(0, 60 * 60);
-    _timeSpentSecondsByIndex[_index] = (_timeSpentSecondsByIndex[_index] ?? 0) + clamped;
+    _timeSpentSecondsByIndex[_index] =
+        (_timeSpentSecondsByIndex[_index] ?? 0) + clamped;
     _questionStartedUtc = nowUtc;
   }
 
@@ -212,7 +211,8 @@ class _QuizRunnerState extends State<QuizRunner> {
 
       final newAnswered = oldAnswered + totalQuestions;
       final newCorrect = oldCorrect + correct;
-      final newAvgScore = newAnswered == 0 ? 0.0 : (newCorrect / newAnswered) * 100.0;
+      final newAvgScore =
+      newAnswered == 0 ? 0.0 : (newCorrect / newAnswered) * 100.0;
 
       final updatedCatStats = <String, dynamic>{
         ...catStats,
@@ -225,9 +225,12 @@ class _QuizRunnerState extends State<QuizRunner> {
         },
       };
 
-      final oldTotalAnswered = _asInt(data['totalQuestionsAnswered'], fallback: 0);
-      final oldTotalCorrect = _asInt(data['totalCorrectAnswers'], fallback: 0);
-      final oldTotalStudySeconds = _asInt(data['totalStudyTimeSeconds'], fallback: 0);
+      final oldTotalAnswered =
+      _asInt(data['totalQuestionsAnswered'], fallback: 0);
+      final oldTotalCorrect =
+      _asInt(data['totalCorrectAnswers'], fallback: 0);
+      final oldTotalStudySeconds =
+      _asInt(data['totalStudyTimeSeconds'], fallback: 0);
 
       final newTotalAnswered = oldTotalAnswered + totalQuestions;
       final newTotalCorrect = oldTotalCorrect + correct;
@@ -248,7 +251,8 @@ class _QuizRunnerState extends State<QuizRunner> {
       } else {
         updatedStreak = 1;
       }
-      final updatedLongest = updatedStreak > longestStreak ? updatedStreak : longestStreak;
+      final updatedLongest =
+      updatedStreak > longestStreak ? updatedStreak : longestStreak;
 
       final Map<String, dynamic> oldRecent =
       (data['recentResults'] is Map<String, dynamic>)
@@ -382,13 +386,14 @@ class _QuizRunnerState extends State<QuizRunner> {
             offset: Offset(0, 18 * (1 - t)),
             child: Dialog(
               backgroundColor: Colors.transparent,
-              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+              insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
               child: ResultPopup(
                 title: loc.quiz_result_title,
                 brand: 'ZHALBYRAK',
                 percent: pct,
                 correctText: loc.quiz_correct_out_of(correct, total),
-                trophiesLabel: loc.trophies, // if you add this key; otherwise use a literal
+                trophiesLabel: loc.trophies,
                 trophiesCount: '$correct',
                 totalLabel: loc.quiz_total,
                 totalCount: '$total',
@@ -408,7 +413,7 @@ class _QuizRunnerState extends State<QuizRunner> {
                 },
                 onClose: () {
                   Navigator.of(ctx).pop();
-                  Navigator.of(context).pop(); // back to home
+                  Navigator.of(context).pop();
                 },
                 onRetry: () {
                   Navigator.of(ctx).pop();
@@ -422,16 +427,31 @@ class _QuizRunnerState extends State<QuizRunner> {
     );
   }
 
+  // -------- UI helpers (no borders; tiles lighter than bg) --------
+
+  List<BoxShadow> _softShadow(ColorScheme cs, {bool strong = false}) => [
+    BoxShadow(
+      color: cs.shadow.withOpacity(strong ? 0.16 : 0.10),
+      blurRadius: strong ? 20 : 14,
+      offset: const Offset(0, 10),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+
+    // Background is slightly “deeper”, tiles are lighter.
+    final bg = cs.surface;
+    final tile = cs.surfaceContainerHighest;
 
     return Scaffold(
-      backgroundColor: ZTheme.bg,
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: bg,
+        surfaceTintColor: bg,
+        elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.only(left: 10),
           child: RoundXButton(onTap: () => Navigator.of(context).pop()),
@@ -442,7 +462,9 @@ class _QuizRunnerState extends State<QuizRunner> {
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(color: cs.primary),
+            );
           }
           if (snap.hasError) {
             return ErrorStateView(
@@ -475,14 +497,13 @@ class _QuizRunnerState extends State<QuizRunner> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Top progress card
+                // Top progress card (NO BORDER)
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: tile,
                     borderRadius: BorderRadius.circular(18),
-                    boxShadow: ZTheme.softShadow,
-                    border: Border.all(color: ZTheme.border),
+                    boxShadow: _softShadow(cs),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,24 +513,26 @@ class _QuizRunnerState extends State<QuizRunner> {
                           Expanded(
                             child: Text(
                               loc.quiz_question_of(_index + 1, questions.length),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 13,
+                                color: cs.onSurface,
                               ),
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: ZTheme.pillBg,
+                              color: cs.surface.withOpacity(0.65),
                               borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: ZTheme.border),
                             ),
                             child: Text(
                               '${_answers.length}/${questions.length}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 12,
+                                color: cs.onSurface,
                               ),
                             ),
                           ),
@@ -521,8 +544,9 @@ class _QuizRunnerState extends State<QuizRunner> {
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 9,
-                          backgroundColor: const Color(0xFFEAE7FF),
-                          valueColor: AlwaysStoppedAnimation<Color>(ZTheme.purple),
+                          backgroundColor: cs.surface.withOpacity(0.65),
+                          valueColor:
+                          AlwaysStoppedAnimation<Color>(ZTheme.purple),
                         ),
                       ),
                     ],
@@ -535,46 +559,62 @@ class _QuizRunnerState extends State<QuizRunner> {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        // Question card
+                        // Question card (NO BORDER)
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: tile,
                             borderRadius: BorderRadius.circular(18),
-                            boxShadow: ZTheme.softShadow,
-                            border: Border.all(color: ZTheme.border),
+                            boxShadow: _softShadow(cs, strong: true),
                           ),
                           child: Text(
                             q.stem,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
                               height: 1.35,
+                              color: cs.onSurface,
                             ),
                           ),
                         ),
 
                         const SizedBox(height: 12),
 
-                        // Answer choices
+                        // Answer choices (NO BORDERS)
                         ...q.optionKeys.map((key) {
                           final text = q.options[key] ?? '';
                           final isSelected = selected == key;
 
-                          final border = isSelected ? ZTheme.purple : ZTheme.border;
-                          final fill = isSelected ? ZTheme.selectedFill : Colors.white;
+                          final fill = isSelected
+                              ? Color.alphaBlend(
+                            cs.primary.withOpacity(0.10),
+                            tile,
+                          )
+                              : tile;
+
+                          final shadow = isSelected
+                              ? [
+                            BoxShadow(
+                              color: cs.shadow.withOpacity(0.14),
+                              blurRadius: 14,
+                              offset: const Offset(0, 8),
+                            ),
+                          ]
+                              : _softShadow(cs);
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 10),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(16),
                               onTap: _finishing ? null : () => _select(key),
-                              child: Container(
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOutCubic,
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: fill,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: border, width: 1.2),
+                                  boxShadow: shadow,
                                 ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,26 +624,37 @@ class _QuizRunnerState extends State<QuizRunner> {
                                       height: 30,
                                       alignment: Alignment.center,
                                       decoration: BoxDecoration(
-                                        color: ZTheme.pillBg,
+                                        color: cs.surface.withOpacity(0.65),
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: ZTheme.border),
                                       ),
                                       child: Text(
                                         key,
-                                        style: const TextStyle(fontWeight: FontWeight.w900),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          color: cs.onSurface,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
                                         text,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 14,
                                           height: 1.35,
                                           fontWeight: FontWeight.w700,
+                                          color: cs.onSurface,
                                         ),
                                       ),
                                     ),
+                                    if (isSelected) ...[
+                                      const SizedBox(width: 10),
+                                      Icon(
+                                        Icons.check_circle_rounded,
+                                        size: 18,
+                                        color: ZTheme.purple,
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -613,7 +664,7 @@ class _QuizRunnerState extends State<QuizRunner> {
 
                         const SizedBox(height: 6),
 
-                        // Bottom buttons
+                        // Bottom buttons (keep your styling)
                         Row(
                           children: [
                             Expanded(
@@ -624,19 +675,22 @@ class _QuizRunnerState extends State<QuizRunner> {
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   side: BorderSide(
+                                    // ✅ neutral outline (secondary)
                                     color: canGoBack
-                                        ? ZTheme.purple
-                                        : ZTheme.purple.withOpacity(0.25),
+                                        ? cs.outlineVariant.withOpacity(0.70)
+                                        : cs.outlineVariant.withOpacity(0.35),
+                                    width: 1.2,
                                   ),
+                                  // ✅ neutral text color (secondary)
+                                  foregroundColor: canGoBack
+                                      ? cs.onSurfaceVariant.withOpacity(0.90)
+                                      : cs.onSurface.withOpacity(0.35),
                                   padding: const EdgeInsets.symmetric(vertical: 14),
                                 ),
                                 child: Text(
                                   loc.quiz_back,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.w900,
-                                    color: canGoBack
-                                        ? ZTheme.purple
-                                        : ZTheme.purple.withOpacity(0.35),
                                   ),
                                 ),
                               ),
@@ -655,8 +709,10 @@ class _QuizRunnerState extends State<QuizRunner> {
                                     : null,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: ZTheme.purple,
-                                  disabledBackgroundColor: ZTheme.purple.withOpacity(0.35),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  disabledBackgroundColor:
+                                  ZTheme.purple.withOpacity(0.35),
+                                  padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
@@ -668,7 +724,8 @@ class _QuizRunnerState extends State<QuizRunner> {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.4,
                                     valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                    AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 )
                                     : Text(

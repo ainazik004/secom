@@ -229,5 +229,19 @@
   "verifyEmailHint": "If you do not see the email, check your Spam folder or wait 1–2 minutes.",
 
   "jinny": "Jinny",
-  "jinny_firstPrompt": "Explain this question step-by-step. My answer: {picked}. Correct answer: {correct}. Also explain why the other options are wrong."
+  "jinny_firstPrompt": "Explain this question step-by-step. My answer: {picked}. Correct answer: {correct}. Also explain why the other options are wrong.",
+
+  "chooseTheme": "Choose theme",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "themeCurrentValue": "{value}",
+  "@themeCurrentValue": {
+    "description": "Shows the currently selected theme mode label (System/Light/Dark).",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
 }

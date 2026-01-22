@@ -5,23 +5,27 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
+import 'package:zhalbyrak/pages/home_page.dart'
+    show zHeroGradientLight, zHeroGradientDark;
+
 class AdvancedStatisticsPage extends StatelessWidget {
   const AdvancedStatisticsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF6F4FF),
+        backgroundColor: cs.background,
         body: SafeArea(
           child: Center(
             child: Text(
               loc.notLoggedIn,
               style: TextStyle(
-                color: Colors.black.withOpacity(0.6),
+                color: cs.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -31,10 +35,13 @@ class AdvancedStatisticsPage extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F4FF),
+      backgroundColor: cs.background,
       body: SafeArea(
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .snapshots(),
           builder: (context, snapshot) {
             final header = _AdvancedStatsHeader(
               title: loc.advancedStatisticsTitle,
@@ -45,7 +52,9 @@ class AdvancedStatisticsPage extends StatelessWidget {
               return Column(
                 children: [
                   header,
-                  const Expanded(child: Center(child: CircularProgressIndicator())),
+                  const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                 ],
               );
             }
@@ -59,7 +68,7 @@ class AdvancedStatisticsPage extends StatelessWidget {
                       child: Text(
                         loc.noStatisticsYet,
                         style: TextStyle(
-                          color: Colors.black.withOpacity(0.6),
+                          color: cs.onSurfaceVariant,
                           fontSize: 14,
                         ),
                       ),
@@ -100,34 +109,43 @@ class AdvancedStatisticsPage extends StatelessWidget {
             }
 
             // ───────────────────────── global stats ─────────────────────────
-            final totalAnswered = _num('totalQuestionsAnswered').toInt().clamp(0, 1 << 31);
-            final totalCorrect = _num('totalCorrectAnswers').toInt().clamp(0, totalAnswered);
+            final totalAnswered =
+            _num('totalQuestionsAnswered').toInt().clamp(0, 1 << 31);
+            final totalCorrect =
+            _num('totalCorrectAnswers').toInt().clamp(0, totalAnswered);
 
-            final accuracy =
-            totalAnswered == 0 ? 0.0 : (totalCorrect / totalAnswered).clamp(0.0, 1.0);
+            final accuracy = totalAnswered == 0
+                ? 0.0
+                : (totalCorrect / totalAnswered).clamp(0.0, 1.0);
 
-            final avgScorePercent = _num('averageScore').toDouble().clamp(0.0, 100.0);
+            final avgScorePercent =
+            _num('averageScore').toDouble().clamp(0.0, 100.0);
 
-            final avgTimePerQuestionSeconds =
-            _num('averageTimePerQuestionSeconds').toDouble().clamp(0.0, 3600.0);
+            final avgTimePerQuestionSeconds = _num('averageTimePerQuestionSeconds')
+                .toDouble()
+                .clamp(0.0, 3600.0);
 
-            final totalStudySeconds = _num('totalStudyTimeSeconds').toInt().clamp(0, 1 << 31);
+            final totalStudySeconds =
+            _num('totalStudyTimeSeconds').toInt().clamp(0, 1 << 31);
 
-            final currentStreakDays = _num('currentStreakDays').toInt().clamp(0, 36500);
-            final longestStreakDays = _num('longestStreakDays').toInt().clamp(0, 36500);
+            final currentStreakDays =
+            _num('currentStreakDays').toInt().clamp(0, 36500);
+            final longestStreakDays =
+            _num('longestStreakDays').toInt().clamp(0, 36500);
 
             final trophies = _num('trophies').toInt().clamp(0, 1 << 31);
-            final totalTestsCompleted = _num('totalTestsCompleted').toInt().clamp(0, 1 << 31);
+            final totalTestsCompleted =
+            _num('totalTestsCompleted').toInt().clamp(0, 1 << 31);
 
             // ───────────────────────── category stats ─────────────────────────
             final categoryStats = _map(data['categoryStats']);
-
             Map<String, dynamic> _cat(String key) => _map(categoryStats[key]);
 
             int _catAnswered(String key) => _asInt(_cat(key)['answered']);
             int _catCorrect(String key) => _asInt(_cat(key)['correct']);
             int _catTests(String key) => _asInt(_cat(key)['testsCompleted']);
-            double _catAvgScore(String key) => _asDouble(_cat(key)['avgScore']).clamp(0.0, 100.0);
+            double _catAvgScore(String key) =>
+                _asDouble(_cat(key)['avgScore']).clamp(0.0, 100.0);
 
             double _catAccuracy(String key) {
               final a = _catAnswered(key);
@@ -183,7 +201,7 @@ class AdvancedStatisticsPage extends StatelessWidget {
               ),
             ];
 
-            // ───────────────────────── recentResults: r0..r6 (0..100), oldest->newest ─────────────────────────
+            // ───────────────────────── recentResults ─────────────────────────
             final recentResultsMap = _map(data['recentResults']);
             final List<double> recentAccPct = [];
             for (int i = 0; i < 50; i++) {
@@ -207,13 +225,12 @@ class AdvancedStatisticsPage extends StatelessWidget {
               final totalMinutes = seconds ~/ 60;
               final h = totalMinutes ~/ 60;
               final m = totalMinutes % 60;
-              if (h <= 0) return "${m} ${loc.minutes}";
-              return "${h} ${loc.hours} ${m} ${loc.minutes}";
+              if (h <= 0) return "$m ${loc.minutes}";
+              return "$h ${loc.hours} $m ${loc.minutes}";
             }
 
             String _fmtSeconds(double s) => "${s.round()} ${loc.seconds}";
 
-            // ───────────────────────── layout ─────────────────────────
             return LayoutBuilder(
               builder: (context, constraints) {
                 return Column(
@@ -221,9 +238,11 @@ class AdvancedStatisticsPage extends StatelessWidget {
                     header,
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight - 16),
+                          constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight - 16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -235,7 +254,8 @@ class AdvancedStatisticsPage extends StatelessWidget {
                                 totalAnswered: totalAnswered,
                                 totalCorrect: totalCorrect,
                                 avgScorePercent: avgScorePercent,
-                                avgTimePerQuestionLabel: _fmtSeconds(avgTimePerQuestionSeconds),
+                                avgTimePerQuestionLabel:
+                                _fmtSeconds(avgTimePerQuestionSeconds),
                               ),
                               const SizedBox(height: 14),
                               _HighlightsCard(
@@ -251,11 +271,12 @@ class AdvancedStatisticsPage extends StatelessWidget {
                               const SizedBox(height: 8),
                               _CategoryCardsGrid(loc: loc, categories: categories),
                               const SizedBox(height: 20),
-                              _CategoryBarsCard(loc: loc, categories: categories),
-                              const SizedBox(height: 20),
                               _SectionTitle(label: loc.recentTestPerformance),
                               const SizedBox(height: 8),
-                              _RecentResultsCard(loc: loc, recentAccPct: recentAccPct),
+                              _RecentResultsCard(
+                                loc: loc,
+                                recentAccPct: recentAccPct,
+                              ),
                               const SizedBox(height: 32),
                             ],
                           ),
@@ -287,15 +308,13 @@ class _AdvancedStatsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.only(left: 20, right: 20, top: 18, bottom: 18),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+      decoration: BoxDecoration(
+        gradient: isDark ? zHeroGradientDark : zHeroGradientLight,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Row(
         children: [
@@ -309,7 +328,8 @@ class _AdvancedStatsHeader extends StatelessWidget {
                 color: Colors.white.withOpacity(0.18),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+              child:
+              const Icon(Icons.close_rounded, color: Colors.white, size: 20),
             ),
           ),
           const SizedBox(width: 14),
@@ -332,7 +352,8 @@ class _AdvancedStatsHeader extends StatelessWidget {
                   subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+                  style:
+                  TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
                 ),
               ],
             ),
@@ -353,10 +374,12 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Text(
       label,
-      style: const TextStyle(
-        color: Color(0xFF2C015D),
+      style: TextStyle(
+        color: cs.onSurface,
         fontSize: 15,
         fontWeight: FontWeight.w800,
       ),
@@ -378,16 +401,19 @@ class _CardShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.55)),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x142C015D),
+            color: cs.shadow.withOpacity(0.12),
             blurRadius: 16,
-            offset: Offset(0, 8),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -418,31 +444,14 @@ class _OverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return _CardShell(
       child: Row(
         children: [
-          SizedBox(
-            width: 92,
-            height: 92,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: accuracy.clamp(0.0, 1.0),
-                  strokeWidth: 7,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7F4BFF)),
-                ),
-                Text(
-                  "${(accuracy * 100).round()}%",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF2C015D),
-                  ),
-                ),
-              ],
-            ),
+          _AccuracyDonut(
+            value: accuracy.clamp(0.0, 1.0),
+            label: loc.accuracy,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -451,8 +460,8 @@ class _OverviewCard extends StatelessWidget {
               children: [
                 Text(
                   loc.overallAccuracy,
-                  style: const TextStyle(
-                    color: Color(0xFF2C015D),
+                  style: TextStyle(
+                    color: cs.onSurface,
                     fontWeight: FontWeight.w800,
                     fontSize: 15,
                   ),
@@ -468,9 +477,15 @@ class _OverviewCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    _MiniStat(label: loc.avgScore, value: "${avgScorePercent.round()}%"),
+                    _MiniStat(
+                      label: loc.avgScore,
+                      value: "${avgScorePercent.round()}%",
+                    ),
                     const SizedBox(width: 14),
-                    _MiniStat(label: loc.avgTimePerQuestion, value: avgTimePerQuestionLabel),
+                    _MiniStat(
+                      label: loc.avgTimePerQuestion,
+                      value: avgTimePerQuestionLabel,
+                    ),
                   ],
                 ),
               ],
@@ -490,14 +505,16 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             value,
-            style: const TextStyle(
-              color: Color(0xFF2C015D),
+            style: TextStyle(
+              color: cs.onSurface,
               fontSize: 15,
               fontWeight: FontWeight.w800,
             ),
@@ -505,7 +522,7 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 11),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
           ),
         ],
       ),
@@ -514,7 +531,112 @@ class _MiniStat extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Highlights card (colorful icons + clock for study time)
+// Donut (BIGGER + more readable)
+// Key changes:
+// - bigger size
+// - thicker ring
+// - inner padding to guarantee no overlap
+// - auto shrink (FittedBox)
+// - optional subtle center backdrop for contrast
+// ─────────────────────────────────────────────────────────────
+class _AccuracyDonut extends StatelessWidget {
+  final double value; // 0..1
+  final String label;
+
+  const _AccuracyDonut({
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final pct = (value * 100).round();
+
+    const size = 142.0; // ✅ visible and readable in your card
+    const ring = 10.0;  // ✅ more “donut-like” and readable
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // background ring
+          SizedBox(
+            width: size,
+            height: size,
+            child: CircularProgressIndicator(
+              value: 1,
+              strokeWidth: ring,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                cs.onSurfaceVariant.withOpacity(0.18),
+              ),
+            ),
+          ),
+
+          // progress ring
+          SizedBox(
+            width: size,
+            height: size,
+            child: CircularProgressIndicator(
+              value: value.clamp(0.0, 1.0),
+              strokeWidth: ring,
+              strokeCap: StrokeCap.round,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+            ),
+          ),
+
+          // center (contrast + no overlap)
+          Container(
+            width: size - (ring * 2.2),
+            height: size - (ring * 2.2),
+            decoration: BoxDecoration(
+              color: cs.surface.withOpacity(0.55),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "$pct%",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        height: 1.0,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        height: 1.0,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Highlights card
 // ─────────────────────────────────────────────────────────────
 class _HighlightsCard extends StatelessWidget {
   final AppLocalizations loc;
@@ -605,6 +727,8 @@ class _RowStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Row(
       children: [
         Icon(icon, size: 18, color: iconColor),
@@ -613,7 +737,7 @@ class _RowStat extends StatelessWidget {
           child: Text(
             title,
             style: TextStyle(
-              color: const Color(0xFF2C015D),
+              color: cs.onSurface,
               fontSize: compact ? 12 : 13,
               fontWeight: FontWeight.w800,
             ),
@@ -623,7 +747,7 @@ class _RowStat extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            color: Colors.black.withOpacity(0.7),
+            color: cs.onSurfaceVariant,
             fontSize: compact ? 12 : 13,
             fontWeight: FontWeight.w700,
           ),
@@ -634,7 +758,7 @@ class _RowStat extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Category cards grid (adaptive: 1 column on narrow phones)
+// Category cards grid
 // ─────────────────────────────────────────────────────────────
 class _CategoryCardsGrid extends StatelessWidget {
   final AppLocalizations loc;
@@ -644,6 +768,8 @@ class _CategoryCardsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
@@ -665,17 +791,17 @@ class _CategoryCardsGrid extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       cat.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 15,
-                        color: Color(0xFF2C015D),
+                        color: cs.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       "${loc.correct}: ${cat.correct}",
                       style: TextStyle(
-                        color: Colors.black.withOpacity(0.65),
+                        color: cs.onSurfaceVariant,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -684,7 +810,7 @@ class _CategoryCardsGrid extends StatelessWidget {
                     Text(
                       "${loc.answered}: ${cat.answered}",
                       style: TextStyle(
-                        color: Colors.black.withOpacity(0.65),
+                        color: cs.onSurfaceVariant,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -695,24 +821,24 @@ class _CategoryCardsGrid extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: cat.accuracy.clamp(0.0, 1.0),
                         minHeight: 7,
-                        backgroundColor: const Color(0xFFECE7FF),
+                        backgroundColor: cs.surfaceContainerHigh,
                         valueColor: AlwaysStoppedAnimation<Color>(cat.iconColor),
                       ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       "${loc.accuracy}: ${(cat.accuracy * 100).round()}%",
-                      style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 11),
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       "${loc.avgScore}: ${cat.avgScorePercent.round()}%",
-                      style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 11),
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       "${loc.testsCompleted}: ${cat.testsCompleted}",
-                      style: TextStyle(color: Colors.black.withOpacity(0.6), fontSize: 11),
+                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
                     ),
                   ],
                 ),
@@ -726,168 +852,7 @@ class _CategoryCardsGrid extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Category accuracy bars card
-// ─────────────────────────────────────────────────────────────
-class _CategoryBarsCard extends StatelessWidget {
-  final AppLocalizations loc;
-  final List<_CategoryStat> categories;
-
-  const _CategoryBarsCard({required this.loc, required this.categories});
-
-  @override
-  Widget build(BuildContext context) {
-    return _CardShell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            loc.accuracyPerCategory,
-            style: const TextStyle(
-              color: Color(0xFF2C015D),
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 140,
-            width: double.infinity,
-            child: _CategoryBarChart(categories: categories),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            runSpacing: 6,
-            children: categories.map((c) {
-              return _LegendChip(
-                label: c.title,
-                color: c.iconColor,
-                value: "${(c.accuracy * 100).round()}%",
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryBarChart extends StatelessWidget {
-  final List<_CategoryStat> categories;
-
-  const _CategoryBarChart({required this.categories});
-
-  @override
-  Widget build(BuildContext context) {
-    if (categories.isEmpty) return const SizedBox();
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final barCount = categories.length;
-        const spacing = 16.0;
-
-        final barWidth = min(
-          36.0,
-          (constraints.maxWidth - spacing * (barCount - 1)) / barCount,
-        );
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (final c in categories)
-              _SingleBar(
-                heightFactor: c.accuracy.clamp(0.0, 1.0),
-                width: barWidth,
-                color: c.iconColor,
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SingleBar extends StatelessWidget {
-  final double heightFactor;
-  final double width;
-  final Color color;
-
-  const _SingleBar({
-    required this.heightFactor,
-    required this.width,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Flexible(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          width: width,
-          height: 110 * heightFactor,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: color.withOpacity(0.85),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LegendChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _LegendChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      backgroundColor: const Color(0xFFF4ECFF),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF2C015D),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: TextStyle(color: Colors.black.withOpacity(0.7), fontSize: 10),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
 // Recent results card
-// - NO duplicated labels (only bottom labels)
-// - Fits all 7 bars/labels in one row
-// - Discrete band colors (high contrast):
-//   0–20 red, 20–40 yellow, 40–60 light green, 60–80 green, 80–100 dark green
 // ─────────────────────────────────────────────────────────────
 class _RecentResultsCard extends StatelessWidget {
   final AppLocalizations loc;
@@ -898,17 +863,20 @@ class _RecentResultsCard extends StatelessWidget {
     required this.recentAccPct,
   });
 
-  Color _bandColor(double pct) {
+  Color _bandColor(BuildContext context, double pct) {
+    final cs = Theme.of(context).colorScheme;
     pct = pct.clamp(0.0, 100.0);
-    if (pct < 20) return const Color(0xFFEF4444); // red
-    if (pct < 40) return const Color(0xFFFACC15); // yellow
-    if (pct < 60) return const Color(0xFF86EFAC); // light green
-    if (pct < 80) return const Color(0xFF22C55E); // green
-    return const Color(0xFF15803D); // dark green
+
+    if (pct < 20) return const Color(0xFFEF4444);
+    if (pct < 40) return const Color(0xFFFACC15);
+    if (pct < 60) return const Color(0xFF86EFAC);
+    if (pct < 80) return const Color(0xFF22C55E);
+    return cs.primary;
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final vals = recentAccPct;
 
     return _CardShell(
@@ -917,12 +885,12 @@ class _RecentResultsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.insights_rounded, color: Color(0xFF3B82F6)),
+              Icon(Icons.insights_rounded, color: cs.primary),
               const SizedBox(width: 10),
               Text(
                 loc.recentTests,
-                style: const TextStyle(
-                  color: Color(0xFF2C015D),
+                style: TextStyle(
+                  color: cs.onSurface,
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                 ),
@@ -935,7 +903,7 @@ class _RecentResultsCard extends StatelessWidget {
             width: double.infinity,
             child: _RecentBars(
               vals: vals,
-              colorFn: _bandColor,
+              colorFn: (p) => _bandColor(context, p),
             ),
           ),
         ],
@@ -953,17 +921,17 @@ class _RecentBars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (vals.isEmpty) return const SizedBox();
+    final cs = Theme.of(context).colorScheme;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxBars = vals.length;
         const spacing = 8.0;
 
-        final rawBarWidth = (constraints.maxWidth - spacing * (maxBars - 1)) / maxBars;
+        final rawBarWidth =
+            (constraints.maxWidth - spacing * (maxBars - 1)) / maxBars;
         final barWidth = rawBarWidth.clamp(10.0, 22.0);
 
-        // Keep everything within the container height:
-        // bar + gap + label = <= constraints.maxHeight
         const labelH = 14.0;
         const gapH = 6.0;
         final barAreaH = max(40.0, constraints.maxHeight - labelH - gapH);
@@ -980,7 +948,6 @@ class _RecentBars extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  // bar
                   Container(
                     width: barWidth,
                     height: max(6.0, h),
@@ -990,7 +957,6 @@ class _RecentBars extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: gapH),
-                  // bottom label (ONLY label we keep)
                   SizedBox(
                     height: labelH,
                     child: FittedBox(
@@ -1001,7 +967,7 @@ class _RecentBars extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
-                          color: Colors.black.withOpacity(0.75),
+                          color: cs.onSurfaceVariant,
                         ),
                       ),
                     ),

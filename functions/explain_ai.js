@@ -284,9 +284,9 @@ exports.aiExplainQuestion = functions.https.onCall(async (data, context) => {
     const client = getClient();
 
     const resp = await client.responses.create({
-      model: "gpt-4.1-mini",
+      model: "gpt-5.2",
       input: messages,
-      max_output_tokens: 450,
+      max_output_tokens: 1000,
     });
 
     let text = (resp && resp.output_text ? String(resp.output_text) : "").trim();

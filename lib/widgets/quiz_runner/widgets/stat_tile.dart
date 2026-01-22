@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/z_theme.dart';
 
 class StatTile extends StatelessWidget {
   final String label;
@@ -15,26 +14,45 @@ class StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final tileBg = cs.surfaceContainerHighest; // lighter than bg
+    final iconBg = cs.surface; // slightly lower than tile
+    final shadow = cs.shadow.withOpacity(isDark ? 0.35 : 0.12);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: ZTheme.bg,
+        color: tileBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: ZTheme.border),
+        boxShadow: [
+          BoxShadow(
+            color: shadow,
+            blurRadius: isDark ? 18 : 14,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         children: [
+          // Icon container
           Container(
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: iconBg,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: ZTheme.border),
             ),
-            child: Icon(icon, size: 20),
+            child: Icon(
+              icon,
+              size: 20,
+              color: cs.primary,
+            ),
           ),
+
           const SizedBox(width: 10),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,18 +61,19 @@ class StatTile extends StatelessWidget {
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF6B7280),
+                    color: cs.onSurfaceVariant.withOpacity(0.75),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
+                    color: cs.onSurface,
                   ),
                 ),
               ],

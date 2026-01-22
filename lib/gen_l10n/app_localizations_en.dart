@@ -556,4 +556,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String jinny_firstPrompt(Object correct, Object picked) {
     return 'Explain this question step-by-step. My answer: $picked. Correct answer: $correct. Also explain why the other options are wrong.';
   }
+
+  @override
+  String get chooseTheme => 'Choose theme';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String themeCurrentValue(String value) {
+    return '$value';
+  }
 }

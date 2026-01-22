@@ -229,5 +229,19 @@
   "verifyEmailHint": "Кат келбесе — «Спамды» текшериңиз же 1–2 мүнөт күтүңүз.",
 
   "jinny": "Джинни",
-  "jinny_firstPrompt": "Бул суроону кадам-кадам менен түшүндүр. Менин жообум: {picked}. Туура жооп: {correct}. Калган варианттар эмне үчүн туура эмес экенин да түшүндүр."
+  "jinny_firstPrompt": "Бул суроону кадам-кадам менен түшүндүр. Менин жообум: {picked}. Туура жооп: {correct}. Калган варианттар эмне үчүн туура эмес экенин да түшүндүр.",
+
+  "chooseTheme": "Теманы тандаңыз",
+  "themeSystem": "Системалык",
+  "themeLight": "Жарык",
+  "themeDark": "Караңгы",
+  "themeCurrentValue": "{value}",
+  "@themeCurrentValue": {
+    "description": "Shows the currently selected theme mode label (System/Light/Dark).",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  }
 }

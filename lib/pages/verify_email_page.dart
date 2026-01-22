@@ -68,7 +68,6 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       if (refreshed?.emailVerified == true) {
         _timer?.cancel();
 
-        // Build safe fallback data if we don't have pending (e.g. app relaunch)
         final pending = widget.pending ??
             PendingUserData(
               email: refreshed?.email ?? '',
@@ -79,7 +78,6 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
               languageCode: 'ru',
             );
 
-        // Create Firestore user ONLY NOW (after verified)
         await _auth.createUserDocIfVerified(
           displayName: pending.displayName,
           firstName: pending.firstName,
@@ -150,24 +148,30 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    const purple = Color(0xFF2A1A57);
-    const bg = Color(0xFFF6F4FF);
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     final email = FirebaseAuth.instance.currentUser?.email ??
         widget.pending?.email ??
         '';
 
+    final subtitleColor = cs.onSurface.withOpacity(0.70);
+    final hintColor = cs.onSurface.withOpacity(0.60);
+
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
-        backgroundColor: bg,
+        backgroundColor: cs.surface,
         appBar: AppBar(
-          backgroundColor: bg,
+          backgroundColor: cs.surface,
           elevation: 0,
           automaticallyImplyLeading: false,
           title: Text(
             loc.verifyEmailTitle,
-            style: const TextStyle(color: purple, fontWeight: FontWeight.w800),
+            style: tt.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: cs.onSurface,
+            ),
           ),
         ),
         body: Padding(
@@ -177,19 +181,19 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
             children: [
               Text(
                 loc.verifyEmailSubtitle,
-                style: TextStyle(
+                style: tt.bodyMedium?.copyWith(
                   fontSize: 14.5,
-                  color: Colors.black.withOpacity(0.70),
+                  color: subtitleColor,
                   height: 1.3,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 email,
-                style: const TextStyle(
+                style: tt.bodyMedium?.copyWith(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
-                  color: purple,
+                  color: cs.primary,
                 ),
               ),
               const SizedBox(height: 18),
@@ -202,28 +206,29 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                       ? null
                       : () => _checkEmailVerified(silent: false),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: purple,
-                    disabledBackgroundColor: purple.withOpacity(0.6),
+                    backgroundColor: cs.primary,
+                    disabledBackgroundColor: cs.primary.withOpacity(0.6),
+                    foregroundColor: cs.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
                   child: _checking
-                      ? const SizedBox(
+                      ? SizedBox(
                     height: 22,
                     width: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.6,
-                      color: Colors.white,
+                      color: cs.onPrimary,
                     ),
                   )
                       : Text(
                     loc.iVerifiedButton,
-                    style: const TextStyle(
+                    style: tt.titleMedium?.copyWith(
                       fontSize: 16.5,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: cs.onPrimary,
                     ),
                   ),
                 ),
@@ -233,11 +238,14 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
               TextButton(
                 onPressed: (_checking || _sending) ? null : _resendVerification,
+                style: TextButton.styleFrom(
+                  foregroundColor: cs.primary,
+                ),
                 child: Text(
                   loc.resendEmailButton,
-                  style: const TextStyle(
-                    color: purple,
+                  style: tt.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
+                    color: cs.primary,
                   ),
                 ),
               ),
@@ -246,9 +254,9 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
               Text(
                 loc.verifyEmailHint,
-                style: TextStyle(
+                style: tt.bodySmall?.copyWith(
                   fontSize: 12.5,
-                  color: Colors.black.withOpacity(0.60),
+                  color: hintColor,
                   height: 1.25,
                 ),
               ),

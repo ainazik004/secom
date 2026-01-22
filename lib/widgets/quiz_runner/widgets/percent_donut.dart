@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../theme/z_theme.dart';
 
 class PercentDonut extends StatelessWidget {
   final int percent;
@@ -16,7 +15,26 @@ class PercentDonut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final p = (percent.clamp(0, 100)) / 100.0;
+
+    // ✅ Works in both light/dark
+    final bgRing = isDark
+        ? cs.outlineVariant.withOpacity(0.45)
+        : cs.outlineVariant.withOpacity(0.35);
+
+    final fgRing = cs.primary;
+
+    final textColor = cs.onSurface;
+
+    // ✅ Subtle shadow for the number so it stays readable on bright rings / dark UI
+    final textShadow = Shadow(
+      color: cs.shadow.withOpacity(isDark ? 0.45 : 0.18),
+      blurRadius: 10,
+      offset: const Offset(0, 2),
+    );
 
     return SizedBox(
       width: size,
@@ -29,19 +47,20 @@ class PercentDonut extends StatelessWidget {
             painter: _DonutPainter(
               value: p,
               stroke: stroke,
-              background: const Color(0xFFEAE7FF),
-              foreground: ZTheme.purple,
+              background: bgRing,
+              foreground: fgRing,
             ),
           ),
-          Container(
+          Padding(
             padding: const EdgeInsets.only(top: 2),
-            alignment: Alignment.center,
             child: Text(
               '$percent%',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 32,
                 height: 1.0,
                 fontWeight: FontWeight.w900,
+                color: textColor,
+                shadows: [textShadow],
               ),
             ),
           ),

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 import '../models/question.dart';
-import '../theme/z_theme.dart';
 import '../widgets/round_x_button.dart';
 import '../services/ai_explain_service.dart';
 
@@ -45,70 +44,87 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final q = widget.questions[_i];
     final picked = widget.answers[_i];
     final pickedCorrect = picked != null && picked == q.answer;
     final expl = q.explanation?.trim() ?? '';
 
+    // ✅ darker background, lighter cards
+    final pageBg = cs.surface;
+    final cardBg = isDark ? cs.surfaceContainerHighest : cs.surfaceContainerHigh;
+
+    // ✅ status colors (clear in both themes)
+    const ok = Color(0xFF22C55E);
+    const bad = Color(0xFFEF4444);
+    final status = pickedCorrect ? ok : bad;
+
+    // ✅ no borders, visible shadow in both themes
+    final shadow = BoxShadow(
+      color: cs.shadow.withOpacity(isDark ? 0.35 : 0.12),
+      blurRadius: isDark ? 20 : 18,
+      offset: const Offset(0, 10),
+    );
+
     return Scaffold(
-      backgroundColor: ZTheme.bg,
+      backgroundColor: pageBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: pageBg,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: Padding(
           padding: const EdgeInsets.only(left: 10),
           child: RoundXButton(onTap: () => Navigator.of(context).pop()),
         ),
         title: Text(
           loc.quiz_review_question_title(_i + 1, widget.questions.length),
-          style: const TextStyle(fontSize: 14),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: cs.onSurface,
+          ),
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Question card
+            // Question card (no border)
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardBg,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: pickedCorrect ? ZTheme.green : ZTheme.red,
-                  width: 1.2,
-                ),
-                boxShadow: ZTheme.softShadow,
+                boxShadow: [shadow],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
+                      // Q pill (no border)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: pickedCorrect ? ZTheme.greenBg : ZTheme.redBg,
+                          color: status.withOpacity(isDark ? 0.22 : 0.14),
                           borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: (pickedCorrect ? ZTheme.green : ZTheme.red).withOpacity(0.25),
-                          ),
                         ),
                         child: Text(
                           'Q${_i + 1}',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 12,
-                            color: pickedCorrect ? ZTheme.green : ZTheme.red,
+                            color: isDark ? Colors.white : status,
                           ),
                         ),
                       ),
                       const Spacer(),
                       Icon(
                         pickedCorrect ? Icons.check_circle : Icons.cancel,
-                        color: pickedCorrect ? ZTheme.green : ZTheme.red,
+                        color: status,
                         size: 18,
                       ),
                     ],
@@ -116,10 +132,11 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                   const SizedBox(height: 10),
                   Text(
                     q.stem,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
                       height: 1.35,
+                      color: cs.onSurface,
                     ),
                   ),
                 ],
@@ -136,16 +153,14 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                   final isCorrect = key == q.answer;
                   final isPicked = picked == key;
 
-                  Color border = ZTheme.border;
-                  Color fill = Colors.white;
+                  Color fill = cardBg;
 
                   if (isCorrect) {
-                    border = ZTheme.green;
-                    fill = ZTheme.greenBg;
+                    fill = ok.withOpacity(isDark ? 0.18 : 0.16);
                   } else if (isPicked && !isCorrect) {
-                    border = ZTheme.red;
-                    fill = ZTheme.redBg;
+                    fill = bad.withOpacity(isDark ? 0.20 : 0.14);
                   }
+
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
@@ -154,7 +169,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                       decoration: BoxDecoration(
                         color: fill,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: border, width: 1.2),
+                        boxShadow: [shadow],
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,23 +179,26 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                             height: 30,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: ZTheme.pillBg,
+                              color: cs.surface.withOpacity(isDark ? 0.50 : 0.85),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: ZTheme.border),
                             ),
                             child: Text(
                               key,
-                              style: const TextStyle(fontWeight: FontWeight.w900),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                color: cs.onSurface,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               text,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 height: 1.35,
                                 fontWeight: FontWeight.w700,
+                                color: cs.onSurface,
                               ),
                             ),
                           ),
@@ -202,7 +220,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             side: BorderSide(
-                              color: _i > 0 ? ZTheme.purple : ZTheme.purple.withOpacity(0.25),
+                              // ✅ subtle (not a “card borderline”)
+                              color: cs.primary.withOpacity(_i > 0 ? 0.35 : 0.15),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
@@ -210,7 +229,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                             loc.quiz_back,
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
-                              color: _i > 0 ? ZTheme.purple : ZTheme.purple.withOpacity(0.35),
+                              color: cs.primary.withOpacity(_i > 0 ? 1.0 : 0.35),
                             ),
                           ),
                         ),
@@ -220,8 +239,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                         child: ElevatedButton(
                           onPressed: _i < widget.questions.length - 1 ? _next : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: ZTheme.purple,
-                            disabledBackgroundColor: ZTheme.purple.withOpacity(0.35),
+                            backgroundColor: cs.primary,
+                            disabledBackgroundColor: cs.primary.withOpacity(0.35),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -229,9 +248,9 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                           ),
                           child: Text(
                             loc.quiz_next,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: cs.onPrimary,
                             ),
                           ),
                         ),
@@ -251,20 +270,28 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardBg,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: ZTheme.border),
-                        boxShadow: ZTheme.softShadow,
+                        boxShadow: [shadow],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             loc.quiz_explanation,
-                            style: const TextStyle(fontWeight: FontWeight.w900),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              color: cs.onSurface,
+                            ),
                           ),
                           const SizedBox(height: 8),
-                          Text(expl, style: const TextStyle(height: 1.35)),
+                          Text(
+                            expl,
+                            style: TextStyle(
+                              height: 1.35,
+                              color: cs.onSurface.withOpacity(0.90),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -276,7 +303,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      side: BorderSide(color: ZTheme.purple.withOpacity(0.30)),
+                      side: BorderSide(color: cs.primary.withOpacity(0.25)),
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
                     ),
                     child: Row(
@@ -291,7 +318,10 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                         const SizedBox(width: 10),
                         Text(
                           loc.quiz_ai_explain,
-                          style: const TextStyle(fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: cs.onSurface,
+                          ),
                         ),
                       ],
                     ),
@@ -324,9 +354,9 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.transparent, // ✅ keep outside transparent
+      backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withOpacity(0.35),
-      enableDrag: true, // allow default drag too
+      enableDrag: true,
       builder: (_) {
         return _BottomSheetSurface(
           child: _JinnyChatSheet(
@@ -342,15 +372,12 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
   }
 }
 
-// ✅ IMPORTANT: keep this transparent, do NOT paint fullscreen white
 class _BottomSheetSurface extends StatelessWidget {
   final Widget child;
   const _BottomSheetSurface({required this.child});
 
   @override
-  Widget build(BuildContext context) {
-    return child;
-  }
+  Widget build(BuildContext context) => child;
 }
 
 class _ChatMsg {
@@ -406,7 +433,6 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
   final FocusNode _focus = FocusNode();
 
   final Map<int, Timer> _typeTimers = {};
-
   bool _userInteracted = false;
 
   @override
@@ -661,77 +687,101 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
     );
   }
 
-  Widget _userAvatar() {
+  Widget _userAvatar(ColorScheme cs) {
     return Container(
       width: 34,
       height: 34,
       decoration: BoxDecoration(
-        color: ZTheme.pillBg,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: ZTheme.border),
       ),
       alignment: Alignment.center,
-      child: const Icon(
+      child: Icon(
         Icons.person_rounded,
         size: 18,
-        color: Color(0xFF6B7280),
+        color: cs.onSurfaceVariant.withOpacity(0.75),
       ),
     );
   }
 
-  Widget _typingBubble() {
+  Widget _typingBubble(ColorScheme cs, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withOpacity(isDark ? 0.30 : 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _Dot(),
-          SizedBox(width: 4),
-          _Dot(delayMs: 140),
-          SizedBox(width: 4),
-          _Dot(delayMs: 280),
+          _Dot(color: cs.onSurfaceVariant.withOpacity(0.65)),
+          const SizedBox(width: 4),
+          _Dot(delayMs: 140, color: cs.onSurfaceVariant.withOpacity(0.65)),
+          const SizedBox(width: 4),
+          _Dot(delayMs: 280, color: cs.onSurfaceVariant.withOpacity(0.65)),
         ],
       ),
     );
   }
 
-  Widget _messageBubble({required String text, required bool fromJinny}) {
-    final bg = fromJinny ? const Color(0xFFF3F4F6) : ZTheme.selectedFill;
-    final border = fromJinny ? const Color(0xFFE5E7EB) : ZTheme.border;
+  Widget _messageBubble({
+    required String text,
+    required bool fromJinny,
+    required ColorScheme cs,
+    required bool isDark,
+  }) {
+    final bg = fromJinny ? cs.surfaceContainerHighest : cs.primaryContainer;
+    final fg = fromJinny ? cs.onSurface : cs.onPrimaryContainer;
+
+    final shadow = BoxShadow(
+      color: cs.shadow.withOpacity(isDark ? 0.30 : 0.10),
+      blurRadius: 14,
+      offset: const Offset(0, 8),
+    );
 
     return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.72,
+      ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: border),
+          boxShadow: [shadow],
         ),
         child: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             height: 1.35,
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF111827),
+            color: fg,
           ),
         ),
       ),
     );
   }
 
-  Widget _chatRow({required bool isUser, required Widget bubble}) {
+  Widget _chatRow({
+    required bool isUser,
+    required Widget bubble,
+    required ColorScheme cs,
+  }) {
     const avatarSize = 34.0;
     const gap = 10.0;
 
-    final leftAvatar = isUser ? const SizedBox(width: avatarSize, height: avatarSize) : _avatar();
-    final rightAvatar = isUser ? _userAvatar() : const SizedBox(width: avatarSize, height: avatarSize);
+    final leftAvatar =
+    isUser ? const SizedBox(width: avatarSize, height: avatarSize) : _avatar();
+    final rightAvatar =
+    isUser ? _userAvatar(cs) : const SizedBox(width: avatarSize, height: avatarSize);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -755,16 +805,28 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    final sheetBg = isDark ? cs.surfaceContainerHighest : cs.surface;
+    final headerText = cs.onSurface;
+
+    final shadow = BoxShadow(
+      color: cs.shadow.withOpacity(isDark ? 0.45 : 0.16),
+      blurRadius: 24,
+      offset: const Offset(0, -10),
+    );
 
     return DraggableScrollableSheet(
       controller: _sheetCtrl,
-      expand: false, // ✅ crucial: stops fullscreen white painting
+      expand: false,
       initialChildSize: _halfSize,
       minChildSize: _minSize,
       maxChildSize: _maxSize,
       builder: (ctx, sheetScrollController) {
-        final listCtrl = sheetScrollController; // ✅ makes dragging work immediately
+        final listCtrl = sheetScrollController;
 
         return Padding(
           padding: EdgeInsets.only(bottom: bottomInset),
@@ -773,163 +835,188 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
               child: Material(
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 10),
+                color: sheetBg,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: sheetBg,
+                    boxShadow: [shadow],
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
 
-                    // Handle
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Center(
-                        child: Container(
-                          width: 44,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE5E7EB),
-                            borderRadius: BorderRadius.circular(999),
+                      // Handle
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: Container(
+                            width: 44,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              color: cs.onSurfaceVariant.withOpacity(0.20),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                      child: Row(
-                        children: [
-                          _avatar(),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.loc.jinny,
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
-                                ),
-                                Text(
-                                  _sending ? 'typing…' : 'online',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF6B7280),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const Divider(height: 1),
-
-                    Expanded(
-                      child: ListView.builder(
-                        controller: listCtrl, // ✅ important
-                        padding: const EdgeInsets.only(top: 8, bottom: 12),
-                        itemCount: _messages.length + (_sending ? 1 : 0),
-                        itemBuilder: (ctx, index) {
-                          if (_sending && index == _messages.length) {
-                            return _chatRow(isUser: false, bubble: _typingBubble());
-                          }
-
-                          final m = _messages[index];
-                          final isUser = !m.fromJinny;
-
-                          // Start typewriter once per assistant message when it appears
-                          if (!isUser && m.shown == 0 && m.fullText.isNotEmpty) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (!mounted) return;
-                              _startTypewriterForIndex(index, listCtrl);
-                            });
-                          }
-
-                          return _chatRow(
-                            isUser: isUser,
-                            bubble: _messageBubble(
-                              text: isUser ? m.fullText : m.visibleText,
-                              fromJinny: !isUser,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    SafeArea(
-                      top: false,
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border(top: BorderSide(color: ZTheme.border)),
-                        ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
                         child: Row(
                           children: [
+                            _avatar(),
+                            const SizedBox(width: 10),
                             Expanded(
-                              child: TextField(
-                                controller: _inputCtrl,
-                                focusNode: _focus,
-                                autofocus: false,
-                                textInputAction: TextInputAction.send,
-                                minLines: 1,
-                                maxLines: 4,
-                                onTap: () {
-                                  _userInteracted = true;
-                                  _goFullscreen();
-                                },
-                                onSubmitted: (_) {
-                                  final text = _inputCtrl.text;
-                                  _inputCtrl.clear();
-                                  _sendUserMessage(text, listCtrl);
-                                },
-                                decoration: InputDecoration(
-                                  hintText: widget.loc.quiz_ai_explain,
-                                  filled: true,
-                                  fillColor: const Color(0xFFF3F4F6),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.loc.jinny,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
+                                      color: headerText,
+                                    ),
                                   ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(999),
-                                    borderSide: BorderSide.none,
+                                  Text(
+                                    _sending ? 'typing…' : 'online',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: cs.onSurfaceVariant.withOpacity(0.75),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            GestureDetector(
-                              onTap: _sending
-                                  ? null
-                                  : () {
-                                final text = _inputCtrl.text;
-                                _inputCtrl.clear();
-                                _sendUserMessage(text, listCtrl);
-                              },
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: _sending ? ZTheme.purple.withOpacity(0.35) : ZTheme.purple,
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: const Icon(
-                                  Icons.send_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.close_rounded),
+                              color: cs.onSurface.withOpacity(0.75),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
+
+                      Divider(height: 1, color: cs.outlineVariant.withOpacity(0.35)),
+
+                      Expanded(
+                        child: ListView.builder(
+                          controller: listCtrl,
+                          padding: const EdgeInsets.only(top: 8, bottom: 12),
+                          itemCount: _messages.length + (_sending ? 1 : 0),
+                          itemBuilder: (ctx, index) {
+                            if (_sending && index == _messages.length) {
+                              return _chatRow(
+                                isUser: false,
+                                bubble: _typingBubble(cs, isDark),
+                                cs: cs,
+                              );
+                            }
+
+                            final m = _messages[index];
+                            final isUser = !m.fromJinny;
+
+                            if (!isUser && m.shown == 0 && m.fullText.isNotEmpty) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (!mounted) return;
+                                _startTypewriterForIndex(index, listCtrl);
+                              });
+                            }
+
+                            return _chatRow(
+                              isUser: isUser,
+                              cs: cs,
+                              bubble: _messageBubble(
+                                text: isUser ? m.fullText : m.visibleText,
+                                fromJinny: !isUser,
+                                cs: cs,
+                                isDark: isDark,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                      SafeArea(
+                        top: false,
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                          decoration: BoxDecoration(
+                            color: sheetBg,
+                            border: Border(
+                              top: BorderSide(color: cs.outlineVariant.withOpacity(0.35)),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _inputCtrl,
+                                  focusNode: _focus,
+                                  autofocus: false,
+                                  textInputAction: TextInputAction.send,
+                                  minLines: 1,
+                                  maxLines: 4,
+                                  onTap: () {
+                                    _userInteracted = true;
+                                    _goFullscreen();
+                                  },
+                                  onSubmitted: (_) {
+                                    final text = _inputCtrl.text;
+                                    _inputCtrl.clear();
+                                    _sendUserMessage(text, listCtrl);
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: widget.loc.quiz_ai_explain,
+                                    hintStyle: TextStyle(
+                                      color: cs.onSurfaceVariant.withOpacity(0.70),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    filled: true,
+                                    fillColor: cs.surfaceContainerHighest,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(999),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              GestureDetector(
+                                onTap: _sending
+                                    ? null
+                                    : () {
+                                  final text = _inputCtrl.text;
+                                  _inputCtrl.clear();
+                                  _sendUserMessage(text, listCtrl);
+                                },
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: _sending
+                                        ? cs.primary.withOpacity(0.35)
+                                        : cs.primary,
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Icon(
+                                    Icons.send_rounded,
+                                    color: cs.onPrimary,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -942,7 +1029,12 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
 
 class _Dot extends StatefulWidget {
   final int delayMs;
-  const _Dot({this.delayMs = 0});
+  final Color color;
+
+  const _Dot({
+    this.delayMs = 0,
+    required this.color,
+  });
 
   @override
   State<_Dot> createState() => _DotState();
@@ -983,7 +1075,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
         width: 7,
         height: 7,
         decoration: BoxDecoration(
-          color: const Color(0xFF9CA3AF),
+          color: widget.color,
           borderRadius: BorderRadius.circular(999),
         ),
       ),

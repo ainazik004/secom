@@ -5,6 +5,25 @@ import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 import 'advancedStatistics.dart';
 
+// ✅ Reuse the same hero gradients as Home (so colors are NOT inverted between themes)
+const LinearGradient zHeroGradientLight = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [
+    Color(0xFFFF5FA2),
+    Color(0xFF9B7CFF),
+  ],
+);
+
+const LinearGradient zHeroGradientDark = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [
+    Color(0xFFFF3D7F),
+    Color(0xFF2C015D),
+  ],
+);
+
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
 
@@ -52,15 +71,27 @@ class _StatisticsPageState extends State<StatisticsPage>
     final loc = AppLocalizations.of(context)!;
     final user = FirebaseAuth.instance.currentUser;
 
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    // ✅ theme-based background
+    final bg = cs.surface;
+
+    // ✅ theme-based text colors
+    final muted = cs.onSurface.withOpacity(isDark ? 0.72 : 0.60);
+
+    // ✅ theme-based header gradient (same direction as Home)
+    final headerGradient = isDark ? zHeroGradientDark : zHeroGradientLight;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F4FF),
+      backgroundColor: bg,
       body: SafeArea(
         child: user == null
             ? Center(
           child: Text(
             loc.notLoggedIn,
             style: TextStyle(
-              color: Colors.black.withOpacity(0.6),
+              color: muted,
               fontSize: 14,
             ),
           ),
@@ -80,7 +111,7 @@ class _StatisticsPageState extends State<StatisticsPage>
                 child: Text(
                   loc.noStatisticsYet,
                   style: TextStyle(
-                    color: Colors.black.withOpacity(0.6),
+                    color: muted,
                     fontSize: 14,
                   ),
                 ),
@@ -128,7 +159,8 @@ class _StatisticsPageState extends State<StatisticsPage>
             final analogyAvg = _avgScore('analogy');
             final grammarAvg = _avgScore('grammar');
 
-            final overallAvg = ((mathAvg + readingAvg + analogyAvg + grammarAvg) / 4.0)
+            final overallAvg =
+            ((mathAvg + readingAvg + analogyAvg + grammarAvg) / 4.0)
                 .clamp(0.0, 100.0)
                 .round();
 
@@ -150,13 +182,9 @@ class _StatisticsPageState extends State<StatisticsPage>
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 32),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFFF7FB2), Color(0xFF7F4BFF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.vertical(
+                      decoration: BoxDecoration(
+                        gradient: headerGradient,
+                        borderRadius: const BorderRadius.vertical(
                           bottom: Radius.circular(32),
                         ),
                       ),
@@ -171,7 +199,6 @@ class _StatisticsPageState extends State<StatisticsPage>
                             ),
                           ),
                           const SizedBox(height: 30),
-
                           AnimatedBuilder(
                             animation: _progress,
                             builder: (_, __) {
@@ -183,14 +210,17 @@ class _StatisticsPageState extends State<StatisticsPage>
                                     stats: radarStats,
                                     progress: _progress.value,
                                     context: context,
+                                    // ✅ use theme colors instead of hardcoded amber
+                                    fillColor: cs.tertiary.withOpacity(0.25),
+                                    strokeColor: cs.tertiary,
+                                    labelColor: Colors.white,
+                                    gridColor: Colors.white.withOpacity(0.35),
                                   ),
                                 ),
                               );
                             },
                           ),
-
                           const SizedBox(height: 16),
-
                           _PrimaryActionButton(
                             label: loc.advancedStatistics,
                             icon: Icons.bar_chart_rounded,
@@ -210,7 +240,7 @@ class _StatisticsPageState extends State<StatisticsPage>
 
                     const SizedBox(height: 24),
 
-                    // ───────── CATEGORY CARDS (CORRECT / ANSWERED PER CATEGORY) ─────────
+                    // ───────── CATEGORY CARDS ─────────
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Wrap(
@@ -264,10 +294,20 @@ class _PentagonRadarPainter extends CustomPainter {
   final double progress;
   final BuildContext context;
 
+  // ✅ theme-driven colors (no hardcoded amber)
+  final Color fillColor;
+  final Color strokeColor;
+  final Color labelColor;
+  final Color gridColor;
+
   _PentagonRadarPainter({
     required this.stats,
     required this.progress,
     required this.context,
+    required this.fillColor,
+    required this.strokeColor,
+    required this.labelColor,
+    required this.gridColor,
   });
 
   @override
@@ -295,7 +335,7 @@ class _PentagonRadarPainter extends CustomPainter {
     ];
 
     final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.35)
+      ..color = gridColor
       ..style = PaintingStyle.stroke;
 
     for (int layer = 1; layer <= 5; layer++) {
@@ -328,11 +368,11 @@ class _PentagonRadarPainter extends CustomPainter {
     radar.close();
 
     final fillPaint = Paint()
-      ..color = Colors.amber.withOpacity(0.25)
+      ..color = fillColor
       ..style = PaintingStyle.fill;
 
     final outlinePaint = Paint()
-      ..color = Colors.amber
+      ..color = strokeColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
@@ -346,12 +386,13 @@ class _PentagonRadarPainter extends CustomPainter {
 
     for (int i = 0; i < 5; i++) {
       final a = step * i - pi / 2;
-      final pos = center + Offset((radius + 44) * cos(a), (radius + 44) * sin(a));
+      final pos =
+          center + Offset((radius + 44) * cos(a), (radius + 44) * sin(a));
 
       tp.text = TextSpan(
         text: "${labels[i]}\n${values[i].round()}%",
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: labelColor,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -363,7 +404,12 @@ class _PentagonRadarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PentagonRadarPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.stats != stats;
+      oldDelegate.progress != progress ||
+          oldDelegate.stats != stats ||
+          oldDelegate.fillColor != fillColor ||
+          oldDelegate.strokeColor != strokeColor ||
+          oldDelegate.gridColor != gridColor ||
+          oldDelegate.labelColor != labelColor;
 }
 
 /* ───────────────────────── CARD ───────────────────────── */
@@ -384,6 +430,13 @@ class _SkillCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+
+    final isDark = cs.brightness == Brightness.dark;
+    final surface = cs.surface;
+    final border = cs.outlineVariant.withOpacity(isDark ? 0.55 : 0.70);
+    final titleColor = cs.onSurface;
+    final muted = cs.onSurfaceVariant.withOpacity(isDark ? 0.78 : 0.70);
 
     final accuracy =
     answered == 0 ? 0.0 : (correct / answered).clamp(0.0, 1.0);
@@ -395,35 +448,36 @@ class _SkillCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: surface,
           borderRadius: BorderRadius.circular(22),
-          boxShadow: const [
+          border: Border.all(color: border, width: 1),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x142C015D),
+              color: cs.shadow.withOpacity(isDark ? 0.22 : 0.10),
               blurRadius: 16,
-              offset: Offset(0, 8),
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: const Color(0xFF2C015D)),
+            Icon(icon, color: cs.primary),
             const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
+                color: titleColor,
               ),
             ),
             const SizedBox(height: 6),
 
-            // ✅ Separate lines
             Text(
               "${loc.correct}: $correct",
               style: TextStyle(
-                color: Colors.black.withOpacity(0.6),
+                color: muted,
                 fontSize: 12,
               ),
             ),
@@ -431,7 +485,7 @@ class _SkillCard extends StatelessWidget {
             Text(
               "${loc.answered}: $answered",
               style: TextStyle(
-                color: Colors.black.withOpacity(0.6),
+                color: muted,
                 fontSize: 12,
               ),
             ),
@@ -442,7 +496,8 @@ class _SkillCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: accuracy,
                 minHeight: 7,
-                backgroundColor: const Color(0xFFECE7FF),
+                backgroundColor: cs.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
               ),
             ),
           ],
@@ -467,14 +522,17 @@ class _PrimaryActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        backgroundColor: Colors.amber,
-        foregroundColor: Colors.black,
+        backgroundColor: cs.tertiary,
+        foregroundColor: cs.onTertiary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
+        elevation: 0,
       ),
       onPressed: onPressed,
       icon: Icon(icon, size: 18),

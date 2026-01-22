@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:zhalbyrak/provider/provider.dart';
+import 'package:zhalbyrak/provider/provider.dart'; // LocaleProvider
+import 'package:zhalbyrak/provider/theme_provider.dart'; // ThemeProvider
 import 'package:zhalbyrak/l10n/l10n.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 import 'package:zhalbyrak/pages/login_page.dart';
@@ -29,8 +30,6 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
-  // Emoji flags for supported languages (RU, KY).
-  // You can extend this map later if you add more languages.
   String _flagForLanguage(String languageCode) {
     switch (languageCode) {
       case 'ru':
@@ -42,24 +41,42 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
+  String _themeLabel(AppLocalizations loc, ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system:
+        return loc.themeSystem;
+      case ThemeMode.light:
+        return loc.themeLight;
+      case ThemeMode.dark:
+        return loc.themeDark;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // If embedded inside MainPage → return body only
     if (embedded) {
       return SafeArea(child: _buildBody(context));
     }
 
-    // Stand-alone version → NO header
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F4FF),
+      backgroundColor: cs.surface,
       body: SafeArea(child: _buildBody(context)),
     );
   }
 
   Widget _buildBody(BuildContext context) {
-    final provider = Provider.of<LocaleProvider>(context);
-    final currentLocale = provider.locale;
-    final loc = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
+    final currentLocale = localeProvider.locale;
+    final loc = AppLocalizations.of(context);
+
+    final isDarkNow = themeProvider.mode == ThemeMode.system
+        ? (MediaQuery.of(context).platformBrightness == Brightness.dark)
+        : (themeProvider.mode == ThemeMode.dark);
+
+
+    final cs = Theme.of(context).colorScheme;
 
     // Only show RU + KY in settings
     final availableLocales =
@@ -91,11 +108,10 @@ class SettingsPage extends StatelessWidget {
                         style: const TextStyle(fontSize: 22),
                       ),
                       title: Text(languageName),
-                      trailing: isSelected
-                          ? const Icon(Icons.check, color: Color(0xFFFF3D7F))
-                          : null,
+                      trailing:
+                      isSelected ? Icon(Icons.check, color: cs.primary) : null,
                       onTap: () {
-                        provider.setLocale(locale);
+                        localeProvider.setLocale(locale);
                         Navigator.pop(context);
                       },
                     );
@@ -105,9 +121,63 @@ class SettingsPage extends StatelessWidget {
             );
           },
           icon: Icons.language,
-          iconBackground: const Color(0xFFF4ECFF),
+          iconBackground: cs.primaryContainer,
           title: loc.language,
           subtitle: loc.chooseLanguage,
+        ),
+
+        // ---------- Theme ----------
+        _SettingCard(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text(loc.theme),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<ThemeMode>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(loc.themeSystem),
+                      value: ThemeMode.system,
+                      groupValue: themeProvider.mode,
+                      onChanged: (v) {
+                        if (v == null) return;
+                        context.read<ThemeProvider>().setMode(v);
+                        Navigator.pop(context);
+                      },
+                    ),
+                    RadioListTile<ThemeMode>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(loc.themeLight),
+                      value: ThemeMode.light,
+                      groupValue: themeProvider.mode,
+                      onChanged: (v) {
+                        if (v == null) return;
+                        context.read<ThemeProvider>().setMode(v);
+                        Navigator.pop(context);
+                      },
+                    ),
+                    RadioListTile<ThemeMode>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(loc.themeDark),
+                      value: ThemeMode.dark,
+                      groupValue: themeProvider.mode,
+                      onChanged: (v) {
+                        if (v == null) return;
+                        context.read<ThemeProvider>().setMode(v);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+          icon: isDarkNow ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+          iconBackground: cs.secondaryContainer,
+          title: loc.theme,
+          subtitle: loc.themeCurrentValue(_themeLabel(loc, themeProvider.mode)),
         ),
 
         // ---------- Logout ----------
@@ -125,7 +195,8 @@ class SettingsPage extends StatelessWidget {
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: cs.error,
+                      foregroundColor: cs.onError,
                     ),
                     onPressed: () async {
                       Navigator.pop(context);
@@ -138,10 +209,10 @@ class SettingsPage extends StatelessWidget {
             );
           },
           icon: Icons.logout,
-          iconBackground: const Color(0xFFFFEBEE),
-          iconColor: Colors.redAccent,
+          iconBackground: cs.errorContainer,
+          iconColor: cs.error,
           title: loc.logout,
-          titleColor: Colors.redAccent,
+          titleColor: cs.error,
         ),
 
         const SizedBox(height: 30),
@@ -171,16 +242,23 @@ class _SettingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    final cardColor = cs.surfaceContainerHighest;
+    final onCard = cs.onSurface;
+    final chevron = cs.outlineVariant;
+    final shadow = cs.shadow.withOpacity(0.12);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(26),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x112C015D),
+            color: shadow,
             blurRadius: 18,
-            offset: Offset(0, 10),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -199,7 +277,7 @@ class _SettingCard extends StatelessWidget {
                 ),
                 child: Icon(
                   icon,
-                  color: iconColor ?? const Color(0xFF2C015D),
+                  color: iconColor ?? cs.onPrimaryContainer,
                 ),
               ),
               const SizedBox(width: 18),
@@ -212,7 +290,7 @@ class _SettingCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: titleColor ?? const Color(0xFF2C015D),
+                        color: titleColor ?? onCard,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -220,7 +298,7 @@ class _SettingCard extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: TextStyle(
-                          color: Colors.black.withOpacity(0.55),
+                          color: onCard.withOpacity(0.60),
                           fontSize: 13,
                         ),
                       ),
@@ -228,9 +306,9 @@ class _SettingCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFB39DDB),
+                color: chevron,
               ),
             ],
           ),

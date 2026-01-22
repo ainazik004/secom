@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:shimmer/shimmer.dart';
 
 class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({super.key});
@@ -143,7 +144,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     });
   }
 
-  // ✅ Prefer displayName (your Firestore field), fallback to fullName, then others.
+  // ✅ Prefer displayName, fallback to fullName, then others.
   String _readDisplayName(Map<String, dynamic> data) {
     String pick(dynamic v) => (v ?? '').toString().trim();
 
@@ -173,8 +174,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     final fullName = _readDisplayName(data);
 
     final photoUrlRaw = data['photoUrl'];
-    final photoUrl =
-    (photoUrlRaw is String && photoUrlRaw.trim().isNotEmpty) ? photoUrlRaw : null;
+    final photoUrl = (photoUrlRaw is String && photoUrlRaw.trim().isNotEmpty)
+        ? photoUrlRaw
+        : null;
 
     int readInt(dynamic v) {
       if (v is int) return v;
@@ -199,10 +201,13 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF2C015D);
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final pageBg = isDark ? cs.surfaceContainerLow : cs.surface;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F4FF),
+      backgroundColor: pageBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -215,13 +220,19 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
+                    boxShadow: [
+                      if (isDark)
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.05),
+                          blurRadius: 18,
+                          offset: const Offset(0, 2),
+                        ),
                       BoxShadow(
-                        color: Color(0x142C015D),
-                        blurRadius: 14,
-                        offset: Offset(0, 8),
+                        color: Colors.black.withOpacity(isDark ? 0.35 : 0.10),
+                        blurRadius: 16,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
@@ -229,15 +240,16 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                     controller: _tabController,
                     indicatorSize: TabBarIndicatorSize.tab,
                     indicator: BoxDecoration(
-                      color: const Color(0xFFEDD9FF),
+                      color: cs.primaryContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     indicatorPadding: EdgeInsets.zero,
-                    dividerColor: Colors.transparent,
+                    dividerColor: cs.surface.withOpacity(0),
                     splashBorderRadius: BorderRadius.circular(12),
                     labelPadding: EdgeInsets.zero,
-                    labelColor: purple,
-                    unselectedLabelColor: purple.withOpacity(0.55),
+                    labelColor: cs.primary,
+                    unselectedLabelColor:
+                    cs.onSurface.withOpacity(isDark ? 0.60 : 0.55),
                     tabs: const [
                       Tab(
                         iconMargin: EdgeInsets.zero,
@@ -282,7 +294,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                       lastVisibleIndex: _trophyLastVisibleIndex,
                       metricField: 'trophies',
                       metricIcon: Icons.emoji_events_rounded,
-                      metricIconColor: const Color(0xFFFFC107),
+                      metricIconColor: cs.tertiary,
                       shortenMetric: true,
                       onOpenUser: _openUserDialog,
                     ),
@@ -312,7 +324,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                       lastVisibleIndex: _streakLastVisibleIndex,
                       metricField: 'currentStreakDays',
                       metricIcon: Icons.local_fire_department_rounded,
-                      metricIconColor: const Color(0xFFFF6A00),
+                      metricIconColor: const Color(0xFFFF5A00),
                       shortenMetric: false,
                       onOpenUser: _openUserDialog,
                     ),
@@ -407,14 +419,25 @@ class _LeaderboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final user = FirebaseAuth.instance.currentUser;
     final userId = user?.uid;
+
+    // Shimmer colors aligned to theme
+    final shimmerBase = cs.surfaceContainerHighest;
+    final shimmerHighlight = (isDark ? cs.surfaceContainerHigh : cs.surface).withOpacity(0.9);
 
     return FutureBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
       future: future,
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return _LeaderboardShimmer(
+            itemExtent: itemExtent,
+            baseColor: shimmerBase,
+            highlightColor: shimmerHighlight,
+          );
         }
 
         if (!snap.hasData || snap.data!.isEmpty || userId == null) {
@@ -422,7 +445,7 @@ class _LeaderboardTab extends StatelessWidget {
             child: Text(
               "No users yet",
               style: TextStyle(
-                color: Colors.black.withOpacity(0.6),
+                color: cs.onSurface.withOpacity(0.60),
                 fontSize: 14,
               ),
             ),
@@ -454,7 +477,7 @@ class _LeaderboardTab extends StatelessWidget {
                   ListView.separated(
                     controller: scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: docs.length, // ✅ 50 or 51
+                    itemCount: docs.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final doc = docs[index];
@@ -524,6 +547,120 @@ class _LeaderboardTab extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+/// Shimmer list placeholder (matches tile layout)
+class _LeaderboardShimmer extends StatelessWidget {
+  final double itemExtent;
+  final Color baseColor;
+  final Color highlightColor;
+
+  const _LeaderboardShimmer({
+    required this.itemExtent,
+    required this.baseColor,
+    required this.highlightColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Use RefreshIndicator so pull-to-refresh still feels consistent while loading
+    return RefreshIndicator(
+      onRefresh: () async {},
+      child: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(top: 0),
+          itemCount: 10,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            return _LeaderboardShimmerTile(itemExtent: itemExtent);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _LeaderboardShimmerTile extends StatelessWidget {
+  final double itemExtent;
+
+  const _LeaderboardShimmerTile({required this.itemExtent});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    Widget pill({double w = 80, double h = 14, double r = 10}) {
+      return Container(
+        width: w,
+        height: h,
+        decoration: BoxDecoration(
+          color: cs.onSurface.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(r),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      height: itemExtent,
+      decoration: BoxDecoration(
+        color: cs.onSurface.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          // rank circle
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: cs.onSurface.withOpacity(0.10),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          // avatar
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: cs.onSurface.withOpacity(0.10),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // name + (optional YOU badge placeholder)
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                pill(w: 160, h: 14),
+                const SizedBox(height: 8),
+                pill(w: 110, h: 12),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          // metric icon + value
+          Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              color: cs.onSurface.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(width: 8),
+          pill(w: 48, h: 14),
+        ],
+      ),
     );
   }
 }
@@ -630,16 +767,20 @@ class LeaderboardUserTile extends StatelessWidget {
     required this.onTap,
   });
 
-  Color _rankColor(int rank) {
-    switch (rank) {
+  Color _rankColor(ColorScheme cs, int rankIndex) {
+    final gold = Color.lerp(cs.tertiary, cs.secondary, 0.40) ?? cs.tertiary;
+    final silver = Color.lerp(cs.primary, cs.onSurface, 0.55) ?? cs.onSurface;
+    final bronze = Color.lerp(cs.secondary, cs.primary, 0.65) ?? cs.secondary;
+
+    switch (rankIndex) {
       case 0:
-        return const Color(0xFFFFD700);
+        return gold;
       case 1:
-        return const Color(0xFFC0C0C0);
+        return silver;
       case 2:
-        return const Color(0xFFCD7F32);
+        return bronze;
       default:
-        return const Color(0xFF2C015D);
+        return cs.primary;
     }
   }
 
@@ -653,11 +794,13 @@ class LeaderboardUserTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rank = index + 1;
-    final rankColor = _rankColor(index);
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final tileColor = isMe ? const Color(0xFFEDD9FF) : Colors.white;
-    final borderColor = isMe ? const Color(0xFF9A4DFF) : Colors.transparent;
+    final rank = index + 1;
+    final rankColor = _rankColor(cs, index);
+
+    final tileColor = isMe ? cs.primaryContainer : cs.surfaceContainerHighest;
 
     final displayMetric = shortenMetric ? _shortenCount(metricValue) : "$metricValue";
 
@@ -666,7 +809,7 @@ class LeaderboardUserTile extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutBack,
       child: Material(
-        color: Colors.transparent,
+        type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
@@ -676,15 +819,17 @@ class LeaderboardUserTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: tileColor,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: borderColor,
-                width: isMe ? 2 : 0,
-              ),
-              boxShadow: const [
+              boxShadow: [
+                if (isDark)
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.05),
+                    blurRadius: 16,
+                    offset: const Offset(0, 2),
+                  ),
                 BoxShadow(
-                  color: Color(0x142C015D),
-                  blurRadius: 14,
-                  offset: Offset(0, 8),
+                  color: Colors.black.withOpacity(isDark ? 0.35 : 0.10),
+                  blurRadius: isDark ? 22 : 14,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
@@ -695,7 +840,7 @@ class LeaderboardUserTile extends StatelessWidget {
                   height: 32,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: rankColor.withOpacity(0.1),
+                    color: rankColor.withOpacity(isDark ? 0.16 : 0.12),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -709,15 +854,16 @@ class LeaderboardUserTile extends StatelessWidget {
                 const SizedBox(width: 10),
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor: const Color(0xFF2C015D),
+                  backgroundColor: cs.primary,
+                  foregroundColor: cs.onPrimary,
                   backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
                       ? NetworkImage(photoUrl!)
                       : null,
                   child: (photoUrl == null || photoUrl!.isEmpty)
                       ? Text(
                     name.isNotEmpty ? name[0].toUpperCase() : "?",
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: cs.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   )
@@ -732,10 +878,10 @@ class LeaderboardUserTile extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF2C015D),
+                            color: cs.onSurface,
                           ),
                         ),
                       ),
@@ -746,13 +892,13 @@ class LeaderboardUserTile extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF9A4DFF),
+                            color: cs.primary,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
+                          child: Text(
                             "YOU",
                             style: TextStyle(
-                              color: Colors.white,
+                              color: cs.onPrimary,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -774,10 +920,10 @@ class LeaderboardUserTile extends StatelessWidget {
                         child: Text(
                           displayMetric,
                           maxLines: 1,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
-                            color: Color(0xFF2C015D),
+                            color: cs.onSurface,
                           ),
                         ),
                       ),
@@ -817,10 +963,10 @@ class _CenteredUserDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF2C015D);
+    final cs = Theme.of(context).colorScheme;
 
     return Material(
-      color: Colors.black.withOpacity(0.35),
+      color: cs.scrim.withOpacity(0.35),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 360),
@@ -829,13 +975,13 @@ class _CenteredUserDialog extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cs.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(22),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x1A000000),
+                    color: cs.shadow.withOpacity(0.18),
                     blurRadius: 18,
-                    offset: Offset(0, 10),
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
@@ -846,14 +992,16 @@ class _CenteredUserDialog extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor: purple,
-                        backgroundImage:
-                        (photoUrl != null && photoUrl!.isNotEmpty) ? NetworkImage(photoUrl!) : null,
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
+                            ? NetworkImage(photoUrl!)
+                            : null,
                         child: (photoUrl == null || photoUrl!.isEmpty)
                             ? Text(
                           fullName.isNotEmpty ? fullName[0].toUpperCase() : "?",
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: cs.onPrimary,
                             fontWeight: FontWeight.w800,
                             fontSize: 18,
                           ),
@@ -866,17 +1014,17 @@ class _CenteredUserDialog extends StatelessWidget {
                           fullName,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: purple,
+                            color: cs.onSurface,
                           ),
                         ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.close_rounded),
-                        color: purple.withOpacity(0.75),
+                        color: cs.onSurface.withOpacity(0.75),
                       ),
                     ],
                   ),
@@ -888,8 +1036,8 @@ class _CenteredUserDialog extends StatelessWidget {
                           title: "Trophies",
                           value: _shortenCount(trophies),
                           icon: Icons.emoji_events_rounded,
-                          iconColor: const Color(0xFFFFC107),
-                          bg: const Color(0xFFFFF4E0),
+                          iconColor: cs.tertiary,
+                          bg: cs.tertiaryContainer,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -898,8 +1046,8 @@ class _CenteredUserDialog extends StatelessWidget {
                           title: "Streak",
                           value: "$streakDays",
                           icon: Icons.local_fire_department_rounded,
-                          iconColor: const Color(0xFFFF6A00),
-                          bg: const Color(0xFFFFF0E8),
+                          iconColor: cs.secondary,
+                          bg: cs.secondaryContainer,
                         ),
                       ),
                     ],
@@ -931,14 +1079,14 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const purple = Color(0xFF2C015D);
+    final cs = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.50)),
       ),
       child: Row(
         children: [
@@ -946,7 +1094,7 @@ class _StatCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.75),
+              color: cs.surface.withOpacity(0.75),
               borderRadius: BorderRadius.circular(14),
             ),
             alignment: Alignment.center,
@@ -965,7 +1113,7 @@ class _StatCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: purple.withOpacity(0.70),
+                    color: cs.onSurface.withOpacity(0.70),
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -973,10 +1121,10 @@ class _StatCard extends StatelessWidget {
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    color: purple,
+                    color: cs.onSurface,
                   ),
                 ),
               ],
