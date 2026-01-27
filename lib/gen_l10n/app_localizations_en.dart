@@ -616,4 +616,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get readingTestAboutBody =>
       'This test focuses on reading comprehension — understanding the main idea, details, and meaning of texts. It helps you answer exam-style questions faster, build vocabulary from context, and improve your ability to analyze information.';
+
+  @override
+  String get report_a_mistake => 'Report a mistake';
+
+  @override
+  String get report_hint =>
+      'Describe what is wrong (wrong answer, unclear wording, typo, bad translation, etc.). We will review and fix it.';
+
+  @override
+  String get report_placeholder =>
+      'Example: Option C should be correct because… / There is a typo in the question…';
+
+  @override
+  String get sending => 'Sending…';
+
+  @override
+  String get report_sent => 'Thank you! Your report has been sent.';
+
+  @override
+  String get error_prefix => 'Error';
 }

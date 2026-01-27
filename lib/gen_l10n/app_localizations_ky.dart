@@ -459,7 +459,7 @@ class AppLocalizationsKy extends AppLocalizations {
   String get quiz_explanation => 'Түшүндүрмө';
 
   @override
-  String get quiz_ai_explain => 'Джиниден суроо';
+  String get quiz_ai_explain => 'Джинниден суроо';
 
   @override
   String get quiz_progress_saved => 'Илгерилөө сакталды';
@@ -617,4 +617,24 @@ class AppLocalizationsKy extends AppLocalizations {
   @override
   String get readingTestAboutBody =>
       'Бул тест окуп түшүнүүгө арналган — негизги ойду, маанилүү деталдарды жана тексттин маанисин аныктоо. Ал экзамен форматындагы суроолорго ылдамыраак жооп берүүгө, сөздөрдү контексттен түшүнүүгө жана маалыматты талдоо жөндөмүн өнүктүрүүгө жардам берет.';
+
+  @override
+  String get report_a_mistake => 'Ката жөнүндө билдирүү';
+
+  @override
+  String get report_hint =>
+      'Эмнеси туура эмес экенин жазыңыз (туура эмес жооп, түшүнүксүз текст, ката жазуу, начар котормо ж. б.). Биз текшерип, оңдойбуз.';
+
+  @override
+  String get report_placeholder =>
+      'Мисалы: туура жооп C болушу керек, анткени… / Суроодо ката бар…';
+
+  @override
+  String get sending => 'Жөнөтүлүүдө…';
+
+  @override
+  String get report_sent => 'Рахмат! Билдирүүңүз жөнөтүлдү.';
+
+  @override
+  String get error_prefix => 'Ката';
 }

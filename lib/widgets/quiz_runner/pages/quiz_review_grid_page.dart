@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
+
 import '../models/question.dart';
 import '../widgets/round_x_button.dart';
 import 'quiz_single_review_page.dart';
@@ -24,6 +25,39 @@ class QuizReviewGridPage extends StatelessWidget {
     Navigator.of(context).popUntil((r) => r.isFirst);
   }
 
+  bool _isComparison(Question q) {
+    final t = (q.topic ?? '').toLowerCase();
+    return t == 'comparison' || t.startsWith('comparison/') || t.contains('/comparison');
+  }
+
+  String _cleanStem(String stem) {
+    var s = stem.trim();
+    s = s.replaceAll('Сравните значения', '').trim();
+    s = s.replaceAll('Сравните значения:', '').trim();
+    s = s.replaceAll('Compare values', '').trim();
+    s = s.replaceAll('Compare values:', '').trim();
+    s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    s = s.replaceAll(RegExp(r'[ \t]{2,}'), ' ');
+    return s;
+  }
+
+  String _previewTextForTile(Question q) {
+    // For comparison questions, show left vs right as identifier.
+    if (_isComparison(q)) {
+      final l = (q.left ?? '').trim();
+      final r = (q.right ?? '').trim();
+      if (l.isNotEmpty || r.isNotEmpty) {
+        final left = l.isEmpty ? '—' : l;
+        final right = r.isEmpty ? '—' : r;
+        return '$left  vs  $right';
+      }
+    }
+
+    // Otherwise show cleaned stem.
+    final s = _cleanStem(q.stem);
+    return s.isEmpty ? '—' : s;
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -31,12 +65,11 @@ class QuizReviewGridPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // ✅ Background darker, tiles lighter (both themes)
-    final pageBg = cs.surface; // good base for both
+    final pageBg = cs.surface;
     final tileBg = isDark ? cs.surfaceContainerHighest : cs.surfaceContainerHigh;
 
-    // Status colors (consistent, but still readable on both themes)
-    const ok = Color(0xFF22C55E); // green
-    const bad = Color(0xFFEF4444); // red
+    const ok = Color(0xFF22C55E);
+    const bad = Color(0xFFEF4444);
 
     return Scaffold(
       backgroundColor: pageBg,
@@ -81,12 +114,14 @@ class QuizReviewGridPage extends StatelessWidget {
               final accent = correct ? ok : bad;
               final icon = correct ? Icons.check_circle : Icons.cancel;
 
-              // ✅ No borderlines + visible shadow in both themes
               final shadow = BoxShadow(
                 color: cs.shadow.withOpacity(isDark ? 0.35 : 0.12),
                 blurRadius: isDark ? 18 : 16,
                 offset: const Offset(0, 10),
               );
+
+              final q = questions[i];
+              final preview = _previewTextForTile(q);
 
               return InkWell(
                 borderRadius: BorderRadius.circular(18),
@@ -113,7 +148,6 @@ class QuizReviewGridPage extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          // ✅ status pill (no border)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -140,7 +174,26 @@ class QuizReviewGridPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const Spacer(),
+
+                      const SizedBox(height: 10),
+
+                      // ✅ Stem preview (no overflow)
+                      Expanded(
+                        child: Text(
+                          preview,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            height: 1.25,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
                       Row(
                         children: [
                           Expanded(

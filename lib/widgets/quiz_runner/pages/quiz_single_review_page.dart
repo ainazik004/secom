@@ -1,10 +1,15 @@
+// lib/pages/quiz_single_review_page.dart
 import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 import '../models/question.dart';
-import '../widgets/round_x_button.dart';
 import '../services/ai_explain_service.dart';
+import '../widgets/comparison_value_card.dart';
+import '../widgets/round_x_button.dart';
 
 class QuizSingleReviewPage extends StatefulWidget {
   final List<Question> questions;
@@ -41,6 +46,24 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     setState(() => _i++);
   }
 
+  bool _isComparison(Question q) {
+    final t = (q.topic ?? '').toLowerCase();
+    return t == 'comparison' || t.startsWith('comparison/') || t.contains('/comparison');
+  }
+
+  String _cleanStem(String stem) {
+    var s = stem.trim();
+    // Remove common “Compare values” headers that end up as the stem
+    s = s.replaceAll('Сравните значения', '').trim();
+    s = s.replaceAll('Сравните значения:', '').trim();
+    s = s.replaceAll('Compare values', '').trim();
+    s = s.replaceAll('Compare values:', '').trim();
+    // Collapse multiple spaces/newlines
+    s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    s = s.replaceAll(RegExp(r'[ \t]{2,}'), ' ');
+    return s;
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -52,21 +75,26 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     final pickedCorrect = picked != null && picked == q.answer;
     final expl = q.explanation?.trim() ?? '';
 
-    // ✅ darker background, lighter cards
+    final isComparison = _isComparison(q);
+    final left = (q.left ?? '').trim();
+    final right = (q.right ?? '').trim();
+
+    // Backgrounds
     final pageBg = cs.surface;
     final cardBg = isDark ? cs.surfaceContainerHighest : cs.surfaceContainerHigh;
 
-    // ✅ status colors (clear in both themes)
+    // Status colors
     const ok = Color(0xFF22C55E);
     const bad = Color(0xFFEF4444);
     final status = pickedCorrect ? ok : bad;
 
-    // ✅ no borders, visible shadow in both themes
     final shadow = BoxShadow(
       color: cs.shadow.withOpacity(isDark ? 0.35 : 0.12),
       blurRadius: isDark ? 20 : 18,
       offset: const Offset(0, 10),
     );
+
+    final cleanedStem = _cleanStem(q.stem);
 
     return Scaffold(
       backgroundColor: pageBg,
@@ -88,11 +116,204 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Question card (no border)
+
+      // ✅ Buttons scroll with content (same behavior as the rest of the page)
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        children: [
+          // Question card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [shadow],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: status.withOpacity(isDark ? 0.22 : 0.14),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Q${_i + 1}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          color: isDark ? Colors.white : status,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      pickedCorrect ? Icons.check_circle : Icons.cancel,
+                      color: status,
+                      size: 18,
+                    ),
+                  ],
+                ),
+
+                // ✅ For non-comparison, show stem.
+                // ✅ For comparison, hide stem if it was only "Сравните значения" etc.
+                if (!isComparison && cleanedStem.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    cleanedStem,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      height: 1.35,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                ],
+
+                // ✅ Comparison left/right visible in review mode
+                if (isComparison && (left.isNotEmpty || right.isNotEmpty)) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ComparisonSideCard(
+                          value: left.isEmpty ? '—' : left,
+                          cs: cs,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ComparisonSideCard(
+                          value: right.isEmpty ? '—' : right,
+                          cs: cs,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Options / Comparison answers
+          if (isComparison) ...[
+            // ✅ A/B/C/D tiles only
+            Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ComparisonAnswerTile(
+                        letter: 'A',
+                        selected: picked == 'A',
+                        cs: cs,
+                        onTap: () => setState(() => widget.answers[_i] = 'A'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ComparisonAnswerTile(
+                        letter: 'B',
+                        selected: picked == 'B',
+                        cs: cs,
+                        onTap: () => setState(() => widget.answers[_i] = 'B'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ComparisonAnswerTile(
+                        letter: 'C',
+                        selected: picked == 'C',
+                        cs: cs,
+                        onTap: () => setState(() => widget.answers[_i] = 'C'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ComparisonAnswerTile(
+                        letter: 'D',
+                        selected: picked == 'D',
+                        cs: cs,
+                        onTap: () => setState(() => widget.answers[_i] = 'D'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ] else ...[
+            ...q.optionKeys.map((key) {
+              final text = (q.options[key] ?? '').toString();
+              final isCorrect = key == q.answer;
+              final isPicked = picked == key;
+
+              Color fill = cardBg;
+              if (isCorrect) {
+                fill = ok.withOpacity(isDark ? 0.18 : 0.16);
+              } else if (isPicked && !isCorrect) {
+                fill = bad.withOpacity(isDark ? 0.20 : 0.14);
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: fill,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [shadow],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: cs.surface.withOpacity(isDark ? 0.50 : 0.85),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          key,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          text,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.35,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+
+          const SizedBox(height: 8),
+
+          // Explanation
+          if (expl.isNotEmpty) ...[
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -103,237 +324,290 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      // Q pill (no border)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: status.withOpacity(isDark ? 0.22 : 0.14),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Q${_i + 1}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
-                            color: isDark ? Colors.white : status,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        pickedCorrect ? Icons.check_circle : Icons.cancel,
-                        color: status,
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
                   Text(
-                    q.stem,
+                    loc.quiz_explanation,
                     style: TextStyle(
-                      fontSize: 16,
                       fontWeight: FontWeight.w900,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    expl,
+                    style: TextStyle(
                       height: 1.35,
+                      color: cs.onSurface.withOpacity(0.90),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // ✅ Full-width Jinny
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => _openJinnyChat(context),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                side: BorderSide(color: cs.primary.withOpacity(0.25)),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/icon/quokka_large.png',
+                    width: 18,
+                    height: 18,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    loc.quiz_ai_explain,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
                       color: cs.onSurface,
                     ),
                   ),
                 ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-            // Options + nav
-            Column(
-              children: [
-                ...q.optionKeys.map((key) {
-                  final text = q.options[key] ?? '';
-                  final isCorrect = key == q.answer;
-                  final isPicked = picked == key;
-
-                  Color fill = cardBg;
-
-                  if (isCorrect) {
-                    fill = ok.withOpacity(isDark ? 0.18 : 0.16);
-                  } else if (isPicked && !isCorrect) {
-                    fill = bad.withOpacity(isDark ? 0.20 : 0.14);
-                  }
-
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: fill,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [shadow],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 30,
-                            height: 30,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: cs.surface.withOpacity(isDark ? 0.50 : 0.85),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              key,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              text,
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 1.35,
-                                fontWeight: FontWeight.w700,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-
-                Padding(
-                  padding: const EdgeInsets.only(top: 2, bottom: 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _i > 0 ? _prev : null,
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            side: BorderSide(
-                              // ✅ subtle (not a “card borderline”)
-                              color: cs.primary.withOpacity(_i > 0 ? 0.35 : 0.15),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: Text(
-                            loc.quiz_back,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              color: cs.primary.withOpacity(_i > 0 ? 1.0 : 0.35),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _i < widget.questions.length - 1 ? _next : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: cs.primary,
-                            disabledBackgroundColor: cs.primary.withOpacity(0.35),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                          child: Text(
-                            loc.quiz_next,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              color: cs.onPrimary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+          // ✅ Full-width Report a mistake (Callable Function)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _openReportMistake(context),
+              icon: Icon(Icons.flag_rounded, size: 18, color: cs.onSurface),
+              label: Text(
+                loc.report_a_mistake,
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: cs.onSurface,
                 ),
-              ],
-            ),
-
-            // Explanation + Jinny
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  if (expl.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [shadow],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            loc.quiz_explanation,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            expl,
-                            style: TextStyle(
-                              height: 1.35,
-                              color: cs.onSurface.withOpacity(0.90),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                  OutlinedButton(
-                    onPressed: () => _openJinnyChat(context),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      side: BorderSide(color: cs.primary.withOpacity(0.25)),
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/icon/quokka_large.png',
-                          width: 18,
-                          height: 18,
-                          fit: BoxFit.contain,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          loc.quiz_ai_explain,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  const SafeArea(top: false, child: SizedBox()),
-                ],
+              ),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                side: BorderSide(color: cs.onSurface.withOpacity(0.18)),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
               ),
             ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Bottom navigation (scrollable with page)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _i > 0 ? _prev : null,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    side: BorderSide(color: cs.primary.withOpacity(_i > 0 ? 0.35 : 0.15)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: Text(
+                    loc.quiz_back,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: cs.primary.withOpacity(_i > 0 ? 1.0 : 0.35),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _i < widget.questions.length - 1 ? _next : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: cs.primary,
+                    disabledBackgroundColor: cs.primary.withOpacity(0.35),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: Text(
+                    loc.quiz_next,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: cs.onPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+          const SafeArea(top: false, child: SizedBox()),
+        ],
       ),
+    );
+  }
+
+  Future<void> _openReportMistake(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+
+    final q = widget.questions[_i];
+    final picked = widget.answers[_i] ?? '';
+    final messageCtrl = TextEditingController();
+
+    bool sending = false;
+
+    Future<void> submit(StateSetter setModalState) async {
+      final text = messageCtrl.text.trim();
+      if (text.isEmpty || sending) return;
+
+      setModalState(() => sending = true);
+
+      try {
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+
+        // ✅ Callable function (deploy as "reportMistake")
+        final callable = FirebaseFunctions.instance.httpsCallable('reportMistake');
+        await callable.call(<String, dynamic>{
+          'userId': uid,
+          'questionId': q.id,
+          'stem': q.stem,
+          'picked': picked,
+          'correct': q.answer,
+          'options': q.options,
+          'left': q.left,
+          'right': q.right,
+          'topic': q.topic,
+          'difficulty': q.difficulty,
+          'language': q.language,
+          'section': q.section,
+          'message': text,
+          'reviewIndex': _i,
+          'totalQuestions': widget.questions.length,
+        });
+
+        if (!context.mounted) return;
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(loc.report_sent),
+            backgroundColor: cs.primary,
+          ),
+        );
+      } catch (e) {
+        setModalState(() => sending = false);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${loc.error_prefix}: $e')),
+        );
+      }
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.35),
+      builder: (_) {
+        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: bottomInset),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                  child: Material(
+                    color: cs.surface,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                loc.report_a_mistake,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            loc.report_hint,
+                            style: TextStyle(
+                              color: cs.onSurfaceVariant.withOpacity(0.85),
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: messageCtrl,
+                            minLines: 3,
+                            maxLines: 8,
+                            textInputAction: TextInputAction.newline,
+                            decoration: InputDecoration(
+                              hintText: loc.report_placeholder,
+                              filled: true,
+                              fillColor: cs.surfaceContainerHighest,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.all(14),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: sending ? null : () => submit(setModalState),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: cs.primary,
+                                disabledBackgroundColor: cs.primary.withOpacity(0.35),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              child: Text(
+                                sending ? loc.sending : loc.send,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: cs.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -778,10 +1052,8 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
     const avatarSize = 34.0;
     const gap = 10.0;
 
-    final leftAvatar =
-    isUser ? const SizedBox(width: avatarSize, height: avatarSize) : _avatar();
-    final rightAvatar =
-    isUser ? _userAvatar(cs) : const SizedBox(width: avatarSize, height: avatarSize);
+    final leftAvatar = isUser ? const SizedBox(width: avatarSize, height: avatarSize) : _avatar();
+    final rightAvatar = isUser ? _userAvatar(cs) : const SizedBox(width: avatarSize, height: avatarSize);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -845,7 +1117,6 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
                     children: [
                       const SizedBox(height: 10),
 
-                      // Handle
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Center(
@@ -999,9 +1270,7 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
                                   width: 44,
                                   height: 44,
                                   decoration: BoxDecoration(
-                                    color: _sending
-                                        ? cs.primary.withOpacity(0.35)
-                                        : cs.primary,
+                                    color: _sending ? cs.primary.withOpacity(0.35) : cs.primary,
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Icon(
@@ -1023,6 +1292,74 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
           ),
         );
       },
+    );
+  }
+}
+
+class _ComparisonAnswerTile extends StatelessWidget {
+  final String letter; // A/B/C/D
+  final bool selected;
+  final ColorScheme cs;
+  final VoidCallback? onTap;
+
+  const _ComparisonAnswerTile({
+    required this.letter,
+    required this.selected,
+    required this.cs,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = selected
+        ? Color.alphaBlend(
+      cs.primary.withOpacity(0.12),
+      cs.surfaceContainerHighest,
+    )
+        : cs.surfaceContainerHighest;
+
+    final shadow = selected
+        ? [
+      BoxShadow(
+        color: cs.shadow.withOpacity(0.14),
+        blurRadius: 14,
+        offset: const Offset(0, 8),
+      ),
+    ]
+        : [
+      BoxShadow(
+        color: cs.shadow.withOpacity(0.10),
+        blurRadius: 14,
+        offset: const Offset(0, 10),
+      ),
+    ];
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: SizedBox(
+        height: 72,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: shadow,
+          ),
+          child: Center(
+            child: Text(
+              letter.toUpperCase(),
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+                color: selected ? cs.primary : cs.onSurface,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -460,7 +460,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get quiz_explanation => 'Объяснение';
 
   @override
-  String get quiz_ai_explain => 'Спросить у Джини';
+  String get quiz_ai_explain => 'Спросить у Джинни';
 
   @override
   String get quiz_progress_saved => 'Прогресс сохранён';
@@ -618,4 +618,24 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get readingTestAboutBody =>
       'Этот тест посвящён чтению и пониманию текста — выделению главной мысли, деталей и смысла. Он помогает быстрее решать задания экзаменационного формата, расширять словарный запас по контексту и развивать навыки анализа информации.';
+
+  @override
+  String get report_a_mistake => 'Сообщить об ошибке';
+
+  @override
+  String get report_hint =>
+      'Опишите, что именно неверно (неправильный ответ, непонятная формулировка, опечатка, плохой перевод и т. д.). Мы проверим и исправим.';
+
+  @override
+  String get report_placeholder =>
+      'Например: правильный ответ должен быть C, потому что… / В вопросе есть опечатка…';
+
+  @override
+  String get sending => 'Отправка…';
+
+  @override
+  String get report_sent => 'Спасибо! Сообщение отправлено.';
+
+  @override
+  String get error_prefix => 'Ошибка';
 }

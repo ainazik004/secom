@@ -1,8 +1,20 @@
+// lib/widgets/quiz_runner/models/question.dart
+
 class Question {
   final String id;
   final String stem;
+
+  /// For MCQ questions. Comparison questions may have empty options.
   final Map<String, dynamic> options;
+
+  /// For comparison questions: values shown in the left/right outlined cards.
+  final String? left;
+  final String? right;
+
+  /// For MCQ: A/B/C/... must exist in options.
+  /// For comparison: must be A/B/C/D.
   final String answer;
+
   final String? explanation;
   final String? difficulty;
   final String? topic;
@@ -14,6 +26,8 @@ class Question {
     required this.stem,
     required this.options,
     required this.answer,
+    this.left,
+    this.right,
     this.explanation,
     this.difficulty,
     this.topic,
@@ -24,12 +38,12 @@ class Question {
   static String? _readNonEmptyString(dynamic v) {
     if (v == null) return null;
 
-    // Accept strings and "string-like" values safely
     final s = v.toString().trim();
     if (s.isEmpty) return null;
 
-    // Optionally ignore "null"/"undefined" strings if your dataset has them
-    if (s.toLowerCase() == 'null' || s.toLowerCase() == 'undefined') return null;
+    if (s.toLowerCase() == 'null' || s.toLowerCase() == 'undefined') {
+      return null;
+    }
 
     return s;
   }
@@ -46,9 +60,11 @@ class Question {
       options: options,
       answer: (map['answer'] ?? '').toString(),
 
-      // ✅ robust explanation parsing
-      explanation: _readNonEmptyString(map['explanation']),
+      // ✅ new fields for comparison
+      left: _readNonEmptyString(map['left']),
+      right: _readNonEmptyString(map['right']),
 
+      explanation: _readNonEmptyString(map['explanation']),
       difficulty: _readNonEmptyString(map['difficulty']),
       topic: _readNonEmptyString(map['topic']),
       language: _readNonEmptyString(map['language']),

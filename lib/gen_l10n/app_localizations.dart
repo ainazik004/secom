@@ -1251,6 +1251,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This test focuses on reading comprehension — understanding the main idea, details, and meaning of texts. It helps you answer exam-style questions faster, build vocabulary from context, and improve your ability to analyze information.'**
   String get readingTestAboutBody;
+
+  /// No description provided for @report_a_mistake.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a mistake'**
+  String get report_a_mistake;
+
+  /// No description provided for @report_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what is wrong (wrong answer, unclear wording, typo, bad translation, etc.). We will review and fix it.'**
+  String get report_hint;
+
+  /// No description provided for @report_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: Option C should be correct because… / There is a typo in the question…'**
+  String get report_placeholder;
+
+  /// No description provided for @sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get sending;
+
+  /// No description provided for @report_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you! Your report has been sent.'**
+  String get report_sent;
+
+  /// No description provided for @error_prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get error_prefix;
 }
 
 class _AppLocalizationsDelegate

@@ -9,13 +9,13 @@ import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 import '../models/question.dart';
 import '../pages/quiz_review_grid_page.dart';
-
 import '../theme/z_theme.dart';
 
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/result_popup.dart';
 import '../widgets/round_x_button.dart';
+import '../widgets/comparison_value_card.dart';
 
 class QuizRunner extends StatefulWidget {
   final String title;
@@ -236,8 +236,9 @@ class _QuizRunnerState extends State<QuizRunner> {
       final newTotalCorrect = oldTotalCorrect + correct;
       final newTotalStudySeconds = oldTotalStudySeconds + totalStudySeconds;
 
-      final newAvgTimePerQuestion =
-      newTotalAnswered == 0 ? 0.0 : (newTotalStudySeconds / newTotalAnswered);
+      final newAvgTimePerQuestion = newTotalAnswered == 0
+          ? 0.0
+          : (newTotalStudySeconds / newTotalAnswered);
 
       final currentStreak = _asInt(data['currentStreakDays'], fallback: 0);
       final longestStreak = _asInt(data['longestStreakDays'], fallback: 0);
@@ -427,7 +428,12 @@ class _QuizRunnerState extends State<QuizRunner> {
     );
   }
 
-  // -------- UI helpers (no borders; tiles lighter than bg) --------
+  bool _isComparison(Question q) {
+    final t = (q.topic ?? '').toLowerCase();
+    return t == 'comparison' ||
+        t.startsWith('comparison/') ||
+        t.contains('/comparison');
+  }
 
   List<BoxShadow> _softShadow(ColorScheme cs, {bool strong = false}) => [
     BoxShadow(
@@ -442,7 +448,6 @@ class _QuizRunnerState extends State<QuizRunner> {
     final loc = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
 
-    // Background is slightly “deeper”, tiles are lighter.
     final bg = cs.surface;
     final tile = cs.surfaceContainerHighest;
 
@@ -462,9 +467,7 @@ class _QuizRunnerState extends State<QuizRunner> {
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(color: cs.primary),
-            );
+            return Center(child: CircularProgressIndicator(color: cs.primary));
           }
           if (snap.hasError) {
             return ErrorStateView(
@@ -493,11 +496,14 @@ class _QuizRunnerState extends State<QuizRunner> {
           final canGoNext = !_finishing && (selected ?? '').isNotEmpty;
           final isLast = _index == questions.length - 1;
 
+          final isComparison = _isComparison(q);
+          final left = (q.left ?? '').trim();
+          final right = (q.right ?? '').trim();
+
           return Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Top progress card (NO BORDER)
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -552,119 +558,174 @@ class _QuizRunnerState extends State<QuizRunner> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 14),
-
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        // Question card (NO BORDER)
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: tile,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: _softShadow(cs, strong: true),
-                          ),
-                          child: Text(
-                            q.stem,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              height: 1.35,
-                              color: cs.onSurface,
+                        if (!isComparison) ...[
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: tile,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: _softShadow(cs, strong: true),
                             ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Answer choices (NO BORDERS)
-                        ...q.optionKeys.map((key) {
-                          final text = q.options[key] ?? '';
-                          final isSelected = selected == key;
-
-                          final fill = isSelected
-                              ? Color.alphaBlend(
-                            cs.primary.withOpacity(0.10),
-                            tile,
-                          )
-                              : tile;
-
-                          final shadow = isSelected
-                              ? [
-                            BoxShadow(
-                              color: cs.shadow.withOpacity(0.14),
-                              blurRadius: 14,
-                              offset: const Offset(0, 8),
-                            ),
-                          ]
-                              : _softShadow(cs);
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: _finishing ? null : () => _select(key),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                curve: Curves.easeOutCubic,
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: fill,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: shadow,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: 30,
-                                      height: 30,
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                        color: cs.surface.withOpacity(0.65),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        key,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                          color: cs.onSurface,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        text,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          height: 1.35,
-                                          fontWeight: FontWeight.w700,
-                                          color: cs.onSurface,
-                                        ),
-                                      ),
-                                    ),
-                                    if (isSelected) ...[
-                                      const SizedBox(width: 10),
-                                      Icon(
-                                        Icons.check_circle_rounded,
-                                        size: 18,
-                                        color: ZTheme.purple,
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                            child: Text(
+                              q.stem,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                height: 1.35,
+                                color: cs.onSurface,
                               ),
                             ),
-                          );
-                        }),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        if (isComparison) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ComparisonSideCard(value: left, cs: cs),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ComparisonSideCard(value: right, cs: cs),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _ComparisonAnswerTile(
+                                      letter: 'A',
+                                      selected: selected == 'A',
+                                      cs: cs,
+                                      onTap: _finishing ? null : () => _select('A'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _ComparisonAnswerTile(
+                                      letter: 'B',
+                                      selected: selected == 'B',
+                                      cs: cs,
+                                      onTap: _finishing ? null : () => _select('B'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _ComparisonAnswerTile(
+                                      letter: 'C',
+                                      selected: selected == 'C',
+                                      cs: cs,
+                                      onTap: _finishing ? null : () => _select('C'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _ComparisonAnswerTile(
+                                      letter: 'D',
+                                      selected: selected == 'D',
+                                      cs: cs,
+                                      onTap: _finishing ? null : () => _select('D'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          ...q.optionKeys.map((key) {
+                            final text = q.options[key] ?? '';
+                            final isSelected = selected == key;
 
+                            final fill = isSelected
+                                ? Color.alphaBlend(
+                              cs.primary.withOpacity(0.10),
+                              tile,
+                            )
+                                : tile;
+
+                            final shadow = isSelected
+                                ? [
+                              BoxShadow(
+                                color: cs.shadow.withOpacity(0.14),
+                                blurRadius: 14,
+                                offset: const Offset(0, 8),
+                              ),
+                            ]
+                                : _softShadow(cs);
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: _finishing ? null : () => _select(key),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  curve: Curves.easeOutCubic,
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: fill,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: shadow,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 30,
+                                        height: 30,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: cs.surface.withOpacity(0.65),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          key,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          text,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            height: 1.35,
+                                            fontWeight: FontWeight.w700,
+                                            color: cs.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isSelected) ...[
+                                        const SizedBox(width: 10),
+                                        Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 18,
+                                          color: ZTheme.purple,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
                         const SizedBox(height: 6),
-
-                        // Bottom buttons (keep your styling)
                         Row(
                           children: [
                             Expanded(
@@ -675,23 +736,20 @@ class _QuizRunnerState extends State<QuizRunner> {
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   side: BorderSide(
-                                    // ✅ neutral outline (secondary)
                                     color: canGoBack
                                         ? cs.outlineVariant.withOpacity(0.70)
                                         : cs.outlineVariant.withOpacity(0.35),
                                     width: 1.2,
                                   ),
-                                  // ✅ neutral text color (secondary)
                                   foregroundColor: canGoBack
                                       ? cs.onSurfaceVariant.withOpacity(0.90)
                                       : cs.onSurface.withOpacity(0.35),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
                                 ),
                                 child: Text(
                                   loc.quiz_back,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                                  style: const TextStyle(fontWeight: FontWeight.w900),
                                 ),
                               ),
                             ),
@@ -725,7 +783,8 @@ class _QuizRunnerState extends State<QuizRunner> {
                                     strokeWidth: 2.4,
                                     valueColor:
                                     AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
                                     : Text(
@@ -739,7 +798,6 @@ class _QuizRunnerState extends State<QuizRunner> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 10),
                         const SafeArea(top: false, child: SizedBox(height: 0)),
                       ],
@@ -750,6 +808,74 @@ class _QuizRunnerState extends State<QuizRunner> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ComparisonAnswerTile extends StatelessWidget {
+  final String letter; // A/B/C/D
+  final bool selected;
+  final ColorScheme cs;
+  final VoidCallback? onTap;
+
+  const _ComparisonAnswerTile({
+    required this.letter,
+    required this.selected,
+    required this.cs,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = selected
+        ? Color.alphaBlend(
+      cs.primary.withOpacity(0.12),
+      cs.surfaceContainerHighest,
+    )
+        : cs.surfaceContainerHighest;
+
+    final shadow = selected
+        ? [
+      BoxShadow(
+        color: cs.shadow.withOpacity(0.14),
+        blurRadius: 14,
+        offset: const Offset(0, 8),
+      ),
+    ]
+        : [
+      BoxShadow(
+        color: cs.shadow.withOpacity(0.10),
+        blurRadius: 14,
+        offset: const Offset(0, 10),
+      ),
+    ];
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: SizedBox(
+        height: 72,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: shadow,
+          ),
+          child: Center(
+            child: Text(
+              letter.toUpperCase(),
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+                color: selected ? ZTheme.purple : cs.onSurface,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
