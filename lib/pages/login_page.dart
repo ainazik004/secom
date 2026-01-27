@@ -86,8 +86,8 @@ class _LoginPageState extends State<LoginPage> {
       Fluttertoast.showToast(msg: loc.verificationRequired);
 
       final now = DateTime.now();
-      final canResend = _lastResendAt == null ||
-          now.difference(_lastResendAt!).inSeconds >= 30;
+      final canResend =
+          _lastResendAt == null || now.difference(_lastResendAt!).inSeconds >= 30;
 
       if (canResend) {
         final lang = Localizations.localeOf(context).languageCode;
@@ -181,7 +181,7 @@ class _LoginPageState extends State<LoginPage> {
     final cs = Theme.of(context).colorScheme;
 
     // Brand purple for the header panel (uses your scheme, works in both modes)
-    final headerPurple = cs.primaryContainer; // dark: zPurple, light: light container
+    final headerPurple = cs.primaryContainer;
 
     final normalBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
@@ -198,21 +198,31 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Column(
           children: [
+            // ✅ FIXED: tighter header + logo aligned to bottom center
             SizedBox(
-              height: 200,
-              child: Center(
-                child: Image.asset('assets/secom_logo.png', height: 80),
+              height: 150, // was 200
+              width: double.infinity,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Image.asset(
+                  'assets/secom_logo.png',
+                  height: 72, // slightly smaller for tighter grouping
+                ),
               ),
             ),
+
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: cs.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+                  // ✅ FIXED: reduce top padding so form sits closer to logo
+                  padding: const EdgeInsets.fromLTRB(28, 24, 28, 36), // was 36 top
                   child: Column(
                     children: [
                       Text(
@@ -222,7 +232,8 @@ class _LoginPageState extends State<LoginPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 14), // was 24
+
                       Form(
                         key: _formKey,
                         child: Column(
@@ -250,17 +261,16 @@ class _LoginPageState extends State<LoginPage> {
                                   vertical: 14,
                                 ),
                                 border: normalBorder,
-                                enabledBorder:
-                                _emailError ? errorBorder : normalBorder,
-                                focusedBorder:
-                                _emailError ? errorBorder : normalBorder,
-                                errorText:
-                                _emailError ? loc.invalidEmailOrPassword : null,
+                                enabledBorder: _emailError ? errorBorder : normalBorder,
+                                focusedBorder: _emailError ? errorBorder : normalBorder,
+                                errorText: _emailError ? loc.invalidEmailOrPassword : null,
                               ),
+                              keyboardType: TextInputType.emailAddress,
                               validator: (v) =>
                               (v == null || v.isEmpty) ? loc.enterEmail : null,
                             ),
                             const SizedBox(height: 18),
+
                             Text(
                               loc.password,
                               style: TextStyle(color: cs.onSurfaceVariant),
@@ -288,9 +298,8 @@ class _LoginPageState extends State<LoginPage> {
                                 _passwordError ? errorBorder : normalBorder,
                                 focusedBorder:
                                 _passwordError ? errorBorder : normalBorder,
-                                errorText: _passwordError
-                                    ? loc.invalidEmailOrPassword
-                                    : null,
+                                errorText:
+                                _passwordError ? loc.invalidEmailOrPassword : null,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _passwordVisible
@@ -299,13 +308,14 @@ class _LoginPageState extends State<LoginPage> {
                                     color: cs.onSurfaceVariant,
                                   ),
                                   onPressed: () => setState(
-                                          () => _passwordVisible = !_passwordVisible),
+                                        () => _passwordVisible = !_passwordVisible,
+                                  ),
                                 ),
                               ),
-                              validator: (v) => (v == null || v.isEmpty)
-                                  ? loc.enterPassword
-                                  : null,
+                              validator: (v) =>
+                              (v == null || v.isEmpty) ? loc.enterPassword : null,
                             ),
+
                             const SizedBox(height: 8),
                             Center(
                               child: TextButton(
@@ -319,8 +329,11 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
+
                             const SizedBox(height: 16),
-                            Center(
+
+                            SizedBox(
+                              width: double.infinity,
                               child: FilledButton(
                                 onPressed: _loading ? null : _login,
                                 style: FilledButton.styleFrom(
@@ -329,10 +342,7 @@ class _LoginPageState extends State<LoginPage> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(22),
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 40,
-                                    vertical: 14,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
                                 ),
                                 child: _loading
                                     ? SizedBox(
@@ -352,7 +362,9 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                             ),
+
                             const SizedBox(height: 16),
+
                             Center(
                               child: TextButton(
                                 onPressed: () {

@@ -573,4 +573,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String themeCurrentValue(String value) {
     return '$value';
   }
+
+  @override
+  String get acceptTermsToContinue =>
+      'Please accept Terms of Service and Privacy Policy to continue';
+
+  @override
+  String get acceptLegalPrefix => 'I agree to the';
+
+  @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
+  String get acceptLegalAnd => 'and';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get acceptLegalSuffix => '.';
+
+  @override
+  String get analogyIntroSubtitle =>
+      'Sharpen your logical reasoning and comparison skills.';
+
+  @override
+  String get analogyTestAboutBody =>
+      'This test focuses on analogies — tasks where you must identify relationships between words, concepts, or patterns. It helps develop abstract thinking, logic, and the ability to quickly recognize meaningful connections.';
+
+  @override
+  String get grammarIntroSubtitle =>
+      'Practice key grammar rules and improve accuracy.';
+
+  @override
+  String get grammarTestAboutBody =>
+      'This test focuses on grammar — sentence structure, agreement, and correct usage of forms. It helps you write and speak more accurately, avoid common mistakes, and strengthen language fundamentals for exams.';
+
+  @override
+  String get readingIntroSubtitle =>
+      'Improve your reading comprehension and accuracy.';
+
+  @override
+  String get readingTestAboutBody =>
+      'This test focuses on reading comprehension — understanding the main idea, details, and meaning of texts. It helps you answer exam-style questions faster, build vocabulary from context, and improve your ability to analyze information.';
 }

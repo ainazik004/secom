@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
+import 'package:zhalbyrak/pages/categories/topic_quiz_page.dart';
 
 class GrammarPage extends StatelessWidget {
   const GrammarPage({super.key});
@@ -7,10 +8,11 @@ class GrammarPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    const purple = Color(0xFF2C015D);
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F4FF),
+      backgroundColor: cs.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,18 +30,19 @@ class GrammarPage extends StatelessWidget {
                       children: [
                         Text(
                           loc.grammar,
-                          style: const TextStyle(
+                          style: tt.titleLarge?.copyWith(
                             fontSize: 21,
                             fontWeight: FontWeight.w700,
-                            color: purple,
+                            color: cs.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Practice key grammar skills.',
-                          style: TextStyle(
+                          // Add this key to ARB if missing
+                          loc.grammarIntroSubtitle,
+                          style: tt.bodySmall?.copyWith(
                             fontSize: 13,
-                            color: Colors.black.withOpacity(0.6),
+                            color: cs.onSurface.withOpacity(0.60),
                           ),
                         ),
                       ],
@@ -48,36 +51,43 @@ class GrammarPage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 18),
 
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                children: const [
-                  _TopicCard(
-                    icon: Icons.spellcheck_rounded,
-                    accentColor: Color(0xFF2C015D),
-                    title: 'Tenses',
-                    subtitle: 'Present, past, future usage',
+                children: [
+                  _InfoCard(
+                    title: loc.testAboutTitle,
+                    // Add this key to ARB if missing
+                    body: loc.grammarTestAboutBody,
                   ),
-                  _TopicCard(
-                    icon: Icons.text_fields_rounded,
-                    accentColor: Color(0xFF7F4BFF),
-                    title: 'Sentence structure',
-                    subtitle: 'Clauses, phrases, word order',
+                  const SizedBox(height: 14),
+
+                  _BulletsCard(
+                    title: loc.testYouWillGetTitle,
+                    bullets: [
+                      loc.testYouWillGetBullet1,
+                      loc.testYouWillGetBullet2,
+                      loc.testYouWillGetBullet3,
+                    ],
                   ),
-                  _TopicCard(
-                    icon: Icons.rule_folder_rounded,
-                    accentColor: Color(0xFFFF8AB6),
-                    title: 'Agreement & articles',
-                    subtitle: 'Subject-verb agreement, a/an/the',
-                  ),
-                  _TopicCard(
-                    icon: Icons.checklist_rtl_rounded,
-                    accentColor: Color(0xFFFFB74D),
-                    title: 'Mixed practice',
-                    subtitle: 'Combine all grammar topics',
+                  const SizedBox(height: 18),
+
+                  _PrimaryButton(
+                    text: loc.startTest,
+                    icon: Icons.play_arrow_rounded,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => TopicQuizPage(
+                            title: loc.grammar,
+                            section: 'grammar',
+                            limit: 20,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -94,20 +104,22 @@ class _CloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Material(
-      color: Colors.white,
+      color: cs.surfaceContainerHighest,
       shape: const CircleBorder(),
       elevation: 4,
-      shadowColor: const Color(0x22000000),
+      shadowColor: cs.shadow.withOpacity(0.18),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: () => Navigator.of(context).pop(),
-        child: const Padding(
-          padding: EdgeInsets.all(10),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
           child: Icon(
             Icons.close_rounded,
             size: 20,
-            color: Color(0xFF2C015D),
+            color: cs.onSurface,
           ),
         ),
       ),
@@ -115,96 +127,241 @@ class _CloseButton extends StatelessWidget {
   }
 }
 
-class _TopicCard extends StatelessWidget {
-  final IconData icon;
-  final Color accentColor;
+class _InfoCard extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String body;
 
-  const _TopicCard({
+  const _InfoCard({required this.title, required this.body});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    final card = cs.surfaceContainerHighest;
+    final shadow = cs.shadow.withOpacity(0.10);
+    final accent = cs.primary;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: shadow,
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.info_outline_rounded,
+                    color: accent,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: tt.titleSmall?.copyWith(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              body,
+              style: tt.bodyMedium?.copyWith(
+                fontSize: 13.5,
+                height: 1.45,
+                color: cs.onSurface.withOpacity(0.72),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BulletsCard extends StatelessWidget {
+  final String title;
+  final List<String> bullets;
+
+  const _BulletsCard({required this.title, required this.bullets});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    final card = cs.surfaceContainerHighest;
+    final shadow = cs.shadow.withOpacity(0.10);
+    final accent = cs.secondary;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: shadow,
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.checklist_rounded,
+                    color: accent,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: tt.titleSmall?.copyWith(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...bullets.map((b) => _BulletRow(text: b)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BulletRow extends StatelessWidget {
+  final String text;
+
+  const _BulletRow({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: cs.primary,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: tt.bodyMedium?.copyWith(
+                fontSize: 13.5,
+                height: 1.4,
+                color: cs.onSurface.withOpacity(0.72),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  final String text;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _PrimaryButton({
+    required this.text,
     required this.icon,
-    required this.accentColor,
-    required this.title,
-    required this.subtitle,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x132C015D),
-            blurRadius: 18,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Coming soon'),
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(milliseconds: 900),
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final btnColor = isDark
+        ? Color.alphaBlend(Colors.black.withOpacity(0.18), cs.primary)
+        : cs.primary;
+
+    final shadowOpacity = isDark ? 0.12 : 0.22;
+    final elevation = isDark ? 2.0 : 6.0;
+
+    return SizedBox(
+      height: 54,
+      child: Material(
+        color: btnColor,
+        borderRadius: BorderRadius.circular(18),
+        elevation: elevation,
+        shadowColor: cs.shadow.withOpacity(shadowOpacity),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: cs.onPrimary),
+                const SizedBox(width: 10),
+                Text(
+                  text,
+                  style: tt.titleSmall?.copyWith(
+                    color: cs.onPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15.5,
+                  ),
+                ),
+              ],
             ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(11),
-                decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Icon(
-                  icon,
-                  color: accentColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF2C015D),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1.3,
-                        color: Colors.black.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.grey.withOpacity(0.6),
-              ),
-            ],
           ),
         ),
       ),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/auth_service.dart';
 import 'package:zhalbyrak/main.dart'; // for MainPage
@@ -34,8 +35,14 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _pwdVisible = false;
   bool _confirmPwdVisible = false;
 
+  // ✅ NEW: Must accept Terms + Privacy
+  bool _acceptedLegal = false;
+
   Locale? _overrideLocale; // RU/KY only
   static const _prefKeyLocale = 'ui_locale_code';
+
+  static const String _termsUrl = 'https://zhalbyrak.app/terms';
+  static const String _privacyUrl = 'https://zhalbyrak.app/privacy';
 
   ActionCodeSettings _emailActionCodeSettings() {
     return ActionCodeSettings(
@@ -90,10 +97,25 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (_) {}
   }
 
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok) {
+      Fluttertoast.showToast(msg: 'Could not open link');
+    }
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
     final loc = AppLocalizations.of(context)!;
+
+    // ✅ Block registration if legal not accepted
+    if (!_acceptedLegal) {
+      Fluttertoast.showToast(msg: loc.acceptTermsToContinue);
+      return;
+    }
+
     setState(() => _loading = true);
 
     try {
@@ -136,6 +158,11 @@ class _RegisterPageState extends State<RegisterPage> {
               surname: _surnameCtrl.text.trim(),
               phoneNumber: _phoneCtrl.text.trim(),
               languageCode: langCode,
+              acceptedTerms: true, // ✅ NEW
+              acceptedPrivacy: true, // ✅ NEW
+              acceptedAt: DateTime.now(), // ✅ NEW
+              termsUrl: _termsUrl, // ✅ NEW
+              privacyUrl: _privacyUrl, // ✅ NEW
             ),
           ),
         ),
@@ -304,8 +331,8 @@ class _RegisterPageState extends State<RegisterPage> {
                               label: loc.confirmPassword,
                               hint: loc.confirmPasswordHint,
                               visible: _confirmPwdVisible,
-                              onToggle: () => setState(() =>
-                              _confirmPwdVisible = !_confirmPwdVisible),
+                              onToggle: () => setState(
+                                      () => _confirmPwdVisible = !_confirmPwdVisible),
                               validator: (v) {
                                 final t = v ?? '';
                                 if (t.isEmpty) return loc.confirmPassword;
@@ -318,13 +345,29 @@ class _RegisterPageState extends State<RegisterPage> {
                               onSubmitted: (_) => _loading ? null : _register(),
                             ),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 14),
+
+                            // ✅ NEW: Terms/Privacy checkbox + links
+                            _LegalAcceptRow(
+                              value: _acceptedLegal,
+                              onChanged: _loading
+                                  ? null
+                                  : (v) => setState(() => _acceptedLegal = v),
+                              cs: cs,
+                              onOpenTerms: () => _openUrl(_termsUrl),
+                              onOpenPrivacy: () => _openUrl(_privacyUrl),
+                              // If you want localization, add these keys:
+                              // loc: loc,
+                            ),
+
+                            const SizedBox(height: 16),
 
                             SizedBox(
                               width: double.infinity,
                               height: 52,
                               child: FilledButton(
-                                onPressed: _loading ? null : _register,
+                                onPressed:
+                                (_loading || !_acceptedLegal) ? null : _register,
                                 style: FilledButton.styleFrom(
                                   backgroundColor: cs.primary,
                                   foregroundColor: cs.onPrimary,
@@ -490,6 +533,82 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 }
 
+// ---------------------------
+// ✅ NEW WIDGET: checkbox + links
+// ---------------------------
+class _LegalAcceptRow extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final ColorScheme cs;
+  final VoidCallback onOpenTerms;
+  final VoidCallback onOpenPrivacy;
+
+  const _LegalAcceptRow({
+    required this.value,
+    required this.onChanged,
+    required this.cs,
+    required this.onOpenTerms,
+    required this.onOpenPrivacy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
+    TextStyle base() => TextStyle(
+      fontSize: 12.8,
+      height: 1.25,
+      color: cs.onSurface.withOpacity(0.85),
+    );
+
+    TextStyle link() => TextStyle(
+      fontSize: 12.8,
+      height: 1.25,
+      color: cs.primary,
+      fontWeight: FontWeight.w700,
+      decoration: TextDecoration.underline,
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: onChanged == null ? null : (v) => onChanged!(v ?? false),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Wrap(
+              alignment: WrapAlignment.start,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                Text(loc.acceptLegalPrefix, style: base()),
+                InkWell(
+                  onTap: onOpenTerms,
+                  child: Text(loc.termsOfService, style: link()),
+                ),
+                Text(loc.acceptLegalAnd, style: base()),
+                InkWell(
+                  onTap: onOpenPrivacy,
+                  child: Text(loc.privacyPolicy, style: link()),
+                ),
+                Text(loc.acceptLegalSuffix, style: base()),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+
 /// After verification: create Firestore doc, then go Home and clear stack.
 class VerifyEmailGatePage extends StatefulWidget {
   final Locale forcedLocale; // RU/KY only
@@ -644,11 +763,18 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
         'authProvider': 'password',
         'createdAt': now,
         'lastLoginAt': now,
+
+        // ✅ NEW: store legal acceptance
+        'hasAcceptedTerms': widget.pendingData.acceptedTerms,
+        'hasAcceptedPrivacy': widget.pendingData.acceptedPrivacy,
+        'acceptedLegalAt': widget.pendingData.acceptedAt.toIso8601String(),
+        'termsUrl': widget.pendingData.termsUrl,
+        'privacyUrl': widget.pendingData.privacyUrl,
+
         'country': null,
         'birthYear': null,
         'educationLevel': null,
         'hasCompletedOnboarding': false,
-        'hasAcceptedTerms': true,
         'referralCode': null,
         'languageCode': widget.pendingData.languageCode,
         'theme': 'system',
@@ -750,8 +876,9 @@ class _VerifyEmailGatePageState extends State<VerifyEmailGatePage> {
                       width: double.infinity,
                       height: 52,
                       child: FilledButton(
-                        onPressed:
-                        _creating ? null : () => _checkVerified(silent: false),
+                        onPressed: _creating
+                            ? null
+                            : () => _checkVerified(silent: false),
                         style: FilledButton.styleFrom(
                           backgroundColor: cs.primary,
                           foregroundColor: cs.onPrimary,
@@ -820,7 +947,14 @@ class PendingUserData {
   final String firstName;
   final String surname;
   final String phoneNumber;
-  final String languageCode; // 'ru' or 'ky'
+  final String languageCode;
+
+  // ✅ NEW
+  final bool acceptedTerms;
+  final bool acceptedPrivacy;
+  final DateTime acceptedAt;
+  final String termsUrl;
+  final String privacyUrl;
 
   PendingUserData({
     required this.email,
@@ -829,6 +963,11 @@ class PendingUserData {
     required this.surname,
     required this.phoneNumber,
     required this.languageCode,
+    required this.acceptedTerms,
+    required this.acceptedPrivacy,
+    required this.acceptedAt,
+    required this.termsUrl,
+    required this.privacyUrl,
   });
 }
 

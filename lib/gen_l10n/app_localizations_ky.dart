@@ -574,4 +574,47 @@ class AppLocalizationsKy extends AppLocalizations {
   String themeCurrentValue(String value) {
     return '$value';
   }
+
+  @override
+  String get acceptTermsToContinue =>
+      'Улантуу үчүн Тейлөө шарттарын жана Купуялык саясатын кабыл алыңыз';
+
+  @override
+  String get acceptLegalPrefix => 'Мен';
+
+  @override
+  String get termsOfService => 'Колдонуу шарттарын';
+
+  @override
+  String get acceptLegalAnd => 'жана';
+
+  @override
+  String get privacyPolicy => 'Купуялык саясатын';
+
+  @override
+  String get acceptLegalSuffix => 'кабыл алам.';
+
+  @override
+  String get analogyIntroSubtitle =>
+      'Логикалык ой жүгүртүүнү жана салыштыруу жөндөмүн өнүктүрүңүз.';
+
+  @override
+  String get analogyTestAboutBody =>
+      'Бул тест аналогияларга арналган — сөздөрдүн, түшүнүктөрдүн же үлгүлөрдүн ортосундагы байланышты табуу тапшырмалары. Ал абстракттуу ой жүгүртүүнү, логиканы жана маанилүү байланышты тез аңдоону өнүктүрөт.';
+
+  @override
+  String get grammarIntroSubtitle =>
+      'Негизги грамматикалык эрежелерди машыгып, тактыкты жогорулатыңыз.';
+
+  @override
+  String get grammarTestAboutBody =>
+      'Бул тест грамматикага арналган — сүйлөм түзүлүшү, сөздөрдүн/формалардын туура колдонулушу жана грамматикалык шайкештик. Ал каталарды азайтууга, тилдин негизин бекемдөөгө жана экзаменге жакшы даярданууга жардам берет.';
+
+  @override
+  String get readingIntroSubtitle =>
+      'Окуганды түшүнүүнү жана жооптордун тактыгын жакшыртыңыз.';
+
+  @override
+  String get readingTestAboutBody =>
+      'Бул тест окуп түшүнүүгө арналган — негизги ойду, маанилүү деталдарды жана тексттин маанисин аныктоо. Ал экзамен форматындагы суроолорго ылдамыраак жооп берүүгө, сөздөрдү контексттен түшүнүүгө жана маалыматты талдоо жөндөмүн өнүктүрүүгө жардам берет.';
 }

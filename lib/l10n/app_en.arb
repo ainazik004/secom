@@ -243,5 +243,19 @@
         "type": "String"
       }
     }
-  }
+  },
+
+  "acceptTermsToContinue": "Please accept Terms of Service and Privacy Policy to continue",
+  "acceptLegalPrefix": "I agree to the",
+  "termsOfService": "Terms of Service",
+  "acceptLegalAnd": "and",
+  "privacyPolicy": "Privacy Policy",
+  "acceptLegalSuffix": ".",
+
+  "analogyIntroSubtitle": "Sharpen your logical reasoning and comparison skills.",
+  "analogyTestAboutBody": "This test focuses on analogies — tasks where you must identify relationships between words, concepts, or patterns. It helps develop abstract thinking, logic, and the ability to quickly recognize meaningful connections.",
+  "grammarIntroSubtitle": "Practice key grammar rules and improve accuracy.",
+  "grammarTestAboutBody": "This test focuses on grammar — sentence structure, agreement, and correct usage of forms. It helps you write and speak more accurately, avoid common mistakes, and strengthen language fundamentals for exams.",
+  "readingIntroSubtitle": "Improve your reading comprehension and accuracy.",
+  "readingTestAboutBody": "This test focuses on reading comprehension — understanding the main idea, details, and meaning of texts. It helps you answer exam-style questions faster, build vocabulary from context, and improve your ability to analyze information."
 }

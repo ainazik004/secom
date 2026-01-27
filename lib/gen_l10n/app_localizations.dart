@@ -1179,6 +1179,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{value}'**
   String themeCurrentValue(String value);
+
+  /// No description provided for @acceptTermsToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Please accept Terms of Service and Privacy Policy to continue'**
+  String get acceptTermsToContinue;
+
+  /// No description provided for @acceptLegalPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the'**
+  String get acceptLegalPrefix;
+
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// No description provided for @acceptLegalAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'and'**
+  String get acceptLegalAnd;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @acceptLegalSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'.'**
+  String get acceptLegalSuffix;
+
+  /// No description provided for @analogyIntroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharpen your logical reasoning and comparison skills.'**
+  String get analogyIntroSubtitle;
+
+  /// No description provided for @analogyTestAboutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This test focuses on analogies — tasks where you must identify relationships between words, concepts, or patterns. It helps develop abstract thinking, logic, and the ability to quickly recognize meaningful connections.'**
+  String get analogyTestAboutBody;
+
+  /// No description provided for @grammarIntroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice key grammar rules and improve accuracy.'**
+  String get grammarIntroSubtitle;
+
+  /// No description provided for @grammarTestAboutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This test focuses on grammar — sentence structure, agreement, and correct usage of forms. It helps you write and speak more accurately, avoid common mistakes, and strengthen language fundamentals for exams.'**
+  String get grammarTestAboutBody;
+
+  /// No description provided for @readingIntroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Improve your reading comprehension and accuracy.'**
+  String get readingIntroSubtitle;
+
+  /// No description provided for @readingTestAboutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This test focuses on reading comprehension — understanding the main idea, details, and meaning of texts. It helps you answer exam-style questions faster, build vocabulary from context, and improve your ability to analyze information.'**
+  String get readingTestAboutBody;
 }
 
 class _AppLocalizationsDelegate

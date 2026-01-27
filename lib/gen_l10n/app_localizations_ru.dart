@@ -575,4 +575,47 @@ class AppLocalizationsRu extends AppLocalizations {
   String themeCurrentValue(String value) {
     return '$value';
   }
+
+  @override
+  String get acceptTermsToContinue =>
+      'Пожалуйста, примите Условия предоставления услуг и Политику конфиденциальности, чтобы продолжить.';
+
+  @override
+  String get acceptLegalPrefix => 'Я принимаю';
+
+  @override
+  String get termsOfService => 'Условия использования';
+
+  @override
+  String get acceptLegalAnd => 'и';
+
+  @override
+  String get privacyPolicy => 'Политику конфиденциальности';
+
+  @override
+  String get acceptLegalSuffix => '.';
+
+  @override
+  String get analogyIntroSubtitle =>
+      'Развивайте логическое мышление и навыки сравнения.';
+
+  @override
+  String get analogyTestAboutBody =>
+      'Этот тест посвящён аналогиям — заданиям, в которых нужно находить связи между словами, понятиями или закономерностями. Он помогает развивать абстрактное мышление, логику и умение быстро видеть смысловые связи.';
+
+  @override
+  String get grammarIntroSubtitle =>
+      'Отрабатывайте ключевые правила грамматики и повышайте точность.';
+
+  @override
+  String get grammarTestAboutBody =>
+      'Этот тест посвящён грамматике — построению предложений, согласованию и правильному употреблению форм. Он помогает писать и говорить точнее, избегать типичных ошибок и укреплять языковую базу для экзаменов.';
+
+  @override
+  String get readingIntroSubtitle =>
+      'Улучшайте понимание текстов и точность ответов.';
+
+  @override
+  String get readingTestAboutBody =>
+      'Этот тест посвящён чтению и пониманию текста — выделению главной мысли, деталей и смысла. Он помогает быстрее решать задания экзаменационного формата, расширять словарный запас по контексту и развивать навыки анализа информации.';
 }

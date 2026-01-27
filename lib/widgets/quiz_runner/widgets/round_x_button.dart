@@ -12,7 +12,7 @@ class RoundXButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: cs.surfaceContainerHighest, // lighter than background
+      color: cs.surfaceContainerHighest,
       shape: const CircleBorder(),
       elevation: 0,
       shadowColor: Colors.transparent,
