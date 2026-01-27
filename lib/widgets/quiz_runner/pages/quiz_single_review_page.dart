@@ -1,15 +1,17 @@
-// lib/pages/quiz_single_review_page.dart
+// lib/widgets/quiz_runner/pages/quiz_single_review_page.dart
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
 import '../models/question.dart';
 import '../services/ai_explain_service.dart';
-import '../widgets/comparison_value_card.dart';
 import '../widgets/round_x_button.dart';
+
+// If you created this file, it should render left/right values with fractions.
+// import '../widgets/comparison_value_card.dart';
 
 class QuizSingleReviewPage extends StatefulWidget {
   final List<Question> questions;
@@ -51,14 +53,13 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     return t == 'comparison' || t.startsWith('comparison/') || t.contains('/comparison');
   }
 
+  // Removes the “Сравните значения” header inside stem (review mode).
   String _cleanStem(String stem) {
     var s = stem.trim();
-    // Remove common “Compare values” headers that end up as the stem
     s = s.replaceAll('Сравните значения', '').trim();
     s = s.replaceAll('Сравните значения:', '').trim();
     s = s.replaceAll('Compare values', '').trim();
     s = s.replaceAll('Compare values:', '').trim();
-    // Collapse multiple spaces/newlines
     s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     s = s.replaceAll(RegExp(r'[ \t]{2,}'), ' ');
     return s;
@@ -71,8 +72,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final q = widget.questions[_i];
-    final picked = widget.answers[_i];
-    final pickedCorrect = picked != null && picked == q.answer;
+    final picked = widget.answers[_i] ?? '';
+    final pickedCorrect = picked.isNotEmpty && picked == q.answer;
     final expl = q.explanation?.trim() ?? '';
 
     final isComparison = _isComparison(q);
@@ -93,8 +94,6 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
       blurRadius: isDark ? 20 : 18,
       offset: const Offset(0, 10),
     );
-
-    final cleanedStem = _cleanStem(q.stem);
 
     return Scaffold(
       backgroundColor: pageBg,
@@ -117,7 +116,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
         ),
       ),
 
-      // ✅ Buttons scroll with content (same behavior as the rest of the page)
+      // ✅ Scrollable page: buttons move with content (as you requested earlier)
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         children: [
@@ -157,52 +156,46 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                     ),
                   ],
                 ),
-
-                // ✅ For non-comparison, show stem.
-                // ✅ For comparison, hide stem if it was only "Сравните значения" etc.
-                if (!isComparison && cleanedStem.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    cleanedStem,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      height: 1.35,
-                      color: cs.onSurface,
-                    ),
+                const SizedBox(height: 10),
+                Text(
+                  _cleanStem(q.stem),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    height: 1.35,
+                    color: cs.onSurface,
                   ),
-                ],
-
-                // ✅ Comparison left/right visible in review mode
-                if (isComparison && (left.isNotEmpty || right.isNotEmpty)) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ComparisonSideCard(
-                          value: left.isEmpty ? '—' : left,
-                          cs: cs,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ComparisonSideCard(
-                          value: right.isEmpty ? '—' : right,
-                          cs: cs,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ],
             ),
           ),
 
           const SizedBox(height: 12),
 
-          // Options / Comparison answers
+          // Comparison values (left/right)
           if (isComparison) ...[
-            // ✅ A/B/C/D tiles only
+            Row(
+              children: [
+                Expanded(
+                  child: _ComparisonValueCard(
+                    value: left.isEmpty ? '—' : left,
+                    cs: cs,
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ComparisonValueCard(
+                    value: right.isEmpty ? '—' : right,
+                    cs: cs,
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Comparison choices: show both picked and correct
             Column(
               children: [
                 Row(
@@ -210,18 +203,20 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                     Expanded(
                       child: _ComparisonAnswerTile(
                         letter: 'A',
-                        selected: picked == 'A',
+                        picked: picked,
+                        correct: q.answer,
                         cs: cs,
-                        onTap: () => setState(() => widget.answers[_i] = 'A'),
+                        onTap: null,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _ComparisonAnswerTile(
                         letter: 'B',
-                        selected: picked == 'B',
+                        picked: picked,
+                        correct: q.answer,
                         cs: cs,
-                        onTap: () => setState(() => widget.answers[_i] = 'B'),
+                        onTap: null,
                       ),
                     ),
                   ],
@@ -232,25 +227,30 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                     Expanded(
                       child: _ComparisonAnswerTile(
                         letter: 'C',
-                        selected: picked == 'C',
+                        picked: picked,
+                        correct: q.answer,
                         cs: cs,
-                        onTap: () => setState(() => widget.answers[_i] = 'C'),
+                        onTap: null,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _ComparisonAnswerTile(
                         letter: 'D',
-                        selected: picked == 'D',
+                        picked: picked,
+                        correct: q.answer,
                         cs: cs,
-                        onTap: () => setState(() => widget.answers[_i] = 'D'),
+                        onTap: null,
                       ),
                     ),
                   ],
                 ),
               ],
             ),
+
+            const SizedBox(height: 12),
           ] else ...[
+            // MCQ options
             ...q.optionKeys.map((key) {
               final text = (q.options[key] ?? '').toString();
               final isCorrect = key == q.answer;
@@ -283,6 +283,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                           color: cs.surface.withOpacity(isDark ? 0.50 : 0.85),
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        // If you previously wanted to remove A/B labels, remove this Text(key).
+                        // For MCQ it is typically useful; keep it for now.
                         child: Text(
                           key,
                           style: TextStyle(
@@ -310,7 +312,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
             }),
           ],
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 2),
 
           // Explanation
           if (expl.isNotEmpty) ...[
@@ -345,13 +347,15 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
             const SizedBox(height: 10),
           ],
 
-          // ✅ Full-width Jinny
+          // ✅ Full-width Jinny button
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
               onPressed: () => _openJinnyChat(context),
               style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 side: BorderSide(color: cs.primary.withOpacity(0.25)),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
               ),
@@ -379,7 +383,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
 
           const SizedBox(height: 10),
 
-          // ✅ Full-width Report a mistake (Callable Function)
+          // ✅ Full-width Report a mistake
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -393,7 +397,9 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 side: BorderSide(color: cs.onSurface.withOpacity(0.18)),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
               ),
@@ -402,15 +408,19 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
 
           const SizedBox(height: 14),
 
-          // Bottom navigation (scrollable with page)
+          // Bottom navigation (scrolls with page)
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: _i > 0 ? _prev : null,
                   style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    side: BorderSide(color: cs.primary.withOpacity(_i > 0 ? 0.35 : 0.15)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    side: BorderSide(
+                      color: cs.primary.withOpacity(_i > 0 ? 0.35 : 0.15),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: Text(
@@ -429,7 +439,9 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
                     disabledBackgroundColor: cs.primary.withOpacity(0.35),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: Text(
@@ -451,6 +463,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     );
   }
 
+  // -------------------- Report mistake --------------------
+
   Future<void> _openReportMistake(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
@@ -470,21 +484,20 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
       try {
         final uid = FirebaseAuth.instance.currentUser?.uid;
 
-        // ✅ Callable function (deploy as "reportMistake")
-        final callable = FirebaseFunctions.instance.httpsCallable('reportMistake');
-        await callable.call(<String, dynamic>{
+        await FirebaseFirestore.instance.collection('mistake_reports').add({
+          'createdAt': FieldValue.serverTimestamp(),
           'userId': uid,
           'questionId': q.id,
           'stem': q.stem,
           'picked': picked,
           'correct': q.answer,
           'options': q.options,
+          'topic': q.topic,
+          'section': q.section,
+          'language': q.language,
+          // ✅ include comparison values (so you can debug reports)
           'left': q.left,
           'right': q.right,
-          'topic': q.topic,
-          'difficulty': q.difficulty,
-          'language': q.language,
-          'section': q.section,
           'message': text,
           'reviewIndex': _i,
           'totalQuestions': widget.questions.length,
@@ -510,16 +523,18 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
 
     await showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // ✅ allows moving above keyboard
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withOpacity(0.35),
-      builder: (_) {
-        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+      builder: (sheetCtx) {
+        final bottomInset = MediaQuery.of(sheetCtx).viewInsets.bottom;
 
         return StatefulBuilder(
           builder: (ctx, setModalState) {
-            return Padding(
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
               padding: EdgeInsets.only(bottom: bottomInset),
               child: Align(
                 alignment: Alignment.bottomCenter,
@@ -527,78 +542,102 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
                   child: Material(
                     color: cs.surface,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                loc.report_a_mistake,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  color: cs.onSurface,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        // ✅ prevents keyboard from covering content on small screens
+                        maxHeight: MediaQuery.of(ctx).size.height * 0.80,
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  loc.report_a_mistake,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: cs.onSurface,
+                                  ),
                                 ),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                onPressed: () => Navigator.of(ctx).pop(),
-                                icon: const Icon(Icons.close_rounded),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            loc.report_hint,
-                            style: TextStyle(
-                              color: cs.onSurfaceVariant.withOpacity(0.85),
-                              fontWeight: FontWeight.w600,
-                              height: 1.35,
+                                const Spacer(),
+                                IconButton(
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: messageCtrl,
-                            minLines: 3,
-                            maxLines: 8,
-                            textInputAction: TextInputAction.newline,
-                            decoration: InputDecoration(
-                              hintText: loc.report_placeholder,
-                              filled: true,
-                              fillColor: cs.surfaceContainerHighest,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
+                            const SizedBox(height: 6),
+                            Text(
+                              loc.report_hint,
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant.withOpacity(0.85),
+                                fontWeight: FontWeight.w600,
+                                height: 1.35,
                               ),
-                              contentPadding: const EdgeInsets.all(14),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: sending ? null : () => submit(setModalState),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: cs.primary,
-                                disabledBackgroundColor: cs.primary.withOpacity(0.35),
-                                shape: RoundedRectangleBorder(
+                            const SizedBox(height: 12),
+
+                            // ✅ visible border + clear focus ring
+                            TextField(
+                              controller: messageCtrl,
+                              autofocus: true,
+                              minLines: 4,
+                              maxLines: 10,
+                              textInputAction: TextInputAction.newline,
+                              decoration: InputDecoration(
+                                hintText: loc.report_placeholder,
+                                filled: true,
+                                fillColor: cs.surfaceContainerHighest,
+                                contentPadding: const EdgeInsets.all(14),
+                                enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: cs.outlineVariant.withOpacity(0.55),
+                                    width: 1.2,
+                                  ),
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              child: Text(
-                                sending ? loc.sending : loc.send,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  color: cs.onPrimary,
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: cs.primary.withOpacity(0.85),
+                                    width: 1.6,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+
+                            const SizedBox(height: 12),
+
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: sending ? null : () => submit(setModalState),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: cs.primary,
+                                  disabledBackgroundColor: cs.primary.withOpacity(0.35),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                child: Text(
+                                  sending ? loc.sending : loc.send,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: cs.onPrimary,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+                            SafeArea(top: false, child: SizedBox(height: bottomInset > 0 ? 6 : 0)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -611,6 +650,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     );
   }
 
+  // -------------------- Jinny chat --------------------
+
   Future<void> _openJinnyChat(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
 
@@ -620,9 +661,12 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     final lang = Localizations.localeOf(context).languageCode.toLowerCase();
     final language = lang.startsWith('ky') ? 'ky' : 'ru';
 
-    final pickedText = picked.isEmpty ? '—' : '$picked. ${q.options[picked] ?? ''}';
-    final correctText = '${q.answer}. ${q.options[q.answer] ?? ''}';
-    final hiddenInitial = loc.jinny_firstPrompt(pickedText, correctText);
+    final hiddenInitial = _buildHiddenInitialForJinny(
+      loc: loc,
+      q: q,
+      picked: picked,
+      language: language,
+    );
 
     await showModalBottomSheet(
       context: context,
@@ -644,7 +688,45 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
       },
     );
   }
+
+  // ✅ IMPORTANT FIX:
+  // For comparison questions, include left/right; for MCQ include picked & correct option texts.
+  String _buildHiddenInitialForJinny({
+    required AppLocalizations loc,
+    required Question q,
+    required String picked,
+    required String language,
+  }) {
+    final isComp = _isComparison(q);
+
+    if (isComp) {
+      final l = (q.left ?? '').trim();
+      final r = (q.right ?? '').trim();
+
+      // The correct answer in comparison is typically A/B/C/D.
+      // We include picked letter + correct letter + left/right values.
+      final pickedLetter = picked.isEmpty ? '—' : picked;
+      final correctLetter = q.answer;
+
+      // Keep it short but explicit; this is sent hidden to Jinny.
+      // (No need to localize fully; your backend prompt can handle language param.)
+      return [
+        'Тип: comparison',
+        'LEFT: ${l.isEmpty ? '—' : l}',
+        'RIGHT: ${r.isEmpty ? '—' : r}',
+        'Ответ пользователя: $pickedLetter',
+        'Правильный ответ: $correctLetter',
+        'Поясни, почему правильный вариант именно $correctLetter.',
+      ].join('\n');
+    }
+
+    final pickedText = picked.isEmpty ? '—' : '$picked. ${q.options[picked] ?? ''}';
+    final correctText = '${q.answer}. ${q.options[q.answer] ?? ''}';
+    return loc.jinny_firstPrompt(pickedText, correctText);
+  }
 }
+
+// -------------------- BottomSheet shell --------------------
 
 class _BottomSheetSurface extends StatelessWidget {
   final Widget child;
@@ -1296,74 +1378,6 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
   }
 }
 
-class _ComparisonAnswerTile extends StatelessWidget {
-  final String letter; // A/B/C/D
-  final bool selected;
-  final ColorScheme cs;
-  final VoidCallback? onTap;
-
-  const _ComparisonAnswerTile({
-    required this.letter,
-    required this.selected,
-    required this.cs,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final fill = selected
-        ? Color.alphaBlend(
-      cs.primary.withOpacity(0.12),
-      cs.surfaceContainerHighest,
-    )
-        : cs.surfaceContainerHighest;
-
-    final shadow = selected
-        ? [
-      BoxShadow(
-        color: cs.shadow.withOpacity(0.14),
-        blurRadius: 14,
-        offset: const Offset(0, 8),
-      ),
-    ]
-        : [
-      BoxShadow(
-        color: cs.shadow.withOpacity(0.10),
-        blurRadius: 14,
-        offset: const Offset(0, 10),
-      ),
-    ];
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: SizedBox(
-        height: 72,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: fill,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: shadow,
-          ),
-          child: Center(
-            child: Text(
-              letter.toUpperCase(),
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2,
-                color: selected ? cs.primary : cs.onSurface,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _Dot extends StatefulWidget {
   final int delayMs;
   final Color color;
@@ -1414,6 +1428,145 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
         decoration: BoxDecoration(
           color: widget.color,
           borderRadius: BorderRadius.circular(999),
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------- Comparison UI (review) --------------------
+
+class _ComparisonAnswerTile extends StatelessWidget {
+  final String letter;
+  final String picked;
+  final String correct;
+  final ColorScheme cs;
+  final VoidCallback? onTap;
+
+  const _ComparisonAnswerTile({
+    required this.letter,
+    required this.picked,
+    required this.correct,
+    required this.cs,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    const ok = Color(0xFF22C55E);
+    const bad = Color(0xFFEF4444);
+
+    final isCorrectTile = letter == correct;
+    final isPickedTile = letter == picked;
+    final isWrongPickedTile = isPickedTile && !isCorrectTile && picked.isNotEmpty;
+
+    Color fill = cs.surfaceContainerHighest;
+    if (isCorrectTile) {
+      fill = ok.withOpacity(isDark ? 0.18 : 0.14);
+    } else if (isWrongPickedTile) {
+      fill = bad.withOpacity(isDark ? 0.20 : 0.14);
+    }
+
+    final emphasizedFill = isPickedTile
+        ? Color.alphaBlend(cs.primary.withOpacity(isDark ? 0.16 : 0.10), fill)
+        : fill;
+
+    IconData? badge;
+    Color? badgeColor;
+    if (isCorrectTile) {
+      badge = Icons.check_circle_rounded;
+      badgeColor = ok;
+    } else if (isWrongPickedTile) {
+      badge = Icons.cancel_rounded;
+      badgeColor = bad;
+    }
+
+    final shadow = [
+      BoxShadow(
+        color: cs.shadow.withOpacity(isDark ? 0.14 : 0.10),
+        blurRadius: 14,
+        offset: const Offset(0, 10),
+      ),
+    ];
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: SizedBox(
+        height: 72,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: emphasizedFill,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: shadow,
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Text(
+                  letter,
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    color: isPickedTile ? cs.primary : cs.onSurface,
+                  ),
+                ),
+              ),
+              if (badge != null)
+                Positioned(
+                  right: 10,
+                  top: 10,
+                  child: Icon(badge, size: 18, color: badgeColor),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Minimal comparison card here so this file works standalone.
+/// If you already created comparison_value_card.dart, replace this widget usage
+/// with your real widget (and delete this class).
+class _ComparisonValueCard extends StatelessWidget {
+  final String value;
+  final ColorScheme cs;
+  final bool isDark;
+
+  const _ComparisonValueCard({
+    required this.value,
+    required this.cs,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: cs.outlineVariant.withOpacity(0.55),
+          width: 1.3,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          value,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            height: 1.2,
+            color: cs.onSurface,
+          ),
         ),
       ),
     );

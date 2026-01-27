@@ -1,5 +1,5 @@
 // functions/submit_mistake_report.js
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
@@ -82,7 +82,7 @@ exports.submitMistakeReport = onCall(async (req) => {
         dayCount: dayCount + 1,
         updatedAt: now,
       },
-      { merge: true }
+      {merge: true}
     );
 
     const reportRef = db.collection("mistake_reports").doc();
@@ -102,5 +102,5 @@ exports.submitMistakeReport = onCall(async (req) => {
     });
   });
 
-  return { ok: true };
+  return {ok: true};
 });
