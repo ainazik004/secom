@@ -55,12 +55,14 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (embedded) {
+      // embedded pages inherit parent scaffold background
       return SafeArea(child: _buildBody(context));
     }
 
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: cs.surface,
+      // ✅ background must be cs.background (not cs.surface)
+      backgroundColor: cs.background,
       body: SafeArea(child: _buildBody(context)),
     );
   }
@@ -69,12 +71,11 @@ class SettingsPage extends StatelessWidget {
     final localeProvider = context.watch<LocaleProvider>();
     final themeProvider = context.watch<ThemeProvider>();
     final currentLocale = localeProvider.locale;
-    final loc = AppLocalizations.of(context);
+    final loc = AppLocalizations.of(context)!;
 
     final isDarkNow = themeProvider.mode == ThemeMode.system
         ? (MediaQuery.of(context).platformBrightness == Brightness.dark)
         : (themeProvider.mode == ThemeMode.dark);
-
 
     final cs = Theme.of(context).colorScheme;
 
@@ -93,6 +94,18 @@ class SettingsPage extends StatelessWidget {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
+                // ✅ dialog surfaces should be surfaceContainerHigh on top of scrim
+                backgroundColor: cs.surfaceContainerHigh,
+                surfaceTintColor: Colors.transparent,
+                titleTextStyle: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+                contentTextStyle: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 14,
+                ),
                 title: Text(loc.language),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -107,7 +120,10 @@ class SettingsPage extends StatelessWidget {
                         _flagForLanguage(code),
                         style: const TextStyle(fontSize: 22),
                       ),
-                      title: Text(languageName),
+                      title: Text(
+                        languageName,
+                        style: TextStyle(color: cs.onSurface),
+                      ),
                       trailing:
                       isSelected ? Icon(Icons.check, color: cs.primary) : null,
                       onTap: () {
@@ -122,6 +138,7 @@ class SettingsPage extends StatelessWidget {
           },
           icon: Icons.language,
           iconBackground: cs.primaryContainer,
+          iconColor: cs.onPrimaryContainer,
           title: loc.language,
           subtitle: loc.chooseLanguage,
         ),
@@ -132,13 +149,19 @@ class SettingsPage extends StatelessWidget {
             showDialog(
               context: context,
               builder: (_) => AlertDialog(
-                title: Text(loc.theme),
+                backgroundColor: cs.surfaceContainerHigh,
+                surfaceTintColor: Colors.transparent,
+                titleTextStyle: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     RadioListTile<ThemeMode>(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(loc.themeSystem),
+                      title: Text(loc.themeSystem, style: TextStyle(color: cs.onSurface)),
                       value: ThemeMode.system,
                       groupValue: themeProvider.mode,
                       onChanged: (v) {
@@ -149,7 +172,7 @@ class SettingsPage extends StatelessWidget {
                     ),
                     RadioListTile<ThemeMode>(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(loc.themeLight),
+                      title: Text(loc.themeLight, style: TextStyle(color: cs.onSurface)),
                       value: ThemeMode.light,
                       groupValue: themeProvider.mode,
                       onChanged: (v) {
@@ -160,7 +183,7 @@ class SettingsPage extends StatelessWidget {
                     ),
                     RadioListTile<ThemeMode>(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(loc.themeDark),
+                      title: Text(loc.themeDark, style: TextStyle(color: cs.onSurface)),
                       value: ThemeMode.dark,
                       groupValue: themeProvider.mode,
                       onChanged: (v) {
@@ -176,6 +199,7 @@ class SettingsPage extends StatelessWidget {
           },
           icon: isDarkNow ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
           iconBackground: cs.secondaryContainer,
+          iconColor: cs.onSecondaryContainer,
           title: loc.theme,
           subtitle: loc.themeCurrentValue(_themeLabel(loc, themeProvider.mode)),
         ),
@@ -186,6 +210,17 @@ class SettingsPage extends StatelessWidget {
             showDialog(
               context: context,
               builder: (_) => AlertDialog(
+                backgroundColor: cs.surfaceContainerHigh,
+                surfaceTintColor: Colors.transparent,
+                titleTextStyle: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+                contentTextStyle: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 14,
+                ),
                 title: Text(loc.confirmation),
                 content: Text(loc.logoutQuestion),
                 actions: [
@@ -244,19 +279,23 @@ class _SettingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    final cardColor = cs.surfaceContainerHighest;
+    // hierarchy:
+    // page background = cs.background
+    // card = cs.surfaceContainerHigh
+    final cardColor = cs.surfaceContainerHigh;
     final onCard = cs.onSurface;
+    final sub = cs.onSurfaceVariant;
     final chevron = cs.outlineVariant;
-    final shadow = cs.shadow.withOpacity(0.12);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(26),
+        // ❌ removed outline
         boxShadow: [
           BoxShadow(
-            color: shadow,
+            color: cs.shadow.withOpacity(0.18),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -274,6 +313,7 @@ class _SettingCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: iconBackground,
                   borderRadius: BorderRadius.circular(18),
+                  // ❌ removed icon outline
                 ),
                 child: Icon(
                   icon,
@@ -298,7 +338,7 @@ class _SettingCard extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: TextStyle(
-                          color: onCard.withOpacity(0.60),
+                          color: sub.withOpacity(0.85),
                           fontSize: 13,
                         ),
                       ),

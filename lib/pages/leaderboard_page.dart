@@ -71,7 +71,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
     if (user == null) return [];
 
-    final field = type == _BoardType.trophies ? 'trophies' : 'currentStreakDays';
+    final field =
+    type == _BoardType.trophies ? 'trophies' : 'currentStreakDays';
 
     final top50snap = await db
         .collection('users')
@@ -202,12 +203,9 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final pageBg = isDark ? cs.surfaceContainerLow : cs.surface;
 
     return Scaffold(
-      backgroundColor: pageBg,
+      backgroundColor: cs.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -220,17 +218,14 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerHighest,
+                    color: cs.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: cs.outlineVariant.withOpacity(0.60),
+                    ),
                     boxShadow: [
-                      if (isDark)
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.05),
-                          blurRadius: 18,
-                          offset: const Offset(0, 2),
-                        ),
                       BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.35 : 0.10),
+                        color: cs.shadow.withOpacity(0.18),
                         blurRadius: 16,
                         offset: const Offset(0, 10),
                       ),
@@ -242,14 +237,16 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                     indicator: BoxDecoration(
                       color: cs.primaryContainer,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: cs.outlineVariant.withOpacity(0.45),
+                      ),
                     ),
                     indicatorPadding: EdgeInsets.zero,
-                    dividerColor: cs.surface.withOpacity(0),
+                    dividerColor: Colors.transparent,
                     splashBorderRadius: BorderRadius.circular(12),
                     labelPadding: EdgeInsets.zero,
-                    labelColor: cs.primary,
-                    unselectedLabelColor:
-                    cs.onSurface.withOpacity(isDark ? 0.60 : 0.55),
+                    labelColor: cs.onPrimaryContainer,
+                    unselectedLabelColor: cs.onSurfaceVariant,
                     tabs: const [
                       Tab(
                         iconMargin: EdgeInsets.zero,
@@ -425,9 +422,11 @@ class _LeaderboardTab extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     final userId = user?.uid;
 
-    // Shimmer colors aligned to theme
-    final shimmerBase = cs.surfaceContainerHighest;
-    final shimmerHighlight = (isDark ? cs.surfaceContainerHigh : cs.surface).withOpacity(0.9);
+    // ✅ Highly visible shimmer palette (does NOT rely on your theme containers)
+    final shimmerBase =
+    isDark ? const Color(0xFF2A2434) : const Color(0xFFE3DDF0);
+    final shimmerHighlight =
+    isDark ? const Color(0xFF3A3346) : const Color(0xFFF9F7FF);
 
     return FutureBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
       future: future,
@@ -445,7 +444,7 @@ class _LeaderboardTab extends StatelessWidget {
             child: Text(
               "No users yet",
               style: TextStyle(
-                color: cs.onSurface.withOpacity(0.60),
+                color: cs.onBackground.withOpacity(0.65),
                 fontSize: 14,
               ),
             ),
@@ -551,7 +550,7 @@ class _LeaderboardTab extends StatelessWidget {
   }
 }
 
-/// Shimmer list placeholder (matches tile layout)
+/// ✅ Shimmer list placeholder (matches tile layout)
 class _LeaderboardShimmer extends StatelessWidget {
   final double itemExtent;
   final Color baseColor;
@@ -565,21 +564,19 @@ class _LeaderboardShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use RefreshIndicator so pull-to-refresh still feels consistent while loading
-    return RefreshIndicator(
-      onRefresh: () async {},
-      child: Shimmer.fromColors(
-        baseColor: baseColor,
-        highlightColor: highlightColor,
-        child: ListView.separated(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(top: 0),
-          itemCount: 10,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            return _LeaderboardShimmerTile(itemExtent: itemExtent);
-          },
-        ),
+    // ✅ No RefreshIndicator here (it can visually mask shimmer and is not needed)
+    // ✅ All placeholders are opaque (white) so shimmer ALWAYS shows.
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 0),
+        itemCount: 10,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          return _LeaderboardShimmerTile(itemExtent: itemExtent);
+        },
       ),
     );
   }
@@ -592,14 +589,12 @@ class _LeaderboardShimmerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     Widget pill({double w = 80, double h = 14, double r = 10}) {
       return Container(
         width: w,
         height: h,
         decoration: BoxDecoration(
-          color: cs.onSurface.withOpacity(0.10),
+          color: Colors.white, // ✅ opaque
           borderRadius: BorderRadius.circular(r),
         ),
       );
@@ -610,32 +605,29 @@ class _LeaderboardShimmerTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       height: itemExtent,
       decoration: BoxDecoration(
-        color: cs.onSurface.withOpacity(0.06),
+        color: Colors.white, // ✅ opaque
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
-          // rank circle
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(
-              color: cs.onSurface.withOpacity(0.10),
+            decoration: const BoxDecoration(
+              color: Colors.white,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 10),
-          // avatar
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(
-              color: cs.onSurface.withOpacity(0.10),
+            decoration: const BoxDecoration(
+              color: Colors.white,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 12),
-          // name + (optional YOU badge placeholder)
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -648,12 +640,11 @@ class _LeaderboardShimmerTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          // metric icon + value
           Container(
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color: cs.onSurface.withOpacity(0.10),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(6),
             ),
           ),
@@ -740,7 +731,6 @@ class _FloatingMyTile extends StatelessWidget {
   }
 }
 
-/// ✅ Reusable tappable tile widget
 class LeaderboardUserTile extends StatelessWidget {
   final int index;
   final String name;
@@ -768,9 +758,9 @@ class LeaderboardUserTile extends StatelessWidget {
   });
 
   Color _rankColor(ColorScheme cs, int rankIndex) {
-    final gold = Color.lerp(cs.tertiary, cs.secondary, 0.40) ?? cs.tertiary;
-    final silver = Color.lerp(cs.primary, cs.onSurface, 0.55) ?? cs.onSurface;
-    final bronze = Color.lerp(cs.secondary, cs.primary, 0.65) ?? cs.secondary;
+    final gold = Color.lerp(cs.tertiary, cs.secondary, 0.40)!;
+    final silver = Color.lerp(cs.primary, cs.onSurface, 0.55)!;
+    final bronze = Color.lerp(cs.secondary, cs.primary, 0.65)!;
 
     switch (rankIndex) {
       case 0:
@@ -795,19 +785,38 @@ class LeaderboardUserTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final brightness = Theme.of(context).brightness;
+    final isLight = brightness == Brightness.light;
+    final isDark = brightness == Brightness.dark;
 
     final rank = index + 1;
     final rankColor = _rankColor(cs, index);
 
-    final tileColor = isMe ? cs.primaryContainer : cs.surfaceContainerHighest;
+    // -------------------------------
+    // BACKGROUND HIERARCHY (NO BORDERS)
+    // -------------------------------
+    final baseTile = cs.surfaceContainerHigh;
 
-    final displayMetric = shortenMetric ? _shortenCount(metricValue) : "$metricValue";
+    // ✅ Branded light-purple highlight for user tile
+    final meTile = isLight
+        ? Color.alphaBlend(
+      cs.primary.withOpacity(0.18),
+      cs.surfaceContainerHighest,
+    )
+        : Color.alphaBlend(
+      cs.primary.withOpacity(0.22),
+      cs.surfaceContainerHigh,
+    );
+
+    final tileColor = isMe ? meTile : baseTile;
+
+    final displayMetric =
+    shortenMetric ? _shortenCount(metricValue) : "$metricValue";
 
     return AnimatedScale(
-      scale: isMe ? 1.03 : 1.0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutBack,
+      scale: isMe ? 1.025 : 1.0,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOut,
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
@@ -819,116 +828,145 @@ class LeaderboardUserTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: tileColor,
               borderRadius: BorderRadius.circular(18),
+              // ❌ NO borders / outlines
               boxShadow: [
-                if (isDark)
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.05),
-                    blurRadius: 16,
-                    offset: const Offset(0, 2),
-                  ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.35 : 0.10),
-                  blurRadius: isDark ? 22 : 14,
+                  color: cs.shadow.withOpacity(
+                    isMe ? (isLight ? 0.18 : 0.28) : (isDark ? 0.24 : 0.10),
+                  ),
+                  blurRadius: isMe ? 22 : 14,
                   offset: const Offset(0, 10),
                 ),
               ],
             ),
-            child: Row(
+            child: Stack(
               children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: rankColor.withOpacity(isDark ? 0.16 : 0.12),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    "$rank",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: rankColor,
+                // ✅ Left brand accent stripe (main differentiator)
+                if (isMe)
+                  Positioned(
+                    left: 0,
+                    top: 10,
+                    bottom: 10,
+                    child: Container(
+                      width: 3,
+                      decoration: BoxDecoration(
+                        color: cs.primary,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: cs.primary,
-                  foregroundColor: cs.onPrimary,
-                  backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
-                      ? NetworkImage(photoUrl!)
-                      : null,
-                  child: (photoUrl == null || photoUrl!.isEmpty)
-                      ? Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : "?",
-                    style: TextStyle(
-                      color: cs.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
+
+                Padding(
+                  padding: EdgeInsets.only(left: isMe ? 10 : 0),
                   child: Row(
                     children: [
-                      Expanded(
+                      // Rank
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: rankColor.withOpacity(isDark ? 0.16 : 0.12),
+                        ),
+                        alignment: Alignment.center,
                         child: Text(
-                          name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          "$rank",
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: cs.onSurface,
+                            fontWeight: FontWeight.w800,
+                            color: rankColor,
                           ),
                         ),
                       ),
-                      if (isMe)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                      const SizedBox(width: 10),
+
+                      // Avatar
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        backgroundImage:
+                        (photoUrl != null && photoUrl!.isNotEmpty)
+                            ? NetworkImage(photoUrl!)
+                            : null,
+                        child: (photoUrl == null || photoUrl!.isEmpty)
+                            ? Text(
+                          name.isNotEmpty
+                              ? name[0].toUpperCase()
+                              : "?",
+                          style: TextStyle(
+                            color: cs.onPrimary,
+                            fontWeight: FontWeight.bold,
                           ),
-                          decoration: BoxDecoration(
-                            color: cs.primary,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            "YOU",
-                            style: TextStyle(
-                              color: cs.onPrimary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                        )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+
+                      // Name + YOU badge
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: cs.onSurface,
+                                ),
+                              ),
+                            ),
+                            if (isMe)
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: cs.primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  "YOU",
+                                  style: TextStyle(
+                                    color: cs.onPrimary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      // Metric
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(metricIcon, size: 20, color: metricIconColor),
+                          const SizedBox(width: 6),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 72),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                displayMetric,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  color: cs.onSurface,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
+                      ),
                     ],
                   ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(metricIcon, size: 20, color: metricIconColor),
-                    const SizedBox(width: 6),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 72),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          displayMetric,
-                          maxLines: 1,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: cs.onSurface,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -975,11 +1013,11 @@ class _CenteredUserDialog extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
+                color: cs.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
-                    color: cs.shadow.withOpacity(0.18),
+                    color: cs.shadow.withOpacity(0.22),
                     blurRadius: 18,
                     offset: const Offset(0, 10),
                   ),
@@ -999,7 +1037,9 @@ class _CenteredUserDialog extends StatelessWidget {
                             : null,
                         child: (photoUrl == null || photoUrl!.isEmpty)
                             ? Text(
-                          fullName.isNotEmpty ? fullName[0].toUpperCase() : "?",
+                          fullName.isNotEmpty
+                              ? fullName[0].toUpperCase()
+                              : "?",
                           style: TextStyle(
                             color: cs.onPrimary,
                             fontWeight: FontWeight.w800,

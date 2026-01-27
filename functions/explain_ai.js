@@ -284,7 +284,7 @@ exports.aiExplainQuestion = functions.https.onCall(async (data, context) => {
     const client = getClient();
 
     const resp = await client.responses.create({
-      model: "gpt-5.2",
+      model: "gpt-5.1",
       input: messages,
       max_output_tokens: 1000,
     });
