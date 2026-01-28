@@ -23,11 +23,13 @@ const LinearGradient zHeroGradientDark = LinearGradient(
 
 class MainAppHeader extends StatelessWidget {
   final VoidCallback? onTapTrophy;
+  final VoidCallback? onTapLeaf; // ✅ NEW
   final VoidCallback onTapProfile;
 
   const MainAppHeader({
     super.key,
     this.onTapTrophy,
+    this.onTapLeaf,
     required this.onTapProfile,
   });
 
@@ -63,6 +65,10 @@ class MainAppHeader extends StatelessWidget {
 
         final trophyCount = _readInt(data, 'trophies', fallback: 0);
         final streakDays = _readInt(data, 'currentStreakDays', fallback: 0);
+
+        // ✅ Change the key if your Firestore field name differs
+        final leafs = _readInt(data, 'leafs', fallback: 0);
+
         final photoUrl = _readString(data, 'photoUrl');
 
         return Padding(
@@ -70,9 +76,10 @@ class MainAppHeader extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
-              final s = (width / 360.0).clamp(0.82, 1.0);
+              final s = (width / 360.0).clamp(0.80, 1.06);
 
-              final logoH = 34.0 * s;
+              // ✅ Slightly smaller logo to give more room to pills
+              final logoH = 30.0 * s; // was 34*s
               final avatarR = 19.0 * s;
               final containerVPad = 8.0 * s;
               final containerHPad = 14.0 * s;
@@ -95,8 +102,9 @@ class MainAppHeader extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
+                    // ✅ Make the logo area a bit tighter too
                     ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: 140 * s),
+                      constraints: BoxConstraints(maxWidth: 118 * s),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
@@ -115,7 +123,9 @@ class MainAppHeader extends StatelessWidget {
                           scale: s,
                           streakDays: streakDays,
                           trophyCount: trophyCount,
+                          leafs: leafs,
                           onTapTrophy: onTapTrophy,
+                          onTapLeaf: onTapLeaf,
                           onTapProfile: onTapProfile,
                           photoUrl: photoUrl,
                           avatarRadius: avatarR,
@@ -137,8 +147,12 @@ class _RightClusterAdaptive extends StatelessWidget {
   final double scale;
   final int streakDays;
   final int trophyCount;
+  final int leafs;
+
   final VoidCallback? onTapTrophy;
+  final VoidCallback? onTapLeaf;
   final VoidCallback onTapProfile;
+
   final String? photoUrl;
   final double avatarRadius;
 
@@ -146,7 +160,9 @@ class _RightClusterAdaptive extends StatelessWidget {
     required this.scale,
     required this.streakDays,
     required this.trophyCount,
+    required this.leafs,
     required this.onTapTrophy,
+    required this.onTapLeaf,
     required this.onTapProfile,
     required this.photoUrl,
     required this.avatarRadius,
@@ -165,6 +181,10 @@ class _RightClusterAdaptive extends StatelessWidget {
         (constraints.maxWidth - avatarDiameter - gapBeforeAvatar)
             .clamp(0.0, constraints.maxWidth);
 
+        // ✅ If space is extremely tight, reduce inter-pill gaps slightly
+        final bool tight = constraints.maxWidth < 210 * scale;
+        final gap = (tight ? 6.0 : 8.0) * scale;
+
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -177,15 +197,26 @@ class _RightClusterAdaptive extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Transform.translate(
-                      offset: Offset(-5 * scale, 0),
+                      offset: Offset(-4 * scale, 0),
                       child: _StreakPill(
                         streakDays: streakDays,
                         scale: scale,
                       ),
                     ),
-                    SizedBox(width: 8 * scale),
+                    SizedBox(width: gap),
+
                     Transform.translate(
-                      offset: Offset(-5 * scale, 0),
+                      offset: Offset(-4 * scale, 0),
+                      child: _LeafPill(
+                        count: leafs,
+                        onTap: onTapLeaf,
+                        scale: scale,
+                      ),
+                    ),
+                    SizedBox(width: gap),
+
+                    Transform.translate(
+                      offset: Offset(-4 * scale, 0),
                       child: _TrophyPill(
                         count: trophyCount,
                         onTap: onTapTrophy,
@@ -203,7 +234,8 @@ class _RightClusterAdaptive extends StatelessWidget {
                 radius: avatarRadius,
                 backgroundColor: cs.primary,
                 foregroundColor: cs.onPrimary,
-                backgroundImage: (photoUrl != null) ? NetworkImage(photoUrl!) : null,
+                backgroundImage:
+                (photoUrl != null) ? NetworkImage(photoUrl!) : null,
                 child: (photoUrl == null)
                     ? Icon(
                   Icons.person,
@@ -220,6 +252,25 @@ class _RightClusterAdaptive extends StatelessWidget {
   }
 }
 
+class _PillNumberFormatter {
+  static String shorten(num value) {
+    final v = value.toDouble().abs();
+    if (v < 1000) return value.toInt().toString();
+    if (v < 10_000) return "${(v / 1000).toStringAsFixed(1)}k";
+    if (v < 1_000_000) return "${(v / 1000).floor()}k";
+    if (v < 10_000_000) return "${(v / 1_000_000).toStringAsFixed(1)}M";
+    return "${(v / 1_000_000).floor()}M";
+  }
+
+  static double fontFor(int value, double base) {
+    final len = value.abs().toString().length;
+    if (len <= 3) return base;
+    if (len == 4) return base * 0.96;
+    if (len == 5) return base * 0.92;
+    return base * 0.88;
+  }
+}
+
 class _TrophyPill extends StatelessWidget {
   final int count;
   final VoidCallback? onTap;
@@ -231,17 +282,13 @@ class _TrophyPill extends StatelessWidget {
     required this.scale,
   });
 
-  String _shorten(int value) {
-    if (value < 1000) return value.toString();
-    if (value < 10000) return "${(value / 1000).toStringAsFixed(1)}k";
-    if (value < 1000000) return "${(value / 1000).floor()}k";
-    if (value < 10000000) return "${(value / 1000000).toStringAsFixed(1)}M";
-    return "${(value / 1000000).floor()}M";
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
+    final text = _PillNumberFormatter.shorten(count);
+    final baseFont = 14.5 * scale;
+    final fontSize = _PillNumberFormatter.fontFor(count, baseFont);
 
     final pill = Container(
       constraints: BoxConstraints(minHeight: 30 * scale),
@@ -266,15 +313,101 @@ class _TrophyPill extends StatelessWidget {
             color: cs.tertiary,
           ),
           SizedBox(width: 6 * scale),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              _shorten(count),
-              maxLines: 1,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: cs.onTertiaryContainer,
-                fontSize: 14.5 * scale,
+          ConstrainedBox(
+            constraints: BoxConstraints(minWidth: 14 * scale),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                text,
+                maxLines: 1,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: cs.onTertiaryContainer,
+                  fontSize: fontSize,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) return pill;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22 * scale),
+      child: pill,
+    );
+  }
+}
+
+class _LeafPill extends StatelessWidget {
+  final int count;
+  final VoidCallback? onTap;
+  final double scale;
+
+  const _LeafPill({
+    required this.count,
+    this.onTap,
+    required this.scale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    // ✅ Green palette (stable across light/dark)
+    const leafGreen = Color(0xFF22C55E); // vivid green
+    const leafGreenDark = Color(0xFF16A34A); // deeper green
+
+    final text = _PillNumberFormatter.shorten(count);
+    final baseFont = 14.5 * scale;
+    final fontSize = _PillNumberFormatter.fontFor(count, baseFont);
+
+    // ✅ Green background that still reads well in both themes
+    final bg = isDark
+        ? Color.alphaBlend(leafGreenDark.withOpacity(0.24), cs.surfaceContainerHigh)
+        : Color.alphaBlend(leafGreen.withOpacity(0.18), cs.surfaceContainerHigh);
+
+    final pill = Container(
+      constraints: BoxConstraints(minHeight: 30 * scale),
+      padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(22 * scale),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withOpacity(0.08),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.eco_rounded,
+            size: 17 * scale,
+            color: isDark ? leafGreen : leafGreenDark,
+          ),
+          SizedBox(width: 6 * scale),
+          ConstrainedBox(
+            constraints: BoxConstraints(minWidth: 14 * scale),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                text,
+                maxLines: 1,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface,
+                  fontSize: fontSize,
+                ),
               ),
             ),
           ),
@@ -306,6 +439,9 @@ class _StreakPill extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final hasStreak = streakDays > 0;
 
+    final baseFont = 14.5 * scale;
+    final fontSize = _PillNumberFormatter.fontFor(streakDays, baseFont);
+
     if (!hasStreak) {
       return Container(
         constraints: BoxConstraints(minHeight: 30 * scale),
@@ -326,7 +462,7 @@ class _StreakPill extends StatelessWidget {
             Text(
               '0',
               style: TextStyle(
-                fontSize: 14.5 * scale,
+                fontSize: _PillNumberFormatter.fontFor(0, baseFont),
                 fontWeight: FontWeight.w700,
                 color: cs.onSurfaceVariant.withOpacity(0.75),
               ),
@@ -336,12 +472,9 @@ class _StreakPill extends StatelessWidget {
       );
     }
 
-    // ✅ FIX: no flipping, no cs.secondary/cs.primary guesswork.
-    // Use the SAME gradients as the Home hero banner.
-    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final isDark = cs.brightness == Brightness.dark;
     final grad = isDark ? zHeroGradientDark : zHeroGradientLight;
 
-    // On these hero gradients, white is always the correct readable foreground
     const fg = Colors.white;
 
     return Container(
@@ -373,7 +506,7 @@ class _StreakPill extends StatelessWidget {
               '$streakDays',
               maxLines: 1,
               style: TextStyle(
-                fontSize: 14.5 * scale,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w800,
                 color: fg,
               ),
