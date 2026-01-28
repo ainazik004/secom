@@ -1,17 +1,16 @@
 // lib/widgets/quiz_runner/pages/quiz_single_review_page.dart
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../models/question.dart';
 import '../services/ai_explain_service.dart';
 import '../widgets/round_x_button.dart';
 
-// If you created this file, it should render left/right values with fractions.
-// import '../widgets/comparison_value_card.dart';
+// ✅ Use stacked/nested fraction renderer for comparison values
+import '../widgets/comparison_value_card.dart';
 
 class QuizSingleReviewPage extends StatefulWidget {
   final List<Question> questions;
@@ -54,14 +53,23 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
   }
 
   // Removes the “Сравните значения” header inside stem (review mode).
+  // Also removes lone "." so the question does not show a dot.
   String _cleanStem(String stem) {
     var s = stem.trim();
+
     s = s.replaceAll('Сравните значения', '').trim();
     s = s.replaceAll('Сравните значения:', '').trim();
     s = s.replaceAll('Compare values', '').trim();
     s = s.replaceAll('Compare values:', '').trim();
+
     s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n');
     s = s.replaceAll(RegExp(r'[ \t]{2,}'), ' ');
+    s = s.trim();
+
+    // ✅ If stem is just "." or "•" etc. treat as empty
+    final onlyPunct = s.replaceAll(RegExp(r'[\s\.\u2022•·-]+'), '');
+    if (onlyPunct.isEmpty) return '';
+
     return s;
   }
 
@@ -79,6 +87,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     final isComparison = _isComparison(q);
     final left = (q.left ?? '').trim();
     final right = (q.right ?? '').trim();
+
+    final stemClean = _cleanStem(q.stem);
 
     // Backgrounds
     final pageBg = cs.surface;
@@ -115,8 +125,6 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
           ),
         ),
       ),
-
-      // ✅ Scrollable page: buttons move with content (as you requested earlier)
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         children: [
@@ -156,39 +164,41 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  _cleanStem(q.stem),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    height: 1.35,
-                    color: cs.onSurface,
+
+                // ✅ Do not show the stem area if it became empty (prevents lone dot)
+                if (stemClean.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    stemClean,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      height: 1.35,
+                      color: cs.onSurface,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
 
           const SizedBox(height: 12),
 
-          // Comparison values (left/right)
+          // Comparison values (left/right) with stacked fractions
           if (isComparison) ...[
             Row(
               children: [
                 Expanded(
-                  child: _ComparisonValueCard(
+                  child: ComparisonSideCard(
                     value: left.isEmpty ? '—' : left,
                     cs: cs,
-                    isDark: isDark,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _ComparisonValueCard(
+                  child: ComparisonSideCard(
                     value: right.isEmpty ? '—' : right,
                     cs: cs,
-                    isDark: isDark,
                   ),
                 ),
               ],
@@ -283,8 +293,6 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                           color: cs.surface.withOpacity(isDark ? 0.50 : 0.85),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        // If you previously wanted to remove A/B labels, remove this Text(key).
-                        // For MCQ it is typically useful; keep it for now.
                         child: Text(
                           key,
                           style: TextStyle(
@@ -347,7 +355,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
             const SizedBox(height: 10),
           ],
 
-          // ✅ Full-width Jinny button
+          // Jinny button
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -383,7 +391,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
 
           const SizedBox(height: 10),
 
-          // ✅ Full-width Report a mistake
+          // Report a mistake
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -408,7 +416,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
 
           const SizedBox(height: 14),
 
-          // Bottom navigation (scrolls with page)
+          // Bottom navigation
           Row(
             children: [
               Expanded(
@@ -482,25 +490,23 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
       setModalState(() => sending = true);
 
       try {
-        final uid = FirebaseAuth.instance.currentUser?.uid;
+        final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
+            .httpsCallable('submitMistakeReport');
 
-        await FirebaseFirestore.instance.collection('mistake_reports').add({
-          'createdAt': FieldValue.serverTimestamp(),
-          'userId': uid,
+        await callable.call(<String, dynamic>{
+          'message': text,
           'questionId': q.id,
           'stem': q.stem,
-          'picked': picked,
           'correct': q.answer,
+          'picked': picked,
           'options': q.options,
           'topic': q.topic,
           'section': q.section,
           'language': q.language,
-          // ✅ include comparison values (so you can debug reports)
           'left': q.left,
           'right': q.right,
-          'message': text,
-          'reviewIndex': _i,
-          'totalQuestions': widget.questions.length,
+          'locale': Localizations.localeOf(context).languageCode,
+          'platform': Theme.of(context).platform.toString(),
         });
 
         if (!context.mounted) return;
@@ -512,9 +518,32 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
             backgroundColor: cs.primary,
           ),
         );
+      } on FirebaseFunctionsException catch (e) {
+        setModalState(() => sending = false);
+        if (!context.mounted) return;
+
+        String msg;
+        switch (e.code) {
+          case 'unauthenticated':
+            msg = loc.login_required;
+            break;
+          case 'invalid-argument':
+            msg = e.message ?? loc.invalid_input;
+            break;
+          case 'resource-exhausted':
+            msg = e.message ?? loc.daily_limit_reached;
+            break;
+          default:
+            msg = e.message ?? '${loc.error_prefix}: ${e.code}';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
       } catch (e) {
         setModalState(() => sending = false);
         if (!context.mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${loc.error_prefix}: $e')),
         );
@@ -523,7 +552,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
 
     await showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // ✅ allows moving above keyboard
+      isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withOpacity(0.35),
@@ -544,7 +573,6 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                     color: cs.surface,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        // ✅ prevents keyboard from covering content on small screens
                         maxHeight: MediaQuery.of(ctx).size.height * 0.80,
                       ),
                       child: SingleChildScrollView(
@@ -580,8 +608,6 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                               ),
                             ),
                             const SizedBox(height: 12),
-
-                            // ✅ visible border + clear focus ring
                             TextField(
                               controller: messageCtrl,
                               autofocus: true,
@@ -609,9 +635,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 12),
-
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -633,9 +657,11 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 8),
-                            SafeArea(top: false, child: SizedBox(height: bottomInset > 0 ? 6 : 0)),
+                            SafeArea(
+                              top: false,
+                              child: SizedBox(height: bottomInset > 0 ? 6 : 0),
+                            ),
                           ],
                         ),
                       ),
@@ -689,8 +715,6 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     );
   }
 
-  // ✅ IMPORTANT FIX:
-  // For comparison questions, include left/right; for MCQ include picked & correct option texts.
   String _buildHiddenInitialForJinny({
     required AppLocalizations loc,
     required Question q,
@@ -702,14 +726,9 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     if (isComp) {
       final l = (q.left ?? '').trim();
       final r = (q.right ?? '').trim();
-
-      // The correct answer in comparison is typically A/B/C/D.
-      // We include picked letter + correct letter + left/right values.
       final pickedLetter = picked.isEmpty ? '—' : picked;
       final correctLetter = q.answer;
 
-      // Keep it short but explicit; this is sent hidden to Jinny.
-      // (No need to localize fully; your backend prompt can handle language param.)
       return [
         'Тип: comparison',
         'LEFT: ${l.isEmpty ? '—' : l}',
@@ -1198,7 +1217,6 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
                   child: Column(
                     children: [
                       const SizedBox(height: 10),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Center(
@@ -1212,7 +1230,6 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
                           ),
                         ),
                       ),
-
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
                         child: Row(
@@ -1250,9 +1267,7 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
                           ],
                         ),
                       ),
-
                       Divider(height: 1, color: cs.outlineVariant.withOpacity(0.35)),
-
                       Expanded(
                         child: ListView.builder(
                           controller: listCtrl,
@@ -1290,7 +1305,6 @@ class _JinnyChatSheetState extends State<_JinnyChatSheet> with WidgetsBindingObs
                           },
                         ),
                       ),
-
                       SafeArea(
                         top: false,
                         child: Container(
@@ -1524,48 +1538,6 @@ class _ComparisonAnswerTile extends StatelessWidget {
                   child: Icon(badge, size: 18, color: badgeColor),
                 ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Minimal comparison card here so this file works standalone.
-/// If you already created comparison_value_card.dart, replace this widget usage
-/// with your real widget (and delete this class).
-class _ComparisonValueCard extends StatelessWidget {
-  final String value;
-  final ColorScheme cs;
-  final bool isDark;
-
-  const _ComparisonValueCard({
-    required this.value,
-    required this.cs,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: cs.outlineVariant.withOpacity(0.55),
-          width: 1.3,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          value,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            height: 1.2,
-            color: cs.onSurface,
           ),
         ),
       ),

@@ -637,4 +637,14 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get error_prefix => 'Ката';
+
+  @override
+  String get login_required => 'Билдирүү жөнөтүү үчүн аккаунтка кириңиз.';
+
+  @override
+  String get invalid_input => 'Туура эмес маалымат.';
+
+  @override
+  String get daily_limit_reached =>
+      'Күнүмдүк лимитке жеттиңиз (күнүнө 10 жолу).';
 }

@@ -636,4 +636,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get error_prefix => 'Error';
+
+  @override
+  String get login_required => 'Please sign in to send a report.';
+
+  @override
+  String get invalid_input => 'Invalid input.';
+
+  @override
+  String get daily_limit_reached =>
+      'Daily report limit reached (10 per day). Try again tomorrow.';
 }

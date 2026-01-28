@@ -264,5 +264,9 @@
   "report_placeholder": "Example: Option C should be correct because… / There is a typo in the question…",
   "sending": "Sending…",
   "report_sent": "Thank you! Your report has been sent.",
-  "error_prefix": "Error"
+  "error_prefix": "Error",
+  "login_required": "Please sign in to send a report.",
+  "invalid_input": "Invalid input.",
+  "daily_limit_reached": "Daily report limit reached (10 per day). Try again tomorrow."
+
 }

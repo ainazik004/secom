@@ -638,4 +638,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get error_prefix => 'Ошибка';
+
+  @override
+  String get login_required =>
+      'Пожалуйста, войдите в аккаунт, чтобы отправить сообщение.';
+
+  @override
+  String get invalid_input => 'Некорректные данные.';
+
+  @override
+  String get daily_limit_reached =>
+      'Достигнут дневной лимит сообщений (10 в день).';
 }

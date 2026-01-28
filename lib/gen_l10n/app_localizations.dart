@@ -1287,6 +1287,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error'**
   String get error_prefix;
+
+  /// No description provided for @login_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to send a report.'**
+  String get login_required;
+
+  /// No description provided for @invalid_input.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid input.'**
+  String get invalid_input;
+
+  /// No description provided for @daily_limit_reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily report limit reached (10 per day). Try again tomorrow.'**
+  String get daily_limit_reached;
 }
 
 class _AppLocalizationsDelegate
