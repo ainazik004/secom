@@ -3,24 +3,14 @@
 
 require("dotenv").config();
 
-const functions = require("firebase-functions");
+// ✅ FORCE v1 import so .region() exists
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const OpenAI = require("openai").default;
 
-admin.initializeApp();
+// IMPORTANT: DO NOT call admin.initializeApp() here.
+// index.js already initializes it.
 const db = admin.firestore();
-
-/**
- * @param {Object|undefined|null} obj
- * @param {string} key
- * @param {*} fallback
- * @return {*}
- */
-function get(obj, key, fallback) {
-  if (!obj) return fallback;
-  const v = obj[key];
-  return v === undefined || v === null ? fallback : v;
-}
 
 /**
  * @param {*} v
@@ -110,7 +100,7 @@ async function saveLastProblem(uid, payload) {
       ...payload,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
-    {merge: true},
+    {merge: true}
   );
 }
 
@@ -218,84 +208,86 @@ function sanitizeNoLatex(text) {
     .trim();
 }
 
-exports.aiExplainQuestion = functions.https.onCall(async (data, context) => {
-  if (!context || !context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Login required.");
-  }
+// ✅ v1 callable + explicit region
+exports.aiExplainQuestion = functions
+  .region("europe-west1")
+  .https.onCall(async (data, context) => {
+    if (!context || !context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Login required.");
+    }
 
-  const uid = context.auth.uid;
+    const uid = context.auth.uid;
 
-  const q = data && data.question;
-  if (!q || typeof q !== "object") {
-    throw new functions.https.HttpsError("invalid-argument", "Missing question.");
-  }
+    const q = data && data.question;
+    if (!q || typeof q !== "object") {
+      throw new functions.https.HttpsError("invalid-argument", "Missing question.");
+    }
 
-  const stem = asString(get(q, "stem", ""), "");
-  const options = get(q, "options", {});
-  const answer = asString(get(q, "answer", ""), "");
-  const picked = asString(get(q, "picked", ""), "");
+    const stem = asString(q.stem, "");
+    const options = q.options;
+    const answer = asString(q.answer, "");
+    const picked = asString(q.picked, "");
 
-  const lang = asString((data && data.language) ? data.language : "ru", "ru");
+    const lang = asString((data && data.language) ? data.language : "ru", "ru");
 
-  if (stem.length < 3 || stem.length > 2000) {
-    throw new functions.https.HttpsError("invalid-argument", "Bad stem length.");
-  }
-  if (!options || typeof options !== "object") {
-    throw new functions.https.HttpsError("invalid-argument", "Bad options type.");
-  }
+    if (stem.length < 3 || stem.length > 2000) {
+      throw new functions.https.HttpsError("invalid-argument", "Bad stem length.");
+    }
+    if (!options || typeof options !== "object") {
+      throw new functions.https.HttpsError("invalid-argument", "Bad options type.");
+    }
 
-  const optionLines = Object.entries(options)
-    .map(([k, v]) => `${k}) ${asString(v, "")}`)
-    .join("\n");
+    const optionLines = Object.entries(options)
+      .map(([k, v]) => `${k}) ${asString(v, "")}`)
+      .join("\n");
 
-  const userMessage = asString(get(data, "userMessage", ""), "").trim();
-  const history = get(data, "history", []);
+    const userMessage = asString(data && data.userMessage, "").trim();
+    const history = (data && data.history) ? data.history : [];
 
-  await saveLastProblem(uid, {
-    stem: stem,
-    optionLines: optionLines,
-    answer: answer,
-    picked: picked,
-    lang: lang,
-  });
-
-  const lastProblem = await loadLastProblem(uid);
-  const attachProblemContext = isProblemRelated(userMessage, lastProblem);
-
-  const system = buildSystem(lang);
-  const messages = [{role: "system", content: system}];
-
-  if (attachProblemContext && lastProblem) {
-    messages.push({role: "system", content: buildReference(lang, lastProblem)});
-  }
-
-  // ✅ CRITICAL: If NOT related, do NOT include chat history (prevents “continuing math”)
-  const effectiveHistory = attachProblemContext ? history : [];
-  const h = normalizeHistory(effectiveHistory);
-  for (const m of h) {
-    messages.push({role: m.role, content: m.content});
-  }
-
-  const isKy = String(lang).toLowerCase().startsWith("ky");
-  const finalPrompt = userMessage || (isKy ? "Сураныч, жооп бер." : "Пожалуйста, ответь.");
-  messages.push({role: "user", content: finalPrompt});
-
-  try {
-    const client = getClient();
-
-    const resp = await client.responses.create({
-      model: "gpt-5.1",
-      input: messages,
-      max_output_tokens: 1000,
+    await saveLastProblem(uid, {
+      stem: stem,
+      optionLines: optionLines,
+      answer: answer,
+      picked: picked,
+      lang: lang,
     });
 
-    let text = (resp && resp.output_text ? String(resp.output_text) : "").trim();
-    if (!text) text = "—";
-    text = sanitizeNoLatex(text);
+    const lastProblem = await loadLastProblem(uid);
+    const attachProblemContext = isProblemRelated(userMessage, lastProblem);
 
-    return {text: text, usedProblemContext: attachProblemContext};
-  } catch (e) {
-    console.error("aiExplainQuestion error:", e);
-    throw new functions.https.HttpsError("internal", "AI error.");
-  }
-});
+    const system = buildSystem(lang);
+    const messages = [{role: "system", content: system}];
+
+    if (attachProblemContext && lastProblem) {
+      messages.push({role: "system", content: buildReference(lang, lastProblem)});
+    }
+
+    const effectiveHistory = attachProblemContext ? history : [];
+    const h = normalizeHistory(effectiveHistory);
+    for (const m of h) {
+      messages.push({role: m.role, content: m.content});
+    }
+
+    const isKy = String(lang).toLowerCase().startsWith("ky");
+    const finalPrompt = userMessage || (isKy ? "Сураныч, жооп бер." : "Пожалуйста, ответь.");
+    messages.push({role: "user", content: finalPrompt});
+
+    try {
+      const client = getClient();
+
+      const resp = await client.responses.create({
+        model: "gpt-5.1",
+        input: messages,
+        max_output_tokens: 1000,
+      });
+
+      let text = (resp && resp.output_text ? String(resp.output_text) : "").trim();
+      if (!text) text = "—";
+      text = sanitizeNoLatex(text);
+
+      return {text: text, usedProblemContext: attachProblemContext};
+    } catch (e) {
+      console.error("aiExplainQuestion error:", e);
+      throw new functions.https.HttpsError("internal", "AI error.");
+    }
+  });
