@@ -52,16 +52,173 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
+  Future<void> _showThemeDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+    final themeProvider = context.read<ThemeProvider>();
+    final cs = Theme.of(context).colorScheme;
+
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: cs.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        title: _DialogHeader(
+          title: loc.theme,
+          subtitle: loc.chooseTheme, // ✅ add this key in l10n OR replace with loc.theme
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _FullWidthOptionTile(
+              title: loc.themeSystem,
+              icon: Icons.brightness_auto_rounded,
+              selected: themeProvider.mode == ThemeMode.system,
+              onTap: () {
+                themeProvider.setMode(ThemeMode.system);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 10),
+            _FullWidthOptionTile(
+              title: loc.themeLight,
+              icon: Icons.light_mode_rounded,
+              selected: themeProvider.mode == ThemeMode.light,
+              onTap: () {
+                themeProvider.setMode(ThemeMode.light);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 10),
+            _FullWidthOptionTile(
+              title: loc.themeDark,
+              icon: Icons.dark_mode_rounded,
+              selected: themeProvider.mode == ThemeMode.dark,
+              onTap: () {
+                themeProvider.setMode(ThemeMode.dark);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(loc.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLanguageDialog(BuildContext context) async {
+    final localeProvider = context.read<LocaleProvider>();
+    final currentLocale = localeProvider.locale;
+    final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+
+    final availableLocales = L10n.all.where((l) => l.languageCode != 'en').toList();
+
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: cs.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        title: _DialogHeader(
+          title: loc.language,
+          subtitle: loc.chooseLanguage,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: availableLocales.map((locale) {
+            final code = locale.languageCode;
+            final languageName = L10n.getLanguageName(code);
+            final isSelected = locale == currentLocale;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _FullWidthOptionTile(
+                title: languageName,
+                iconWidget: Text(
+                  _flagForLanguage(code),
+                  style: const TextStyle(fontSize: 22),
+                ),
+                selected: isSelected,
+                onTap: () {
+                  localeProvider.setLocale(locale);
+                  Navigator.pop(context);
+                },
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(loc.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showLogoutConfirm(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: cs.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        titleTextStyle: TextStyle(
+          color: cs.onSurface,
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+        ),
+        contentTextStyle: TextStyle(
+          color: cs.onSurfaceVariant,
+          fontSize: 14,
+        ),
+        title: Text(loc.confirmation),
+        content: Text(loc.logoutQuestion),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(loc.cancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: cs.error,
+              foregroundColor: cs.onError,
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _logout(context);
+            },
+            child: Text(loc.logout),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (embedded) {
-      // embedded pages inherit parent scaffold background
       return SafeArea(child: _buildBody(context));
     }
 
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      // ✅ background must be cs.background (not cs.surface)
       backgroundColor: cs.background,
       body: SafeArea(child: _buildBody(context)),
     );
@@ -73,176 +230,38 @@ class SettingsPage extends StatelessWidget {
     final currentLocale = localeProvider.locale;
     final loc = AppLocalizations.of(context)!;
 
-    final isDarkNow = themeProvider.mode == ThemeMode.system
-        ? (MediaQuery.of(context).platformBrightness == Brightness.dark)
-        : (themeProvider.mode == ThemeMode.dark);
-
     final cs = Theme.of(context).colorScheme;
-
-    // Only show RU + KY in settings
-    final availableLocales =
-    L10n.all.where((l) => l.languageCode != 'en').toList();
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
         const SizedBox(height: 12),
 
-        // ---------- Language ----------
         _SettingCard(
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                // ✅ dialog surfaces should be surfaceContainerHigh on top of scrim
-                backgroundColor: cs.surfaceContainerHigh,
-                surfaceTintColor: Colors.transparent,
-                titleTextStyle: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-                contentTextStyle: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 14,
-                ),
-                title: Text(loc.language),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: availableLocales.map((locale) {
-                    final code = locale.languageCode;
-                    final languageName = L10n.getLanguageName(code);
-                    final isSelected = locale == currentLocale;
-
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Text(
-                        _flagForLanguage(code),
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                      title: Text(
-                        languageName,
-                        style: TextStyle(color: cs.onSurface),
-                      ),
-                      trailing:
-                      isSelected ? Icon(Icons.check, color: cs.primary) : null,
-                      onTap: () {
-                        localeProvider.setLocale(locale);
-                        Navigator.pop(context);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-            );
-          },
+          onTap: () => _showLanguageDialog(context),
           icon: Icons.language,
           iconBackground: cs.primaryContainer,
           iconColor: cs.onPrimaryContainer,
           title: loc.language,
-          subtitle: loc.chooseLanguage,
+          subtitle:
+          '${_flagForLanguage(currentLocale.languageCode)} ${L10n.getLanguageName(currentLocale.languageCode)}',
         ),
 
-        // ---------- Theme ----------
         _SettingCard(
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                backgroundColor: cs.surfaceContainerHigh,
-                surfaceTintColor: Colors.transparent,
-                titleTextStyle: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RadioListTile<ThemeMode>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(loc.themeSystem, style: TextStyle(color: cs.onSurface)),
-                      value: ThemeMode.system,
-                      groupValue: themeProvider.mode,
-                      onChanged: (v) {
-                        if (v == null) return;
-                        context.read<ThemeProvider>().setMode(v);
-                        Navigator.pop(context);
-                      },
-                    ),
-                    RadioListTile<ThemeMode>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(loc.themeLight, style: TextStyle(color: cs.onSurface)),
-                      value: ThemeMode.light,
-                      groupValue: themeProvider.mode,
-                      onChanged: (v) {
-                        if (v == null) return;
-                        context.read<ThemeProvider>().setMode(v);
-                        Navigator.pop(context);
-                      },
-                    ),
-                    RadioListTile<ThemeMode>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(loc.themeDark, style: TextStyle(color: cs.onSurface)),
-                      value: ThemeMode.dark,
-                      groupValue: themeProvider.mode,
-                      onChanged: (v) {
-                        if (v == null) return;
-                        context.read<ThemeProvider>().setMode(v);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-          icon: isDarkNow ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+          onTap: () => _showThemeDialog(context),
+          icon: themeProvider.mode == ThemeMode.dark
+              ? Icons.dark_mode_rounded
+              : themeProvider.mode == ThemeMode.light
+              ? Icons.light_mode_rounded
+              : Icons.brightness_auto_rounded,
           iconBackground: cs.secondaryContainer,
           iconColor: cs.onSecondaryContainer,
           title: loc.theme,
           subtitle: loc.themeCurrentValue(_themeLabel(loc, themeProvider.mode)),
         ),
 
-        // ---------- Logout ----------
         _SettingCard(
-          onTap: () {
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                backgroundColor: cs.surfaceContainerHigh,
-                surfaceTintColor: Colors.transparent,
-                titleTextStyle: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-                contentTextStyle: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 14,
-                ),
-                title: Text(loc.confirmation),
-                content: Text(loc.logoutQuestion),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(loc.cancel),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: cs.error,
-                      foregroundColor: cs.onError,
-                    ),
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await _logout(context);
-                    },
-                    child: Text(loc.logout),
-                  ),
-                ],
-              ),
-            );
-          },
+          onTap: () => _showLogoutConfirm(context),
           icon: Icons.logout,
           iconBackground: cs.errorContainer,
           iconColor: cs.error,
@@ -279,9 +298,6 @@ class _SettingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    // hierarchy:
-    // page background = cs.background
-    // card = cs.surfaceContainerHigh
     final cardColor = cs.surfaceContainerHigh;
     final onCard = cs.onSurface;
     final sub = cs.onSurfaceVariant;
@@ -292,7 +308,6 @@ class _SettingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(26),
-        // ❌ removed outline
         boxShadow: [
           BoxShadow(
             color: cs.shadow.withOpacity(0.18),
@@ -313,12 +328,8 @@ class _SettingCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: iconBackground,
                   borderRadius: BorderRadius.circular(18),
-                  // ❌ removed icon outline
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor ?? cs.onPrimaryContainer,
-                ),
+                child: Icon(icon, color: iconColor ?? cs.onPrimaryContainer),
               ),
               const SizedBox(width: 18),
               Expanded(
@@ -329,7 +340,7 @@ class _SettingCard extends StatelessWidget {
                       title,
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: titleColor ?? onCard,
                       ),
                     ),
@@ -346,10 +357,111 @@ class _SettingCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: chevron,
+              Icon(Icons.chevron_right_rounded, color: chevron),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogHeader extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+
+  const _DialogHeader({required this.title, this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: cs.onSurface,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            subtitle!,
+            style: TextStyle(
+              color: cs.onSurfaceVariant,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// ✅ Full-width option tile used in BOTH dialogs (language + theme)
+class _FullWidthOptionTile extends StatelessWidget {
+  final String title;
+  final IconData? icon;
+  final Widget? iconWidget;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FullWidthOptionTile({
+    required this.title,
+    this.icon,
+    this.iconWidget,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    final bg = selected
+        ? Color.alphaBlend(cs.primary.withOpacity(0.12), cs.surfaceContainerHighest)
+        : cs.surfaceContainerHighest;
+
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            children: [
+              if (iconWidget != null) ...[
+                iconWidget!,
+                const SizedBox(width: 12),
+              ] else if (icon != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(icon, color: cs.onPrimaryContainer),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15.5,
+                  ),
+                ),
               ),
+              if (selected) Icon(Icons.check_circle_rounded, color: cs.primary),
             ],
           ),
         ),
