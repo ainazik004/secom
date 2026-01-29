@@ -68,7 +68,7 @@ class SettingsPage extends StatelessWidget {
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         title: _DialogHeader(
           title: loc.theme,
-          subtitle: loc.chooseTheme, // ✅ add this key in l10n OR replace with loc.theme
+          subtitle: loc.chooseTheme,
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
