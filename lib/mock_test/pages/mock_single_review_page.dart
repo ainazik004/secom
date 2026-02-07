@@ -1,4 +1,4 @@
-// lib/widgets/quiz_runner/pages/quiz_single_review_page.dart
+// lib/mock_test/pages/mock_single_review_page.dart
 import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
@@ -6,16 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
-import '../models/question.dart';
-import '../widgets/comparison_value_card.dart';
-import '../widgets/round_x_button.dart';
+import '../mock_question_loader.dart';
+import '../../widgets/quiz_runner/widgets/comparison_value_card.dart';
+import '../../widgets/quiz_runner/widgets/round_x_button.dart';
 
-class QuizSingleReviewPage extends StatefulWidget {
-  final List<Question> questions;
+class MockSingleReviewPage extends StatefulWidget {
+  final List<MockQuestion> questions;
   final Map<int, String> answers;
   final int initialIndex;
 
-  const QuizSingleReviewPage({
+  const MockSingleReviewPage({
     super.key,
     required this.questions,
     required this.answers,
@@ -23,10 +23,10 @@ class QuizSingleReviewPage extends StatefulWidget {
   });
 
   @override
-  State<QuizSingleReviewPage> createState() => _QuizSingleReviewPageState();
+  State<MockSingleReviewPage> createState() => _MockSingleReviewPageState();
 }
 
-class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
+class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
   late int _i;
 
   // Cache Jinny explanation per question+language+endpoint to reduce API load.
@@ -48,9 +48,18 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     setState(() => _i++);
   }
 
-  bool _isComparison(Question q) {
-    final t = (q.topic ?? '').toLowerCase();
-    return t == 'comparison' || t.startsWith('comparison/') || t.contains('/comparison');
+  // ---------- helpers (null-safe / defensive) ----------
+
+  String _s(dynamic v) => (v == null) ? '' : v.toString();
+
+  bool _looksComparison(MockQuestion q) {
+    final t = _s(q.topic).toLowerCase().trim();
+    if (t == 'comparison' || t.startsWith('comparison/') || t.contains('/comparison')) return true;
+
+    // Some datasets don’t set topic but still have left/right values.
+    final l = _s(q.left).trim();
+    final r = _s(q.right).trim();
+    return l.isNotEmpty || r.isNotEmpty;
   }
 
   String _cleanStem(String stem) {
@@ -71,294 +80,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     return s;
   }
 
-  // -------------------- Report mistake --------------------
-
-  Future<void> _openReportMistake(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final cs = Theme.of(context).colorScheme;
-
-    final q = widget.questions[_i];
-    final picked = widget.answers[_i] ?? '';
-    final messageCtrl = TextEditingController();
-
-    bool sending = false;
-
-    Future<void> submit(StateSetter setModalState) async {
-      final text = messageCtrl.text.trim();
-      if (text.isEmpty || sending) return;
-
-      setModalState(() => sending = true);
-
-      try {
-        final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
-            .httpsCallable('submitMistakeReport');
-
-        await callable.call(<String, dynamic>{
-          'message': text,
-          'questionId': q.id,
-          'stem': q.stem,
-          'correct': q.answer,
-          'picked': picked,
-          'options': q.options,
-          'topic': q.topic,
-          'section': q.section,
-          'language': q.language,
-          'left': q.left,
-          'right': q.right,
-          'locale': Localizations.localeOf(context).languageCode,
-          'platform': Theme.of(context).platform.toString(),
-        });
-
-        if (!context.mounted) return;
-        Navigator.of(context).pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(loc.report_sent),
-            backgroundColor: cs.primary,
-          ),
-        );
-      } on FirebaseFunctionsException catch (e) {
-        setModalState(() => sending = false);
-        if (!context.mounted) return;
-
-        String msg;
-        switch (e.code) {
-          case 'unauthenticated':
-            msg = loc.login_required;
-            break;
-          case 'invalid-argument':
-            msg = e.message ?? loc.invalid_input;
-            break;
-          case 'resource-exhausted':
-            msg = e.message ?? loc.daily_limit_reached;
-            break;
-          default:
-            msg = e.message ?? '${loc.error_prefix}: ${e.code}';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-      } catch (e) {
-        setModalState(() => sending = false);
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('${loc.error_prefix}: $e')));
-      }
-    }
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.35),
-      builder: (sheetCtx) {
-        final bottomInset = MediaQuery.of(sheetCtx).viewInsets.bottom;
-
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return AnimatedPadding(
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              padding: EdgeInsets.only(bottom: bottomInset),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                  child: Material(
-                    color: cs.surface,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(ctx).size.height * 0.80,
-                      ),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  loc.report_a_mistake,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w900,
-                                    color: cs.onSurface,
-                                  ),
-                                ),
-                                const Spacer(),
-                                IconButton(
-                                  onPressed: () => Navigator.of(ctx).pop(),
-                                  icon: const Icon(Icons.close_rounded),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              loc.report_hint,
-                              style: TextStyle(
-                                color: cs.onSurfaceVariant.withOpacity(0.85),
-                                fontWeight: FontWeight.w600,
-                                height: 1.35,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: messageCtrl,
-                              autofocus: true,
-                              minLines: 4,
-                              maxLines: 10,
-                              textInputAction: TextInputAction.newline,
-                              decoration: InputDecoration(
-                                hintText: loc.report_placeholder,
-                                filled: true,
-                                fillColor: cs.surfaceContainerHighest,
-                                contentPadding: const EdgeInsets.all(14),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(
-                                    color: cs.outlineVariant.withOpacity(0.55),
-                                    width: 1.2,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(
-                                    color: cs.primary.withOpacity(0.85),
-                                    width: 1.6,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: sending ? null : () => submit(setModalState),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: cs.primary,
-                                  disabledBackgroundColor: cs.primary.withOpacity(0.35),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                ),
-                                child: Text(
-                                  sending ? loc.sending : loc.send,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    color: cs.onPrimary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SafeArea(
-                              top: false,
-                              child: SizedBox(height: bottomInset > 0 ? 6 : 0),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // -------------------- Jinny (FIXED payload for your Cloud Functions) --------------------
-
-  String _callableNameForQuestion(Question q) {
-    if (_isComparison(q)) return 'aiExplainComparison';
-
-    final s = (q.section ?? '').toLowerCase();
-    if (s.contains('math')) return 'aiExplainMath';
-    if (s.contains('analogy')) return 'aiExplainAnalogy';
-    return 'aiExplainLanguage';
-  }
-
-  Future<String> _callJinnyOnce({
-    required String language,
-    required Question q,
-    required String picked,
-  }) async {
-    final fn = _callableNameForQuestion(q);
-
-    // Your backend cache key uses picked; keep stable and short here too.
-    final cacheKey = '${q.id}|$language|$fn|${q.topic ?? ''}|$picked';
-    final cached = _jinnyCache[cacheKey];
-    if (cached != null && cached.trim().isNotEmpty) return cached;
-
-    final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
-        .httpsCallable(fn);
-
-    final res = await callable.call(<String, dynamic>{
-      'language': language,
-      'picked': picked,
-      'question': <String, dynamic>{
-        'id': q.id,
-        'stem': q.stem,
-        'answer': q.answer,
-        'options': q.options,
-        'topic': q.topic,
-        'section': q.section,
-        'language': q.language,
-        'left': q.left,
-        'right': q.right,
-        'explanation': q.explanation,
-      },
-    });
-
-    final data = res.data;
-    String text;
-    if (data is Map) {
-      text = (data['text'] ?? data['answer'] ?? data['result'] ?? '—').toString();
-    } else {
-      text = (data ?? '—').toString();
-    }
-
-    text = text.trim().isEmpty ? '—' : text.trim();
-    _jinnyCache[cacheKey] = text;
-    return text;
-  }
-
-  Future<void> _openJinnyChat(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-
-    final q = widget.questions[_i];
-    final picked = widget.answers[_i] ?? '';
-
-    final lang = Localizations.localeOf(context).languageCode.toLowerCase();
-    final language = lang.startsWith('ky') ? 'ky' : 'ru';
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.35),
-      enableDrag: true,
-      builder: (_) {
-        return _BottomSheetSurface(
-          child: _JinnyExplainSheet(
-            loc: loc,
-            language: language,
-            question: q,
-            picked: picked,
-            callOnce: _callJinnyOnce,
-          ),
-        );
-      },
-    );
-  }
-
-  // -------------------- UI --------------------
+  // ---------- UI ----------
 
   @override
   Widget build(BuildContext context) {
@@ -368,14 +90,14 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
 
     final q = widget.questions[_i];
     final picked = widget.answers[_i] ?? '';
-    final pickedCorrect = picked.isNotEmpty && picked == q.answer;
-    final expl = q.explanation?.trim() ?? '';
+    final pickedCorrect = picked.isNotEmpty && picked == _s(q.answer);
+    final expl = _s(q.explanation).trim();
 
-    final isComparison = _isComparison(q);
-    final left = (q.left ?? '').trim();
-    final right = (q.right ?? '').trim();
+    final isComparison = _looksComparison(q);
+    final left = _s(q.left).trim();
+    final right = _s(q.right).trim();
 
-    final stemClean = _cleanStem(q.stem);
+    final stemClean = _cleanStem(_s(q.stem));
 
     final pageBg = cs.surface;
     final cardBg = isDark ? cs.surfaceContainerHighest : cs.surfaceContainerHigh;
@@ -403,11 +125,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
         ),
         title: Text(
           loc.quiz_review_question_title(_i + 1, widget.questions.length),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: cs.onSurface,
-          ),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface),
         ),
       ),
       body: ListView(
@@ -441,11 +159,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                       ),
                     ),
                     const Spacer(),
-                    Icon(
-                      pickedCorrect ? Icons.check_circle : Icons.cancel,
-                      color: status,
-                      size: 18,
-                    ),
+                    Icon(pickedCorrect ? Icons.check_circle : Icons.cancel, color: status, size: 18),
                   ],
                 ),
                 if (stemClean.isNotEmpty) ...[
@@ -463,25 +177,14 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
               ],
             ),
           ),
-
           const SizedBox(height: 12),
 
           if (isComparison) ...[
             Row(
               children: [
-                Expanded(
-                  child: ComparisonSideCard(
-                    value: left.isEmpty ? '—' : left,
-                    cs: cs,
-                  ),
-                ),
+                Expanded(child: ComparisonSideCard(value: left.isEmpty ? '—' : left, cs: cs)),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: ComparisonSideCard(
-                    value: right.isEmpty ? '—' : right,
-                    cs: cs,
-                  ),
-                ),
+                Expanded(child: ComparisonSideCard(value: right.isEmpty ? '—' : right, cs: cs)),
               ],
             ),
             const SizedBox(height: 12),
@@ -489,17 +192,17 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
               children: [
                 Row(
                   children: [
-                    Expanded(child: _ComparisonAnswerTile(letter: 'A', picked: picked, correct: q.answer, cs: cs, onTap: null)),
+                    Expanded(child: _ComparisonAnswerTile(letter: 'A', picked: picked, correct: _s(q.answer), cs: cs, onTap: null)),
                     const SizedBox(width: 12),
-                    Expanded(child: _ComparisonAnswerTile(letter: 'B', picked: picked, correct: q.answer, cs: cs, onTap: null)),
+                    Expanded(child: _ComparisonAnswerTile(letter: 'B', picked: picked, correct: _s(q.answer), cs: cs, onTap: null)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _ComparisonAnswerTile(letter: 'C', picked: picked, correct: q.answer, cs: cs, onTap: null)),
+                    Expanded(child: _ComparisonAnswerTile(letter: 'C', picked: picked, correct: _s(q.answer), cs: cs, onTap: null)),
                     const SizedBox(width: 12),
-                    Expanded(child: _ComparisonAnswerTile(letter: 'D', picked: picked, correct: q.answer, cs: cs, onTap: null)),
+                    Expanded(child: _ComparisonAnswerTile(letter: 'D', picked: picked, correct: _s(q.answer), cs: cs, onTap: null)),
                   ],
                 ),
               ],
@@ -507,8 +210,8 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
             const SizedBox(height: 12),
           ] else ...[
             ...q.optionKeys.map((key) {
-              final text = (q.options[key] ?? '').toString();
-              final isCorrect = key == q.answer;
+              final text = _s(q.options[key]);
+              final isCorrect = key == _s(q.answer);
               final isPicked = picked == key;
 
               Color fill = cardBg;
@@ -540,10 +243,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                         ),
                         child: Text(
                           key,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: cs.onSurface,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -578,21 +278,9 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    loc.quiz_explanation,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color: cs.onSurface,
-                    ),
-                  ),
+                  Text(loc.quiz_explanation, style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface)),
                   const SizedBox(height: 8),
-                  Text(
-                    expl,
-                    style: TextStyle(
-                      height: 1.35,
-                      color: cs.onSurface.withOpacity(0.90),
-                    ),
-                  ),
+                  Text(expl, style: TextStyle(height: 1.35, color: cs.onSurface.withOpacity(0.90))),
                 ],
               ),
             ),
@@ -613,10 +301,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                 children: [
                   Image.asset('assets/icon/quokka_large.png', width: 18, height: 18, fit: BoxFit.contain),
                   const SizedBox(width: 10),
-                  Text(
-                    loc.quiz_ai_explain,
-                    style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface),
-                  ),
+                  Text(loc.quiz_ai_explain, style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface)),
                 ],
               ),
             ),
@@ -629,10 +314,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
             child: OutlinedButton.icon(
               onPressed: () => _openReportMistake(context),
               icon: Icon(Icons.flag_rounded, size: 18, color: cs.onSurface),
-              label: Text(
-                loc.report_a_mistake,
-                style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface),
-              ),
+              label: Text(loc.report_a_mistake, style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface)),
               style: OutlinedButton.styleFrom(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 side: BorderSide(color: cs.onSurface.withOpacity(0.18)),
@@ -672,10 +354,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: Text(
-                    loc.quiz_next,
-                    style: TextStyle(fontWeight: FontWeight.w900, color: cs.onPrimary),
-                  ),
+                  child: Text(loc.quiz_next, style: TextStyle(fontWeight: FontWeight.w900, color: cs.onPrimary)),
                 ),
               ),
             ],
@@ -687,11 +366,374 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
       ),
     );
   }
-}
 
-// ───────────────────────────────────────────────────────────────
-// Bottom sheet + "typing" UI
-// ───────────────────────────────────────────────────────────────
+  // -------------------- Report mistake --------------------
+
+  Future<void> _openReportMistake(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+
+    final q = widget.questions[_i];
+    final picked = widget.answers[_i] ?? '';
+    final messageCtrl = TextEditingController();
+
+    bool sending = false;
+
+    Future<void> submit(StateSetter setModalState) async {
+      final text = messageCtrl.text.trim();
+      if (text.isEmpty || sending) return;
+
+      setModalState(() => sending = true);
+
+      try {
+        final callable = FirebaseFunctions.instanceFor(region: 'europe-west1').httpsCallable('submitMistakeReport');
+
+        await callable.call(<String, dynamic>{
+          'message': text,
+          'questionId': _s(q.id),
+          'stem': _s(q.stem),
+          'correct': _s(q.answer),
+          'picked': picked,
+          'options': q.options,
+          'topic': _s(q.topic),
+          'section': _s(q.section),
+          'language': _s(q.language),
+          'left': _s(q.left),
+          'right': _s(q.right),
+          'value1': _s(q.left),
+          'value2': _s(q.right),
+          'locale': Localizations.localeOf(context).languageCode,
+          'platform': Theme.of(context).platform.toString(),
+          'source': 'mock',
+        });
+
+        if (!context.mounted) return;
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.report_sent), backgroundColor: cs.primary),
+        );
+      } on FirebaseFunctionsException catch (e) {
+        setModalState(() => sending = false);
+        if (!context.mounted) return;
+
+        String msg;
+        switch (e.code) {
+          case 'unauthenticated':
+            msg = loc.login_required;
+            break;
+          case 'invalid-argument':
+            msg = e.message ?? loc.invalid_input;
+            break;
+          case 'resource-exhausted':
+            msg = e.message ?? loc.daily_limit_reached;
+            break;
+          default:
+            msg = e.message ?? '${loc.error_prefix}: ${e.code}';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      } catch (e) {
+        setModalState(() => sending = false);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${loc.error_prefix}: $e')));
+      }
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.35),
+      builder: (sheetCtx) {
+        final bottomInset = MediaQuery.of(sheetCtx).viewInsets.bottom;
+
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              padding: EdgeInsets.only(bottom: bottomInset),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                  child: Material(
+                    color: cs.surface,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.80),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(loc.report_a_mistake, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: cs.onSurface)),
+                                const Spacer(),
+                                IconButton(onPressed: () => Navigator.of(ctx).pop(), icon: const Icon(Icons.close_rounded)),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              loc.report_hint,
+                              style: TextStyle(color: cs.onSurfaceVariant.withOpacity(0.85), fontWeight: FontWeight.w600, height: 1.35),
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: messageCtrl,
+                              autofocus: true,
+                              minLines: 4,
+                              maxLines: 10,
+                              textInputAction: TextInputAction.newline,
+                              decoration: InputDecoration(
+                                hintText: loc.report_placeholder,
+                                filled: true,
+                                fillColor: cs.surfaceContainerHighest,
+                                contentPadding: const EdgeInsets.all(14),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.55), width: 1.2),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(color: cs.primary.withOpacity(0.85), width: 1.6),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: sending ? null : () => submit(setModalState),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: cs.primary,
+                                  disabledBackgroundColor: cs.primary.withOpacity(0.35),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                child: Text(
+                                  sending ? loc.sending : loc.send,
+                                  style: TextStyle(fontWeight: FontWeight.w900, color: cs.onPrimary),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SafeArea(top: false, child: SizedBox(height: bottomInset > 0 ? 6 : 0)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // -------------------- Jinny (make backend receive EVERYTHING) --------------------
+  //
+  // The backend can be strict (e.g., expects question OR value1/value2 at top-level).
+  // This call sends:
+  // - question (full object)
+  // - questionData / problem (aliases)
+  // - left/right + value1/value2 both inside question and at top-level
+  // - stem/answer/options also at top-level (aliases)
+  //
+  // This prevents “Missing question” and prevents Jinny from asking you to type fractions.
+
+  Future<String> _callJinny({
+    required String language,
+    required MockQuestion q,
+    required String picked,
+    required String userMessage,
+  }) async {
+    final section = _s(q.section).toLowerCase();
+    final isComp = _looksComparison(q);
+
+    final callableName = isComp
+        ? 'aiExplainComparison'
+        : (section.contains('math')
+        ? 'aiExplainMath'
+        : (section.contains('analogy') ? 'aiExplainAnalogy' : 'aiExplainLanguage'));
+
+    final callable = FirebaseFunctions.instanceFor(region: 'europe-west1').httpsCallable(callableName);
+
+    final left = _s(q.left).trim();
+    final right = _s(q.right).trim();
+
+    final questionPayload = <String, dynamic>{
+      'id': _s(q.id),
+      'stem': _s(q.stem),
+      'answer': _s(q.answer),
+      'options': q.options,
+      'topic': _s(q.topic),
+      'section': _s(q.section),
+      'language': _s(q.language),
+      'left': left,
+      'right': right,
+      'value1': left,
+      'value2': right,
+      'explanation': _s(q.explanation),
+      'isComparison': isComp,
+    };
+
+    final payload = <String, dynamic>{
+      // Original keys (what your functions likely expect)
+      'language': language,
+      'picked': picked,
+      'userMessage': userMessage,
+      'history': const [],
+      'question': questionPayload,
+
+      // Aliases (for any older/newer backend variants)
+      'questionData': questionPayload,
+      'problem': questionPayload,
+
+      // Top-level fallbacks (some backends validate these instead of question.*)
+      'id': _s(q.id),
+      'stem': _s(q.stem),
+      'answer': _s(q.answer),
+      'options': q.options,
+      'topic': _s(q.topic),
+      'section': _s(q.section),
+      'questionSection': _s(q.section),
+      'languageCode': _s(q.language),
+
+      'left': left,
+      'right': right,
+      'value1': left,
+      'value2': right,
+
+      'isComparison': isComp,
+      'source': 'mock',
+    };
+
+    final res = await callable.call(payload);
+
+    final data = res.data;
+    if (data is Map) {
+      if (data['text'] != null) return data['text'].toString();
+      if (data['answer'] != null) return data['answer'].toString();
+      if (data['result'] != null) return data['result'].toString();
+      return data.toString();
+    }
+    if (data is String) return data;
+    return data?.toString() ?? '—';
+  }
+
+  Future<void> _openJinnyChat(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+
+    final q = widget.questions[_i];
+    final picked = widget.answers[_i] ?? '';
+
+    final lang = Localizations.localeOf(context).languageCode.toLowerCase();
+    final language = lang.startsWith('ky') ? 'ky' : 'ru';
+
+    final isComp = _looksComparison(q);
+    final endpoint = isComp ? 'comparison' : _s(q.section);
+
+    final cacheKey = '${_s(q.id)}|$language|$endpoint|${_s(q.topic)}';
+    final cached = _jinnyCache[cacheKey];
+
+    final hiddenInitial = _buildHiddenInitialForJinny(
+      loc: loc,
+      q: q,
+      picked: picked,
+      language: language,
+    );
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.35),
+      enableDrag: true,
+      builder: (_) {
+        return _BottomSheetSurface(
+          child: _JinnyExplainSheet(
+            loc: loc,
+            language: language,
+            question: q,
+            picked: picked,
+            hiddenInitialUserMessage: hiddenInitial,
+            cachedResponse: cached,
+            onCache: (text) => _jinnyCache[cacheKey] = text,
+            callJinny: _callJinny,
+          ),
+        );
+      },
+    );
+  }
+
+  String _buildHiddenInitialForJinny({
+    required AppLocalizations loc,
+    required MockQuestion q,
+    required String picked,
+    required String language,
+  }) {
+    final isComp = _looksComparison(q);
+    final left = _s(q.left).trim();
+    final right = _s(q.right).trim();
+
+    final rulesRu = [
+      'Поясни решение понятно и не слишком коротко.',
+      'Формат:',
+      '• Можно использовать 0–3 заголовка строками начиная с "## " (не обязательно).',
+      '• Пункты начинай с "• ".',
+      '• Между смысловыми блоками делай 1 пустую строку.',
+      '• НЕ делай пустую строку сразу после заголовка "## ...".',
+      '• Дроби только как a/b, степени как x^2, без LaTeX.',
+    ].join('\n');
+
+    final rulesKy = [
+      'Түшүндүрмө түшүнүктүү жана өтө кыска эмес болсун.',
+      'Формат:',
+      '• 0–3 "## " заголовок колдонсо болот (милдеттүү эмес).',
+      '• Пункттар "• " менен башталсын.',
+      '• Маанилүү блоктордун ортосунда 1 бош сап болсун.',
+      '• "## ..." заголовоктон кийин дароо бош сап койбо.',
+      '• Дробь a/b, даража x^2, LaTeX жок.',
+    ].join('\n');
+
+    final rules = language == 'ky' ? rulesKy : rulesRu;
+
+    if (isComp) {
+      final pickedLetter = picked.isEmpty ? '—' : picked;
+      final correctLetter = _s(q.answer);
+
+      return [
+        rules,
+        '',
+        'Тип: comparison',
+        'Колонка A (value1): ${left.isEmpty ? '—' : left}',
+        'Колонка B (value2): ${right.isEmpty ? '—' : right}',
+        'Ответ пользователя: $pickedLetter',
+        'Правильный ответ: $correctLetter',
+        'ВАЖНО: значения уже даны. НЕ проси пользователя вводить дроби/числа. Просто сравни Колонку A и Колонку B.',
+        'Объясни, почему правильный код ($correctLetter) верный.',
+      ].join('\n');
+    }
+
+    final pickedText = picked.isEmpty ? '—' : '$picked. ${q.options[picked] ?? ''}';
+    final correctText = '${_s(q.answer)}. ${q.options[_s(q.answer)] ?? ''}';
+
+    return [
+      rules,
+      '',
+      loc.jinny_firstPrompt(pickedText, correctText),
+      '',
+      'Поясни именно эту задачу (не общими фразами). Если выбран неверно — покажи где ошибка.',
+    ].join('\n');
+  }
+}
 
 class _BottomSheetSurface extends StatelessWidget {
   final Widget child;
@@ -704,21 +746,29 @@ class _BottomSheetSurface extends StatelessWidget {
 class _JinnyExplainSheet extends StatefulWidget {
   final AppLocalizations loc;
   final String language;
-  final Question question;
+  final MockQuestion question;
   final String picked;
+
+  final String hiddenInitialUserMessage;
+  final String? cachedResponse;
+  final void Function(String text) onCache;
 
   final Future<String> Function({
   required String language,
-  required Question q,
+  required MockQuestion q,
   required String picked,
-  }) callOnce;
+  required String userMessage,
+  }) callJinny;
 
   const _JinnyExplainSheet({
     required this.loc,
     required this.language,
     required this.question,
     required this.picked,
-    required this.callOnce,
+    required this.hiddenInitialUserMessage,
+    required this.cachedResponse,
+    required this.onCache,
+    required this.callJinny,
   });
 
   @override
@@ -732,7 +782,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
 
   final DraggableScrollableController _sheetCtrl = DraggableScrollableController();
 
-  bool _loading = true;
+  bool _loading = false;
 
   String _fullText = '';
   List<_TwUnit> _units = const [];
@@ -745,6 +795,15 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
   @override
   void initState() {
     super.initState();
+
+    final cached = widget.cachedResponse?.trim();
+    if (cached != null && cached.isNotEmpty) {
+      _fullText = cached;
+      _units = _tokenizeToUnits(_fullText);
+      _shownUnits = 0;
+      return;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await _fetchOnce();
@@ -829,10 +888,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
     s = s.replaceAllMapped(RegExp(r'(^|\n)\s*-\s+'), (m) => '${m.group(1)}• ');
     s = s.replaceAllMapped(RegExp(r'(^|\n)\s*•\s+'), (m) => '${m.group(1)}• ');
 
-    s = s.replaceAllMapped(
-      RegExp(r'(^|\n)\s*(\d+)\s*[\.\)]\s+'),
-          (m) => '${m.group(1)}• ${m.group(2)}. ',
-    );
+    s = s.replaceAllMapped(RegExp(r'(^|\n)\s*(\d+)\s*[\.\)]\s+'), (m) => '${m.group(1)}• ${m.group(2)}. ');
 
     s = s.replaceAllMapped(
       RegExp(r'(\b[0-9A-Za-zА-Яа-яπ]+|\))\s*\^\s*([0-9]+)\b'),
@@ -846,10 +902,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
 
     s = s.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
 
-    s = s.replaceAllMapped(
-      RegExp(r'(^|\n)(##[^\n]+)\n\s*\n+'),
-          (m) => '${m.group(1)}${m.group(2)}\n',
-    );
+    s = s.replaceAllMapped(RegExp(r'(^|\n)(##[^\n]+)\n\s*\n+'), (m) => '${m.group(1)}${m.group(2)}\n');
 
     s = _normalizeBlockSpacing(s);
     return s.isEmpty ? '—' : s;
@@ -951,6 +1004,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
 
         final numLen = num.replaceAll(RegExp(r'\s+'), '').length;
         final denLen = den.replaceAll(RegExp(r'\s+'), '').length;
+
         final tooLarge = numLen > 3 || denLen > 3;
 
         if (tooLarge) {
@@ -993,13 +1047,24 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
   }
 
   Future<void> _fetchOnce() async {
+    final prompt = widget.hiddenInitialUserMessage.trim();
+    if (prompt.isEmpty) {
+      setState(() {
+        _fullText = '—';
+        _units = _tokenizeToUnits(_fullText);
+        _shownUnits = 0;
+      });
+      return;
+    }
+
     setState(() => _loading = true);
 
     try {
-      final raw = await widget.callOnce(
+      final raw = await widget.callJinny(
         language: widget.language,
         q: widget.question,
         picked: widget.picked,
+        userMessage: prompt,
       );
 
       if (!mounted) return;
@@ -1025,6 +1090,8 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
         _units = _tokenizeToUnits(_fullText);
         _shownUnits = 0;
       });
+
+      widget.onCache(formatted);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -1038,6 +1105,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
 
   void _startTypewriter(ScrollController listCtrl) {
     _typeTimer?.cancel();
+
     if (_units.isEmpty) return;
     if (_shownUnits >= _units.length) return;
 
@@ -1060,6 +1128,15 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
         if (_shownUnits >= _units.length) {
           _typeTimer?.cancel();
           _typeTimer = null;
+
+          if (listCtrl.hasClients) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              if (listCtrl.hasClients) {
+                listCtrl.jumpTo(listCtrl.position.maxScrollExtent);
+              }
+            });
+          }
         }
       });
     });
@@ -1068,12 +1145,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
   Widget _avatar() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(999),
-      child: Image.asset(
-        'assets/icon/quokka_large.png',
-        width: 34,
-        height: 34,
-        fit: BoxFit.cover,
-      ),
+      child: Image.asset('assets/icon/quokka_large.png', width: 34, height: 34, fit: BoxFit.cover),
     );
   }
 
@@ -1192,10 +1264,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
               t = t.substring(3);
               headerPrefixRemoved = true;
             } else {
-              t = _stripHeaderPrefixIncremental(
-                t,
-                onStripped: () => headerPrefixRemoved = true,
-              );
+              t = _stripHeaderPrefixIncremental(t, onStripped: () => headerPrefixRemoved = true);
             }
           }
 
@@ -1265,6 +1334,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final sheetBg = isDark ? cs.surfaceContainerHighest : cs.surface;
+    final headerText = cs.onSurface;
 
     final shadow = BoxShadow(
       color: cs.shadow.withOpacity(isDark ? 0.45 : 0.16),
@@ -1272,18 +1342,9 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
       offset: const Offset(0, -10),
     );
 
-    final baseStyle = TextStyle(
-      height: 1.38,
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-      color: cs.onSurface,
-    );
+    final baseStyle = TextStyle(height: 1.38, fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurface);
 
-    final headerStyle = baseStyle.copyWith(
-      fontSize: 16,
-      fontWeight: FontWeight.w900,
-      height: 1.18,
-    );
+    final headerStyle = baseStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w900, height: 1.18);
 
     return DraggableScrollableSheet(
       controller: _sheetCtrl,
@@ -1301,12 +1362,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
           });
         }
 
-        final spans = _buildSpans(
-          visibleUnits: _visibleUnits,
-          baseStyle: baseStyle,
-          headerStyle: headerStyle,
-          cs: cs,
-        );
+        final spans = _buildSpans(visibleUnits: _visibleUnits, baseStyle: baseStyle, headerStyle: headerStyle, cs: cs);
 
         return Align(
           alignment: Alignment.bottomCenter,
@@ -1315,10 +1371,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
             child: Material(
               color: sheetBg,
               child: Container(
-                decoration: BoxDecoration(
-                  color: sheetBg,
-                  boxShadow: [shadow],
-                ),
+                decoration: BoxDecoration(color: sheetBg, boxShadow: [shadow]),
                 child: Column(
                   children: [
                     const SizedBox(height: 10),
@@ -1347,11 +1400,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
                               children: [
                                 Text(
                                   widget.loc.jinny,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w900,
-                                    color: cs.onSurface,
-                                  ),
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: headerText),
                                 ),
                                 Text(
                                   _loading ? 'typing…' : 'online',
@@ -1394,9 +1443,7 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
                             else
                               _chatRow(
                                 bubble: _messageBubble(
-                                  spans: spans.isEmpty
-                                      ? <InlineSpan>[TextSpan(text: '—', style: baseStyle)]
-                                      : spans,
+                                  spans: spans.isEmpty ? <InlineSpan>[TextSpan(text: '—', style: baseStyle)] : spans,
                                   cs: cs,
                                   isDark: isDark,
                                 ),
@@ -1421,10 +1468,7 @@ class _Dot extends StatefulWidget {
   final int delayMs;
   final Color color;
 
-  const _Dot({
-    this.delayMs = 0,
-    required this.color,
-  });
+  const _Dot({this.delayMs = 0, required this.color});
 
   @override
   State<_Dot> createState() => _DotState();
@@ -1438,9 +1482,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
-    _a = Tween<double>(begin: 0.25, end: 1.0).animate(
-      CurvedAnimation(parent: _c, curve: Curves.easeInOut),
-    );
+    _a = Tween<double>(begin: 0.25, end: 1.0).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut));
 
     Future.delayed(Duration(milliseconds: widget.delayMs), () {
       if (!mounted) return;
@@ -1461,10 +1503,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
       child: Container(
         width: 7,
         height: 7,
-        decoration: BoxDecoration(
-          color: widget.color,
-          borderRadius: BorderRadius.circular(999),
-        ),
+        decoration: BoxDecoration(color: widget.color, borderRadius: BorderRadius.circular(999)),
       ),
     );
   }
@@ -1479,13 +1518,7 @@ class _TwUnit {
   final String den;
   final String sup;
 
-  const _TwUnit._({
-    required this.kind,
-    this.text = '',
-    this.num = '',
-    this.den = '',
-    this.sup = '',
-  });
+  const _TwUnit._({required this.kind, this.text = '', this.num = '', this.den = '', this.sup = ''});
 
   factory _TwUnit.text(String t) => _TwUnit._(kind: _TwKind.text, text: t);
   factory _TwUnit.frac(String n, String d) => _TwUnit._(kind: _TwKind.frac, num: n, den: d);
@@ -1572,9 +1605,7 @@ class _ComparisonAnswerTile extends StatelessWidget {
       fill = bad.withOpacity(isDark ? 0.20 : 0.14);
     }
 
-    final emphasizedFill = isPickedTile
-        ? Color.alphaBlend(cs.primary.withOpacity(isDark ? 0.16 : 0.10), fill)
-        : fill;
+    final emphasizedFill = isPickedTile ? Color.alphaBlend(cs.primary.withOpacity(isDark ? 0.16 : 0.10), fill) : fill;
 
     IconData? badge;
     Color? badgeColor;

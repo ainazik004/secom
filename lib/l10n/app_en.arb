@@ -267,6 +267,14 @@
   "error_prefix": "Error",
   "login_required": "Please sign in to send a report.",
   "invalid_input": "Invalid input.",
-  "daily_limit_reached": "Daily report limit reached (10 per day). Try again tomorrow."
+  "daily_limit_reached": "Daily report limit reached (10 per day). Try again tomorrow.",
 
+  "ortMockTestTitle": "ORT mock test",
+  "ortMockTestSubtitle": "Full exam simulation with timer and review",
+  "submit_section": "Submit section",
+  "quiz_progress": "{answered}/{total} answered",
+  "@quiz_progress": {
+    "placeholders": { "answered": {}, "total": {} }
+  },
+  "sentence_completion": "Sentence completion"
 }

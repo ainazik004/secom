@@ -649,4 +649,22 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get daily_limit_reached =>
       'Достигнут дневной лимит сообщений (10 в день).';
+
+  @override
+  String get ortMockTestTitle => 'Пробный тест ОРТ';
+
+  @override
+  String get ortMockTestSubtitle =>
+      'Полная симуляция экзамена с таймером и разбором';
+
+  @override
+  String get submit_section => 'Сдать раздел';
+
+  @override
+  String quiz_progress(Object answered, Object total) {
+    return 'Отвечено: $answered/$total';
+  }
+
+  @override
+  String get sentence_completion => 'Дополнение предложений';
 }

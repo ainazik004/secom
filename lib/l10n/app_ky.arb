@@ -267,5 +267,14 @@
   "error_prefix": "Ката",
   "login_required": "Билдирүү жөнөтүү үчүн аккаунтка кириңиз.",
   "invalid_input": "Туура эмес маалымат.",
-  "daily_limit_reached": "Күнүмдүк лимитке жеттиңиз (күнүнө 10 жолу)."
+  "daily_limit_reached": "Күнүмдүк лимитке жеттиңиз (күнүнө 10 жолу).",
+
+  "ortMockTestTitle": "ЖРТ сынамык тест",
+  "ortMockTestSubtitle": "Таймер жана талдоо менен толук экзамен симуляциясы",
+  "submit_section": "Бөлүмдү тапшыруу",
+  "quiz_progress": "Жооп берилди: {answered}/{total}",
+  "@quiz_progress": {
+    "placeholders": { "answered": {}, "total": {} }
+  },
+  "sentence_completion": "Сүйлөмдөрдү толуктоо"
 }

@@ -647,4 +647,22 @@ class AppLocalizationsKy extends AppLocalizations {
   @override
   String get daily_limit_reached =>
       'Күнүмдүк лимитке жеттиңиз (күнүнө 10 жолу).';
+
+  @override
+  String get ortMockTestTitle => 'ЖРТ сынамык тест';
+
+  @override
+  String get ortMockTestSubtitle =>
+      'Таймер жана талдоо менен толук экзамен симуляциясы';
+
+  @override
+  String get submit_section => 'Бөлүмдү тапшыруу';
+
+  @override
+  String quiz_progress(Object answered, Object total) {
+    return 'Жооп берилди: $answered/$total';
+  }
+
+  @override
+  String get sentence_completion => 'Сүйлөмдөрдү толуктоо';
 }

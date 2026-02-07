@@ -267,5 +267,14 @@
   "error_prefix": "Ошибка",
   "login_required": "Пожалуйста, войдите в аккаунт, чтобы отправить сообщение.",
   "invalid_input": "Некорректные данные.",
-  "daily_limit_reached": "Достигнут дневной лимит сообщений (10 в день)."
+  "daily_limit_reached": "Достигнут дневной лимит сообщений (10 в день).",
+
+  "ortMockTestTitle": "Пробный тест ОРТ",
+  "ortMockTestSubtitle": "Полная симуляция экзамена с таймером и разбором",
+  "submit_section": "Сдать раздел",
+  "quiz_progress": "Отвечено: {answered}/{total}",
+  "@quiz_progress": {
+    "placeholders": { "answered": {}, "total": {} }
+  },
+  "sentence_completion": "Дополнение предложений"
 }

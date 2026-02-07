@@ -5,6 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
+// ✅ Mock test start page (adjust import path to where you placed it)
+import 'package:zhalbyrak/mock_test/pages/mock_test_start_page.dart';
+
 import 'categories/mathematics_page.dart';
 import 'categories/analogy_page.dart';
 import 'categories/reading_page.dart';
@@ -112,6 +115,9 @@ class _HomeContent extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Use app locale as Firestore language key (ru/ky/en etc.)
+    final appLang = Localizations.localeOf(context).languageCode;
 
     final fullName =
         (data['fullName'] ?? data['displayName'] ?? '') as String? ?? '';
@@ -229,6 +235,23 @@ class _HomeContent extends StatelessWidget {
               ),
             ),
 
+            // ✅ ORT MOCK TEST BUTTON (full width, before categories)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _OrtMockTestCard(
+                title: loc.ortMockTestTitle,
+                subtitle: loc.ortMockTestSubtitle,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MockTestStartPage(lang: appLang),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
             // TITLE
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -269,6 +292,113 @@ class _HomeContent extends StatelessWidget {
 
             const SizedBox(height: 30),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OrtMockTestCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _OrtMockTestCard({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = cs.brightness == Brightness.dark;
+
+    final bg = cs.surfaceContainerHighest;
+    final sh = cs.shadow.withOpacity(isDark ? 0.28 : 0.16);
+
+    // Light purple branded tint (subtle)
+    final tinted = Color.alphaBlend(
+      const Color(0xFF9B7CFF).withOpacity(isDark ? 0.14 : 0.10),
+      bg,
+    );
+
+    return SizedBox(
+      height: 128,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: sh,
+              blurRadius: 30,
+              offset: const Offset(0, 16),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+            splashFactory: NoSplash.splashFactory,
+            onTap: onTap,
+            child: Ink(
+              decoration: BoxDecoration(
+                color: tinted,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: cs.primary.withOpacity(isDark ? 0.18 : 0.12),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Icon(
+                        Icons.assignment_rounded,
+                        size: 28,
+                        color: cs.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            title,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: cs.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant.withOpacity(0.78),
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -325,8 +455,7 @@ class _CategoryCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color:
-                        data.accentColor.withOpacity(isDark ? 0.18 : 0.14),
+                        color: data.accentColor.withOpacity(isDark ? 0.18 : 0.14),
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Icon(data.icon, size: 28, color: data.accentColor),
@@ -424,6 +553,24 @@ class _HomeShimmer extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
+
+            // ✅ Shimmer for ORT mock test card (full width)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _ZShimmer(
+                baseColor: base,
+                highlightColor: highlight,
+                child: Container(
+                  height: 128,
+                  decoration: BoxDecoration(
+                    color: base,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 18),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Wrap(

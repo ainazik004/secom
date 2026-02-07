@@ -1305,6 +1305,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Daily report limit reached (10 per day). Try again tomorrow.'**
   String get daily_limit_reached;
+
+  /// No description provided for @ortMockTestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ORT mock test'**
+  String get ortMockTestTitle;
+
+  /// No description provided for @ortMockTestSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full exam simulation with timer and review'**
+  String get ortMockTestSubtitle;
+
+  /// No description provided for @submit_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit section'**
+  String get submit_section;
+
+  /// No description provided for @quiz_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'{answered}/{total} answered'**
+  String quiz_progress(Object answered, Object total);
+
+  /// No description provided for @sentence_completion.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence completion'**
+  String get sentence_completion;
 }
 
 class _AppLocalizationsDelegate

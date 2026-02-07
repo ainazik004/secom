@@ -646,4 +646,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get daily_limit_reached =>
       'Daily report limit reached (10 per day). Try again tomorrow.';
+
+  @override
+  String get ortMockTestTitle => 'ORT mock test';
+
+  @override
+  String get ortMockTestSubtitle =>
+      'Full exam simulation with timer and review';
+
+  @override
+  String get submit_section => 'Submit section';
+
+  @override
+  String quiz_progress(Object answered, Object total) {
+    return '$answered/$total answered';
+  }
+
+  @override
+  String get sentence_completion => 'Sentence completion';
 }

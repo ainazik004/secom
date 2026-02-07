@@ -12,7 +12,12 @@ const db = admin.firestore();
 // -------------------------------
 // 1) AI EXPLAIN
 // -------------------------------
-exports.aiExplainQuestion = require("./explain_ai").aiExplainQuestion;
+const explain = require("./explain_ai");
+
+exports.aiExplainMath = explain.aiExplainMath;
+exports.aiExplainAnalogy = explain.aiExplainAnalogy;
+exports.aiExplainLanguage = explain.aiExplainLanguage;
+exports.aiExplainComparison = explain.aiExplainComparison;
 
 // -------------------------------
 // 2) Mistake report
