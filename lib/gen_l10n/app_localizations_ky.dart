@@ -665,4 +665,90 @@ class AppLocalizationsKy extends AppLocalizations {
 
   @override
   String get sentence_completion => 'Сүйлөмдөрдү толуктоо';
+
+  @override
+  String get mock_title => 'ОРТ Сыноо тести';
+
+  @override
+  String get mock_setup_required_title => 'Орнотуу керек';
+
+  @override
+  String get ok => 'ОК';
+
+  @override
+  String get discard => 'Өчүрүү';
+
+  @override
+  String get mock_hero_title => 'Толук сыноо тест';
+
+  @override
+  String get mock_hero_desc =>
+      'ОРТ форматына жакын сыноо тесттен өтүңүз. Бөлүмдөр ошол эле тартипте болот. Прогресс автоматтык сакталат — каалаган убакта уланта аласыз.';
+
+  @override
+  String get mock_overview_title => 'Жалпы маалымат';
+
+  @override
+  String get mock_sections_title => 'Бөлүмдөр';
+
+  @override
+  String get mock_sections_value => '5 бөлүм';
+
+  @override
+  String get mock_order_title => 'Тартип';
+
+  @override
+  String get mock_order_value =>
+      'математика → аналогия → сүйлөмдү толуктоо → окуу → грамматика';
+
+  @override
+  String get mock_time_title => 'Убакыт';
+
+  @override
+  String get mock_time_value =>
+      'Убакыт менен өтсөңүз да болот же таймерсиз машыксаңыз да болот.';
+
+  @override
+  String get mock_tips_title => 'Кеңештер';
+
+  @override
+  String get mock_tip_1 =>
+      'Кезектешип жооп бериңиз — болжолдоо мүмкүн, бирок ар бир бөлүмдү бүтүрүүгө аракет кылыңыз.';
+
+  @override
+  String get mock_tip_2 =>
+      'Токтотуп туруп кийин уланта аласыз — жооптор сакталат.';
+
+  @override
+  String get mock_tip_3 =>
+      'Бүткөндөн кийин каталарды карап, Джинниден түшүндүрмө сураңыз.';
+
+  @override
+  String get mock_start_new => 'Жаңы тест баштоо';
+
+  @override
+  String get mock_continue => 'Учурдагы тестти улантуу';
+
+  @override
+  String get mock_discard => 'Учурдагы тестти өчүрүү';
+
+  @override
+  String get mock_discard_title => 'Учурдагы тест өчүрүлсүнбү?';
+
+  @override
+  String get mock_discard_desc =>
+      'Учурдагы тесттин прогресси өчүрүлөт. Бул аракетти кайтарууга болбойт.';
+
+  @override
+  String get mock_no_active_progress => 'Активдүү аракет жок';
+
+  @override
+  String mock_progress(int answered, int total) {
+    return 'Прогресс: $answered/$total жооп берилди';
+  }
+
+  @override
+  String mock_progress_unknown_total(int answered) {
+    return 'Прогресс: $answered жооп берилди';
+  }
 }

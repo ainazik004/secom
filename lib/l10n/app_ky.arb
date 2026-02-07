@@ -276,5 +276,48 @@
   "@quiz_progress": {
     "placeholders": { "answered": {}, "total": {} }
   },
-  "sentence_completion": "Сүйлөмдөрдү толуктоо"
+  "sentence_completion": "Сүйлөмдөрдү толуктоо",
+
+  "mock_title": "ОРТ Сыноо тести",
+  "mock_setup_required_title": "Орнотуу керек",
+  "ok": "ОК",
+  "discard": "Өчүрүү",
+
+  "mock_hero_title": "Толук сыноо тест",
+  "mock_hero_desc": "ОРТ форматына жакын сыноо тесттен өтүңүз. Бөлүмдөр ошол эле тартипте болот. Прогресс автоматтык сакталат — каалаган убакта уланта аласыз.",
+
+  "mock_overview_title": "Жалпы маалымат",
+  "mock_sections_title": "Бөлүмдөр",
+  "mock_sections_value": "5 бөлүм",
+  "mock_order_title": "Тартип",
+  "mock_order_value": "математика → аналогия → сүйлөмдү толуктоо → окуу → грамматика",
+  "mock_time_title": "Убакыт",
+  "mock_time_value": "Убакыт менен өтсөңүз да болот же таймерсиз машыксаңыз да болот.",
+
+  "mock_tips_title": "Кеңештер",
+  "mock_tip_1": "Кезектешип жооп бериңиз — болжолдоо мүмкүн, бирок ар бир бөлүмдү бүтүрүүгө аракет кылыңыз.",
+  "mock_tip_2": "Токтотуп туруп кийин уланта аласыз — жооптор сакталат.",
+  "mock_tip_3": "Бүткөндөн кийин каталарды карап, Джинниден түшүндүрмө сураңыз.",
+
+  "mock_start_new": "Жаңы тест баштоо",
+  "mock_continue": "Учурдагы тестти улантуу",
+  "mock_discard": "Учурдагы тестти өчүрүү",
+
+  "mock_discard_title": "Учурдагы тест өчүрүлсүнбү?",
+  "mock_discard_desc": "Учурдагы тесттин прогресси өчүрүлөт. Бул аракетти кайтарууга болбойт.",
+
+  "mock_no_active_progress": "Активдүү аракет жок",
+  "mock_progress": "Прогресс: {answered}/{total} жооп берилди",
+  "@mock_progress": {
+    "placeholders": {
+      "answered": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "mock_progress_unknown_total": "Прогресс: {answered} жооп берилди",
+  "@mock_progress_unknown_total": {
+    "placeholders": {
+      "answered": { "type": "int" }
+    }
+  }
 }

@@ -667,4 +667,90 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get sentence_completion => 'Дополнение предложений';
+
+  @override
+  String get mock_title => 'Пробный тест ОРТ';
+
+  @override
+  String get mock_setup_required_title => 'Требуется настройка';
+
+  @override
+  String get ok => 'ОК';
+
+  @override
+  String get discard => 'Удалить';
+
+  @override
+  String get mock_hero_title => 'Полный пробный тест';
+
+  @override
+  String get mock_hero_desc =>
+      'Пройдите реалистичный пробный тест в стиле ОРТ с тем же порядком разделов. Прогресс сохраняется автоматически — можно продолжить в любое время.';
+
+  @override
+  String get mock_overview_title => 'Обзор';
+
+  @override
+  String get mock_sections_title => 'Разделы';
+
+  @override
+  String get mock_sections_value => '5 разделов';
+
+  @override
+  String get mock_order_title => 'Порядок';
+
+  @override
+  String get mock_order_value =>
+      'математика → аналогии → дополнение предложений → чтение → грамматика';
+
+  @override
+  String get mock_time_title => 'Время';
+
+  @override
+  String get mock_time_value =>
+      'Можно проходить как на время или тренироваться без строгого таймера.';
+
+  @override
+  String get mock_tips_title => 'Советы';
+
+  @override
+  String get mock_tip_1 =>
+      'Отвечайте последовательно — можно угадывать, но старайтесь завершать каждый раздел.';
+
+  @override
+  String get mock_tip_2 =>
+      'Можно поставить на паузу и продолжить позже — ответы сохраняются.';
+
+  @override
+  String get mock_tip_3 =>
+      'После завершения проверьте ошибки и попросите объяснение у Джинни.';
+
+  @override
+  String get mock_start_new => 'Начать новый тест';
+
+  @override
+  String get mock_continue => 'Продолжить текущий';
+
+  @override
+  String get mock_discard => 'Удалить текущий';
+
+  @override
+  String get mock_discard_title => 'Удалить текущий тест?';
+
+  @override
+  String get mock_discard_desc =>
+      'Прогресс текущего теста будет удалён. Отменить действие нельзя.';
+
+  @override
+  String get mock_no_active_progress => 'Нет активной попытки';
+
+  @override
+  String mock_progress(int answered, int total) {
+    return 'Прогресс: $answered/$total отвечено';
+  }
+
+  @override
+  String mock_progress_unknown_total(int answered) {
+    return 'Прогресс: $answered отвечено';
+  }
 }

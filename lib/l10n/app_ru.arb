@@ -276,5 +276,48 @@
   "@quiz_progress": {
     "placeholders": { "answered": {}, "total": {} }
   },
-  "sentence_completion": "Дополнение предложений"
+  "sentence_completion": "Дополнение предложений",
+
+  "mock_title": "Пробный тест ОРТ",
+  "mock_setup_required_title": "Требуется настройка",
+  "ok": "ОК",
+  "discard": "Удалить",
+
+  "mock_hero_title": "Полный пробный тест",
+  "mock_hero_desc": "Пройдите реалистичный пробный тест в стиле ОРТ с тем же порядком разделов. Прогресс сохраняется автоматически — можно продолжить в любое время.",
+
+  "mock_overview_title": "Обзор",
+  "mock_sections_title": "Разделы",
+  "mock_sections_value": "5 разделов",
+  "mock_order_title": "Порядок",
+  "mock_order_value": "математика → аналогии → дополнение предложений → чтение → грамматика",
+  "mock_time_title": "Время",
+  "mock_time_value": "Можно проходить как на время или тренироваться без строгого таймера.",
+
+  "mock_tips_title": "Советы",
+  "mock_tip_1": "Отвечайте последовательно — можно угадывать, но старайтесь завершать каждый раздел.",
+  "mock_tip_2": "Можно поставить на паузу и продолжить позже — ответы сохраняются.",
+  "mock_tip_3": "После завершения проверьте ошибки и попросите объяснение у Джинни.",
+
+  "mock_start_new": "Начать новый тест",
+  "mock_continue": "Продолжить текущий",
+  "mock_discard": "Удалить текущий",
+
+  "mock_discard_title": "Удалить текущий тест?",
+  "mock_discard_desc": "Прогресс текущего теста будет удалён. Отменить действие нельзя.",
+
+  "mock_no_active_progress": "Нет активной попытки",
+  "mock_progress": "Прогресс: {answered}/{total} отвечено",
+  "@mock_progress": {
+    "placeholders": {
+      "answered": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "mock_progress_unknown_total": "Прогресс: {answered} отвечено",
+  "@mock_progress_unknown_total": {
+    "placeholders": {
+      "answered": { "type": "int" }
+    }
+  }
 }

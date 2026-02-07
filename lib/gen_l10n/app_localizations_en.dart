@@ -664,4 +664,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sentence_completion => 'Sentence completion';
+
+  @override
+  String get mock_title => 'ORT Mock Test';
+
+  @override
+  String get mock_setup_required_title => 'Setup required';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get mock_hero_title => 'Full-length mock test';
+
+  @override
+  String get mock_hero_desc =>
+      'Take a realistic ORT-style mock with the same section order. Your progress is saved automatically, so you can continue anytime.';
+
+  @override
+  String get mock_overview_title => 'Overview';
+
+  @override
+  String get mock_sections_title => 'Sections';
+
+  @override
+  String get mock_sections_value => '5 sections';
+
+  @override
+  String get mock_order_title => 'Order';
+
+  @override
+  String get mock_order_value =>
+      'math → analogy → sentence completion → reading → grammar';
+
+  @override
+  String get mock_time_title => 'Time';
+
+  @override
+  String get mock_time_value =>
+      'Use it as a timed mock, or practice without strict timing.';
+
+  @override
+  String get mock_tips_title => 'Tips';
+
+  @override
+  String get mock_tip_1 =>
+      'Answer consistently—guessing is allowed, but try to finish every section.';
+
+  @override
+  String get mock_tip_2 =>
+      'You can pause and continue later—your answers are saved.';
+
+  @override
+  String get mock_tip_3 =>
+      'After finishing, review mistakes and request Jinny explanations.';
+
+  @override
+  String get mock_start_new => 'Start new mock';
+
+  @override
+  String get mock_continue => 'Continue current mock';
+
+  @override
+  String get mock_discard => 'Discard current mock';
+
+  @override
+  String get mock_discard_title => 'Discard current mock?';
+
+  @override
+  String get mock_discard_desc =>
+      'Your current mock progress will be deleted. This action cannot be undone.';
+
+  @override
+  String get mock_no_active_progress => 'No active attempt';
+
+  @override
+  String mock_progress(int answered, int total) {
+    return 'Progress: $answered/$total answered';
+  }
+
+  @override
+  String mock_progress_unknown_total(int answered) {
+    return 'Progress: $answered answered';
+  }
 }

@@ -276,5 +276,48 @@
   "@quiz_progress": {
     "placeholders": { "answered": {}, "total": {} }
   },
-  "sentence_completion": "Sentence completion"
+  "sentence_completion": "Sentence completion",
+
+  "mock_title": "ORT Mock Test",
+  "mock_setup_required_title": "Setup required",
+  "ok": "OK",
+  "discard": "Discard",
+
+  "mock_hero_title": "Full-length mock test",
+  "mock_hero_desc": "Take a realistic ORT-style mock with the same section order. Your progress is saved automatically, so you can continue anytime.",
+
+  "mock_overview_title": "Overview",
+  "mock_sections_title": "Sections",
+  "mock_sections_value": "5 sections",
+  "mock_order_title": "Order",
+  "mock_order_value": "math → analogy → sentence completion → reading → grammar",
+  "mock_time_title": "Time",
+  "mock_time_value": "Use it as a timed mock, or practice without strict timing.",
+
+  "mock_tips_title": "Tips",
+  "mock_tip_1": "Answer consistently—guessing is allowed, but try to finish every section.",
+  "mock_tip_2": "You can pause and continue later—your answers are saved.",
+  "mock_tip_3": "After finishing, review mistakes and request Jinny explanations.",
+
+  "mock_start_new": "Start new mock",
+  "mock_continue": "Continue current mock",
+  "mock_discard": "Discard current mock",
+
+  "mock_discard_title": "Discard current mock?",
+  "mock_discard_desc": "Your current mock progress will be deleted. This action cannot be undone.",
+
+  "mock_no_active_progress": "No active attempt",
+  "mock_progress": "Progress: {answered}/{total} answered",
+  "@mock_progress": {
+    "placeholders": {
+      "answered": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "mock_progress_unknown_total": "Progress: {answered} answered",
+  "@mock_progress_unknown_total": {
+    "placeholders": {
+      "answered": { "type": "int" }
+    }
+  }
 }

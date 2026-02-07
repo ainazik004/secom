@@ -1335,6 +1335,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sentence completion'**
   String get sentence_completion;
+
+  /// No description provided for @mock_title.
+  ///
+  /// In en, this message translates to:
+  /// **'ORT Mock Test'**
+  String get mock_title;
+
+  /// No description provided for @mock_setup_required_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup required'**
+  String get mock_setup_required_title;
+
+  /// No description provided for @ok.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
+  /// No description provided for @mock_hero_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Full-length mock test'**
+  String get mock_hero_title;
+
+  /// No description provided for @mock_hero_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a realistic ORT-style mock with the same section order. Your progress is saved automatically, so you can continue anytime.'**
+  String get mock_hero_desc;
+
+  /// No description provided for @mock_overview_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get mock_overview_title;
+
+  /// No description provided for @mock_sections_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections'**
+  String get mock_sections_title;
+
+  /// No description provided for @mock_sections_value.
+  ///
+  /// In en, this message translates to:
+  /// **'5 sections'**
+  String get mock_sections_value;
+
+  /// No description provided for @mock_order_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Order'**
+  String get mock_order_title;
+
+  /// No description provided for @mock_order_value.
+  ///
+  /// In en, this message translates to:
+  /// **'math → analogy → sentence completion → reading → grammar'**
+  String get mock_order_value;
+
+  /// No description provided for @mock_time_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get mock_time_title;
+
+  /// No description provided for @mock_time_value.
+  ///
+  /// In en, this message translates to:
+  /// **'Use it as a timed mock, or practice without strict timing.'**
+  String get mock_time_value;
+
+  /// No description provided for @mock_tips_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips'**
+  String get mock_tips_title;
+
+  /// No description provided for @mock_tip_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer consistently—guessing is allowed, but try to finish every section.'**
+  String get mock_tip_1;
+
+  /// No description provided for @mock_tip_2.
+  ///
+  /// In en, this message translates to:
+  /// **'You can pause and continue later—your answers are saved.'**
+  String get mock_tip_2;
+
+  /// No description provided for @mock_tip_3.
+  ///
+  /// In en, this message translates to:
+  /// **'After finishing, review mistakes and request Jinny explanations.'**
+  String get mock_tip_3;
+
+  /// No description provided for @mock_start_new.
+  ///
+  /// In en, this message translates to:
+  /// **'Start new mock'**
+  String get mock_start_new;
+
+  /// No description provided for @mock_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue current mock'**
+  String get mock_continue;
+
+  /// No description provided for @mock_discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard current mock'**
+  String get mock_discard;
+
+  /// No description provided for @mock_discard_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard current mock?'**
+  String get mock_discard_title;
+
+  /// No description provided for @mock_discard_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current mock progress will be deleted. This action cannot be undone.'**
+  String get mock_discard_desc;
+
+  /// No description provided for @mock_no_active_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'No active attempt'**
+  String get mock_no_active_progress;
+
+  /// No description provided for @mock_progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress: {answered}/{total} answered'**
+  String mock_progress(int answered, int total);
+
+  /// No description provided for @mock_progress_unknown_total.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress: {answered} answered'**
+  String mock_progress_unknown_total(int answered);
 }
 
 class _AppLocalizationsDelegate
