@@ -18,6 +18,13 @@ exports.aiExplainMath = explain.aiExplainMath;
 exports.aiExplainAnalogy = explain.aiExplainAnalogy;
 exports.aiExplainLanguage = explain.aiExplainLanguage;
 exports.aiExplainComparison = explain.aiExplainComparison;
+exports.spendZhalbyraks = require("./spend_wallet").spendZhalbyraks;
+
+// Wallet init (new users)
+exports.initWalletOnUserCreate = require("./wallet").initWalletOnUserCreate;
+
+// Optional one-time pricing seeder (callable)
+exports.seedPricingIfMissing = require("./seed_pricing").seedPricingIfMissing;
 
 // -------------------------------
 // 2) Mistake report

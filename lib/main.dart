@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 
+// ✅ Currency (wired)
+import 'currency/pricing_service.dart';
+import 'currency/wallet_service.dart';
+import 'currency/currency_gate.dart';
 
 // Localization
 import 'gen_l10n/app_localizations.dart';
@@ -23,7 +24,7 @@ import 'pages/profile_page.dart';
 import 'pages/verify_email_page.dart';
 
 // Providers
-import 'provider/provider.dart';
+import 'provider/provider.dart'; // LocaleProvider
 import 'provider/theme_provider.dart';
 
 // Header
@@ -35,20 +36,22 @@ import 'package:shimmer/shimmer.dart';
 // Theme schemes
 import 'theme/z_color_schemes.dart';
 
+// Firebase options
+import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   // ✅ App Check (debug in dev, real provider in release)
   await FirebaseAppCheck.instance.activate(
-    androidProvider: kReleaseMode
-        ? AndroidProvider.playIntegrity
-        : AndroidProvider.debug,
-    appleProvider: kReleaseMode
-        ? AppleProvider.deviceCheck
-        : AppleProvider.debug,
+    androidProvider:
+    kReleaseMode ? AndroidProvider.playIntegrity : AndroidProvider.debug,
+    appleProvider:
+    kReleaseMode ? AppleProvider.deviceCheck : AppleProvider.debug,
   );
 
   final themeProvider = ThemeProvider();
@@ -59,6 +62,25 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider.value(value: themeProvider),
+
+        // ✅ Pricing: live listener to config/pricing
+        ChangeNotifierProvider(
+          create: (_) => PricingService()..start(),
+        ),
+
+        // ✅ Wallet: starts/stops based on auth state (Root)
+        ChangeNotifierProvider(
+          create: (_) => WalletService(),
+        ),
+
+        // ✅ Currency gate: composed from Pricing + Wallet
+        ProxyProvider2<PricingService, WalletService, CurrencyGate>(
+          update: (_, pricing, wallet, __) => CurrencyGate(
+            pricing: pricing,
+            wallet: wallet,
+            region: 'europe-west1', // MUST match your deployed functions region
+          ),
+        ),
       ],
       child: const SecomApp(),
     ),
@@ -76,7 +98,6 @@ class SecomApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ZHALBYRAK',
-
       locale: localeProvider.locale,
       supportedLocales: const [
         Locale('en'),
@@ -96,19 +117,15 @@ class SecomApp extends StatelessWidget {
         }
         return supported.first;
       },
-
       themeMode: themeProvider.mode,
-
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: zLightScheme,
       ),
-
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: zDarkScheme,
       ),
-
       home: const Root(),
     );
   }
@@ -131,15 +148,24 @@ class Root extends StatelessWidget {
         if (s.connectionState == ConnectionState.waiting) {
           return Scaffold(
             backgroundColor: Theme.of(context).colorScheme.background,
-            body: SafeArea(child: _MainShimmer()),
+            body: const SafeArea(child: _MainShimmer()),
           );
         }
 
         final user = s.data;
 
-        if (user == null) return const WelcomePage();
-        if (!user.emailVerified) return const VerifyEmailPage();
+        // ✅ Keep wallet service aligned with auth state
+        final wallet = context.read<WalletService>();
 
+        if (user == null) {
+          wallet.stop();
+          return const WelcomePage();
+        }
+
+        // ✅ start wallet listener once per uid
+        wallet.start(user.uid);
+
+        if (!user.emailVerified) return const VerifyEmailPage();
         return const MainPage();
       },
     );
@@ -201,22 +227,19 @@ class _MainPageState extends State<MainPage> {
                 setState(() => _index = 1);
               },
             ),
-
             Expanded(
               child: IndexedStack(
                 index: _index,
                 children: List.generate(_pages.length, (i) {
                   final page = _pages[i];
                   if (page != null) return page;
-
-                  return _MainShimmer();
+                  return const _MainShimmer();
                 }),
               ),
             ),
           ],
         ),
       ),
-
       bottomNavigationBar: _BottomNavBar(
         index: _index,
         onTap: (i) {
@@ -264,21 +287,17 @@ class _BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     final isDark = cs.brightness == Brightness.dark;
 
     final bg = isDark
-    // darker than surface in dark mode
         ? Color.alphaBlend(
       Colors.black.withOpacity(0.30),
       cs.surface,
     )
-    // darker than surface in light mode
         : Color.alphaBlend(
       Colors.black.withOpacity(0.08),
       cs.surface,
     );
-
 
     final selected = cs.secondary;
 
@@ -338,8 +357,10 @@ class _BottomNavBar extends StatelessWidget {
                             fontSize: 12.8,
                             fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? selected : unselected.withOpacity(0.85),
-                          )
+                            color: isSelected
+                                ? selected
+                                : unselected.withOpacity(0.85),
+                          ),
                         ),
                       ),
                     ),
@@ -406,7 +427,6 @@ class _MainShimmer extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-
                     Wrap(
                       spacing: 16,
                       runSpacing: 16,
@@ -424,7 +444,6 @@ class _MainShimmer extends StatelessWidget {
                         );
                       }),
                     ),
-
                     const SizedBox(height: 30),
                   ],
                 ),

@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../currency/wallet_service.dart';
 
 // ✅ Use EXACT same hero gradients as Home banner (identical colors + direction)
 const LinearGradient zHeroGradientLight = LinearGradient(
@@ -58,6 +61,10 @@ class MainAppHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
+    // ✅ ZHALBYRAKS balance comes from wallet provider (not users doc)
+    final wallet = context.watch<WalletService>();
+    final zhalbyraks = wallet.ready ? wallet.balance : 0;
+
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: _userStream(),
       builder: (context, snap) {
@@ -65,10 +72,6 @@ class MainAppHeader extends StatelessWidget {
 
         final trophyCount = _readInt(data, 'trophies', fallback: 0);
         final streakDays = _readInt(data, 'currentStreakDays', fallback: 0);
-
-        // ✅ Change the key if your Firestore field name differs
-        final leafs = _readInt(data, 'leafs', fallback: 0);
-
         final photoUrl = _readString(data, 'photoUrl');
 
         return Padding(
@@ -123,7 +126,7 @@ class MainAppHeader extends StatelessWidget {
                           scale: s,
                           streakDays: streakDays,
                           trophyCount: trophyCount,
-                          leafs: leafs,
+                          leafs: zhalbyraks, // ✅ use wallet balance
                           onTapTrophy: onTapTrophy,
                           onTapLeaf: onTapLeaf,
                           onTapProfile: onTapProfile,
@@ -204,7 +207,6 @@ class _RightClusterAdaptive extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: gap),
-
                     Transform.translate(
                       offset: Offset(-4 * scale, 0),
                       child: _LeafPill(
@@ -214,7 +216,6 @@ class _RightClusterAdaptive extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: gap),
-
                     Transform.translate(
                       offset: Offset(-4 * scale, 0),
                       child: _TrophyPill(
@@ -259,7 +260,8 @@ class _PillNumberFormatter {
     if (v < 10_000) return "${(v / 1000).toStringAsFixed(1)}k";
     if (v < 1_000_000) return "${(v / 1000).floor()}k";
     if (v < 10_000_000) return "${(v / 1_000_000).toStringAsFixed(1)}M";
-    return "${(v / 1_000_000).floor()}M";
+    if (v < 1_000_000_000) return "${(v / 1_000_000).floor()}M";
+    return "${(v / 1_000_000_000).toStringAsFixed(1)}B";
   }
 
   static double fontFor(int value, double base) {
@@ -267,7 +269,9 @@ class _PillNumberFormatter {
     if (len <= 3) return base;
     if (len == 4) return base * 0.96;
     if (len == 5) return base * 0.92;
-    return base * 0.88;
+    if (len == 6) return base * 0.88;
+    if (len == 7) return base * 0.84;
+    return base * 0.80;
   }
 }
 
@@ -369,8 +373,14 @@ class _LeafPill extends StatelessWidget {
 
     // ✅ Green background that still reads well in both themes
     final bg = isDark
-        ? Color.alphaBlend(leafGreenDark.withOpacity(0.24), cs.surfaceContainerHigh)
-        : Color.alphaBlend(leafGreen.withOpacity(0.18), cs.surfaceContainerHigh);
+        ? Color.alphaBlend(
+      leafGreenDark.withOpacity(0.24),
+      cs.surfaceContainerHigh,
+    )
+        : Color.alphaBlend(
+      leafGreen.withOpacity(0.18),
+      cs.surfaceContainerHigh,
+    );
 
     final pill = Container(
       constraints: BoxConstraints(minHeight: 30 * scale),
