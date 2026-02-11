@@ -319,5 +319,12 @@
     "placeholders": {
       "answered": { "type": "int" }
     }
-  }
+  },
+
+  "pause": "Pause",
+  "resume": "Resume",
+  "exit": "Exit",
+  "test_paused_exit_confirm": "The test is paused. Do you want to exit?",
+  "test_paused_title": "Paused",
+  "test_paused_subtitle": "The timer is stopped. Tap Resume to continue."
 }

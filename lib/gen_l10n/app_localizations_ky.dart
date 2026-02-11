@@ -751,4 +751,23 @@ class AppLocalizationsKy extends AppLocalizations {
   String mock_progress_unknown_total(int answered) {
     return 'Прогресс: $answered жооп берилди';
   }
+
+  @override
+  String get pause => 'Тыныгуу';
+
+  @override
+  String get resume => 'Улантуу';
+
+  @override
+  String get exit => 'Чыгуу';
+
+  @override
+  String get test_paused_exit_confirm => 'Тест тыныгууга коюлду. Чыгасызбы?';
+
+  @override
+  String get test_paused_title => 'Тыныгуу';
+
+  @override
+  String get test_paused_subtitle =>
+      'Таймер токтотулду. Улантуу үчүн «Улантуу» баскычын басыңыз.';
 }

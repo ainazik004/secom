@@ -750,4 +750,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String mock_progress_unknown_total(int answered) {
     return 'Progress: $answered answered';
   }
+
+  @override
+  String get pause => 'Pause';
+
+  @override
+  String get resume => 'Resume';
+
+  @override
+  String get exit => 'Exit';
+
+  @override
+  String get test_paused_exit_confirm =>
+      'The test is paused. Do you want to exit?';
+
+  @override
+  String get test_paused_title => 'Paused';
+
+  @override
+  String get test_paused_subtitle =>
+      'The timer is stopped. Tap Resume to continue.';
 }

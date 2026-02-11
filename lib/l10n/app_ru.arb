@@ -319,5 +319,12 @@
     "placeholders": {
       "answered": { "type": "int" }
     }
-  }
+  },
+
+  "pause": "Пауза",
+  "resume": "Продолжить",
+  "exit": "Выйти",
+  "test_paused_exit_confirm": "Тест поставлен на паузу. Выйти?",
+  "test_paused_title": "Пауза",
+  "test_paused_subtitle": "Таймер остановлен. Нажмите «Продолжить», чтобы продолжить."
 }

@@ -1,7 +1,9 @@
+// mock_test_start_page.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
+import '../../widgets/quiz_runner/widgets/round_x_button.dart';
 import '../mock_attempt_store.dart';
 import '../mock_test_controller.dart';
 import 'mock_test_runner_page.dart';
@@ -18,6 +20,9 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
   late final MockTestController controller;
   bool loading = true;
 
+  // ✅ prevent double-taps / multi-start
+  bool _starting = false;
+
   @override
   void initState() {
     super.initState();
@@ -33,21 +38,40 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
     }();
   }
 
+  // ✅ re-check attempt after coming back from runner
+  Future<void> _refreshAttempt() async {
+    await controller.restore();
+    if (!mounted) return;
+    setState(() {});
+  }
+
   Future<void> _startAndOpenRunner({required bool startNew}) async {
+    if (_starting) return;
+    setState(() => _starting = true);
+
     try {
+      await controller.restore();
+
       if (startNew) {
-        await controller.startNew(lang: widget.lang);
+        final a = controller.attempt;
+        final hasActive = a != null && !a.isFinished;
+        if (!hasActive) {
+          await controller.startNew(lang: widget.lang);
+        }
       } else {
         await controller.startCurrentSectionIfNeeded();
       }
 
       if (!mounted) return;
-      Navigator.push(
+
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => MockTestRunnerPage(controller: controller),
         ),
       );
+
+      await _refreshAttempt();
     } catch (e) {
       if (!mounted) return;
       showDialog(
@@ -63,16 +87,21 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
           ],
         ),
       );
+    } finally {
+      if (mounted) setState(() => _starting = false);
     }
   }
 
   Future<void> _discardCurrent() async {
+    if (_starting) return;
+
     final loc = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
 
     final sure = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(loc.mock_discard_title),
         content: Text(loc.mock_discard_desc),
         actions: [
@@ -91,9 +120,14 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
 
     if (sure != true) return;
 
-    await controller.clearAttempt();
-    if (!mounted) return;
-    setState(() {});
+    setState(() => _starting = true);
+    try {
+      await controller.clearAttempt();
+      if (!mounted) return;
+      setState(() {});
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
   }
 
   @override
@@ -135,6 +169,10 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           scrolledUnderElevation: 0,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: RoundXButton(onTap: () => Navigator.of(context).pop()),
+          ),
           title: Text(
             loc.mock_title,
             style: TextStyle(
@@ -152,41 +190,6 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
 
     final hasActive = attempt != null && !attempt.isFinished;
 
-    // Best-effort progress info (works even if your attempt model changes)
-    final sectionsTotal = 5;
-    int answered = 0;
-    int total = 0;
-
-    try {
-      // Common shapes people use:
-      // - attempt.answers : Map<String, dynamic>
-      // - attempt.answersByIndex : Map<int, String>
-      // - attempt.totalQuestions : int
-      // If none exist, these keep defaults.
-      final dynamic a = attempt;
-      final dynamic answers =
-      (a == null) ? null : (a.answers ?? a.answersByIndex ?? a.userAnswers);
-      if (answers is Map) {
-        total = a.totalQuestions is int ? a.totalQuestions as int : 0;
-        answered = answers.values.where((v) => (v ?? '').toString().trim().isNotEmpty).length;
-      } else if (answers is List) {
-        total = a.totalQuestions is int ? a.totalQuestions as int : answers.length;
-        answered = answers.where((v) => (v ?? '').toString().trim().isNotEmpty).length;
-      }
-    } catch (_) {
-      // ignore
-    }
-
-    final String progressLine;
-    if (!hasActive) {
-      progressLine = loc.mock_no_active_progress;
-    } else {
-      // If total is unknown, still show answered count.
-      progressLine = total > 0
-          ? loc.mock_progress(answered, total)
-          : loc.mock_progress_unknown_total(answered);
-    }
-
     return Scaffold(
       backgroundColor: pageBg,
       appBar: AppBar(
@@ -194,6 +197,10 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: RoundXButton(onTap: () => Navigator.of(context).pop()),
+        ),
         title: Text(
           loc.mock_title,
           style: TextStyle(
@@ -206,12 +213,11 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         children: [
-          // Hero / Info
+          // Hero / Info (✅ progress line removed)
           card(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // icon badge
                 Container(
                   width: 44,
                   height: 44,
@@ -245,23 +251,6 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
                           height: 1.35,
                           fontWeight: FontWeight.w600,
                           color: cs.onSurfaceVariant.withOpacity(0.88),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: cs.surface.withOpacity(isDark ? 0.18 : 0.60),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: cs.outlineVariant.withOpacity(0.25)),
-                        ),
-                        child: Text(
-                          progressLine,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                            color: cs.onSurface,
-                          ),
                         ),
                       ),
                     ],
@@ -336,13 +325,23 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _startAndOpenRunner(startNew: false),
+                onPressed: _starting ? null : () => _startAndOpenRunner(startNew: false),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
+                  disabledBackgroundColor: cs.primary.withOpacity(0.35),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: Text(
+                child: _starting
+                    ? SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: cs.onPrimary,
+                  ),
+                )
+                    : Text(
                   loc.mock_continue,
                   style: TextStyle(fontWeight: FontWeight.w900, color: cs.onPrimary),
                 ),
@@ -352,7 +351,7 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: _discardCurrent,
+                onPressed: _starting ? null : _discardCurrent,
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   side: BorderSide(color: cs.error.withOpacity(0.40)),
@@ -368,13 +367,23 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _startAndOpenRunner(startNew: true),
+                onPressed: _starting ? null : () => _startAndOpenRunner(startNew: true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
+                  disabledBackgroundColor: cs.primary.withOpacity(0.35),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: Text(
+                child: _starting
+                    ? SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: cs.onPrimary,
+                  ),
+                )
+                    : Text(
                   loc.mock_start_new,
                   style: TextStyle(fontWeight: FontWeight.w900, color: cs.onPrimary),
                 ),

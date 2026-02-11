@@ -753,4 +753,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String mock_progress_unknown_total(int answered) {
     return 'Прогресс: $answered отвечено';
   }
+
+  @override
+  String get pause => 'Пауза';
+
+  @override
+  String get resume => 'Продолжить';
+
+  @override
+  String get exit => 'Выйти';
+
+  @override
+  String get test_paused_exit_confirm => 'Тест поставлен на паузу. Выйти?';
+
+  @override
+  String get test_paused_title => 'Пауза';
+
+  @override
+  String get test_paused_subtitle =>
+      'Таймер остановлен. Нажмите «Продолжить», чтобы продолжить.';
 }

@@ -319,5 +319,12 @@
     "placeholders": {
       "answered": { "type": "int" }
     }
-  }
+  },
+
+  "pause": "Тыныгуу",
+  "resume": "Улантуу",
+  "exit": "Чыгуу",
+  "test_paused_exit_confirm": "Тест тыныгууга коюлду. Чыгасызбы?",
+  "test_paused_title": "Тыныгуу",
+  "test_paused_subtitle": "Таймер токтотулду. Улантуу үчүн «Улантуу» баскычын басыңыз."
 }

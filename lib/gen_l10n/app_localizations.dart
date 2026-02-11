@@ -1485,6 +1485,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Progress: {answered} answered'**
   String mock_progress_unknown_total(int answered);
+
+  /// No description provided for @pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pause;
+
+  /// No description provided for @resume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get resume;
+
+  /// No description provided for @exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get exit;
+
+  /// No description provided for @test_paused_exit_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'The test is paused. Do you want to exit?'**
+  String get test_paused_exit_confirm;
+
+  /// No description provided for @test_paused_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get test_paused_title;
+
+  /// No description provided for @test_paused_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The timer is stopped. Tap Resume to continue.'**
+  String get test_paused_subtitle;
 }
 
 class _AppLocalizationsDelegate
