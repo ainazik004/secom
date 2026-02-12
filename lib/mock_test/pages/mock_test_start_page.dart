@@ -1,15 +1,24 @@
-// mock_test_start_page.dart
+// lib/pages/mock_test/mock_test_start_page.dart
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
-
+import 'package:zhalbyrak/l10n/l10n_ext.dart';
+import 'package:zhalbyrak/currency/paid_confirm_dialog.dart';
 import '../../widgets/quiz_runner/widgets/round_x_button.dart';
+
+// ✅ Currency
+import 'package:zhalbyrak/currency/currency_gate.dart';
 import '../mock_attempt_store.dart';
 import '../mock_test_controller.dart';
 import 'mock_test_runner_page.dart';
 
+// MUST match Firestore pricing key
+const String kActionMockTestStart = 'start_mock_test';
+
 class MockTestStartPage extends StatefulWidget {
-  final String lang; // from settings/provider (ru/ky/en)
+  final String lang; // ru/ky/en
   const MockTestStartPage({super.key, required this.lang});
 
   @override
@@ -45,22 +54,107 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
     setState(() {});
   }
 
-  Future<void> _startAndOpenRunner({required bool startNew}) async {
+  String _idempotencyKey() => 'mock_${DateTime.now().microsecondsSinceEpoch}';
+
+  Future<bool> _confirmSpend(BuildContext context, int cost) async {
+    final loc = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+
+    return await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(loc.paidActionTitle),
+        content: Text(
+          '${loc.confirmActionBodyPrefix}${loc.mock_start_new}.\n\n'
+              '${loc.confirmActionCost}: ${loc.zhalbyrakCount(cost)}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(loc.paidActionCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: cs.primary),
+            child: Text(loc.paidActionProceed),
+          ),
+        ],
+      ),
+    ) ??
+        false;
+  }
+
+  // ✅ Paid flow for "Start new" (with idempotency + spend)
+  Future<void> _startPaidNew() async {
+    if (_starting) return;
+
+    final gate = context.read<CurrencyGate>();
+
+    // ✅ Fast local check BEFORE showing confirm
+    if (!gate.canAffordNow(kActionMockTestStart)) {
+      await gate.showNotEnoughPaywall(
+        context,
+        actionKey: kActionMockTestStart,
+      );
+      return;
+    }
+
+    final cost = gate.costOf(kActionMockTestStart);
+
+    final ok = await PaidConfirmDialog.show(
+      context,
+      cost: cost,
+    );
+    if (!ok) return;
+
+    setState(() => _starting = true);
+
+    try {
+      await gate.spend(
+        actionKey: kActionMockTestStart,
+        ref: 'mock_start',
+        idempotencyKey: _idempotencyKey(),
+      );
+
+      await controller.restore();
+
+      final a = controller.attempt;
+      final hasActive = a != null && !a.isFinished;
+      if (!hasActive) {
+        await controller.startNew(lang: widget.lang);
+      }
+
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MockTestRunnerPage(controller: controller),
+        ),
+      );
+
+      await _refreshAttempt();
+    } on FirebaseFunctionsException catch (e) {
+      // ✅ Server remains authoritative
+      if (e.code == 'failed-precondition' && e.message == 'NOT_ENOUGH_ZHALBYRAKS') {
+        await gate.showNotEnoughPaywall(context, actionKey: kActionMockTestStart);
+        return;
+      }
+      rethrow;
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
+
+  // ✅ Continue flow (NO spending). Uses controller logic from file #1.
+  Future<void> _continueAndOpenRunner() async {
     if (_starting) return;
     setState(() => _starting = true);
 
     try {
       await controller.restore();
-
-      if (startNew) {
-        final a = controller.attempt;
-        final hasActive = a != null && !a.isFinished;
-        if (!hasActive) {
-          await controller.startNew(lang: widget.lang);
-        }
-      } else {
-        await controller.startCurrentSectionIfNeeded();
-      }
+      await controller.startCurrentSectionIfNeeded();
 
       if (!mounted) return;
 
@@ -137,10 +231,21 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
+    final gate = context.watch<CurrencyGate>();
+    final cost = gate.costOf(kActionMockTestStart);
+
     final attempt = controller.attempt;
 
     final pageBg = cs.surface;
     final cardBg = isDark ? cs.surfaceContainerHighest : cs.surfaceContainerHigh;
+
+    final costBg = isDark
+        ? const Color(0xFF0B2A16) // deep green
+        : const Color(0xFFE7F7EE); // light green
+
+    final leafColor = isDark
+        ? const Color(0xFF2FBF71) // darker, calmer green for dark mode
+        : const Color(0xFF1E9E55); // clean green for light mode
 
     final shadow = BoxShadow(
       color: cs.shadow.withOpacity(isDark ? 0.35 : 0.12),
@@ -320,12 +425,12 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
 
           const SizedBox(height: 14),
 
-          // CTA buttons
+          // CTA buttons (design from file #1, functions/content from file #2)
           if (hasActive) ...[
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _starting ? null : () => _startAndOpenRunner(startNew: false),
+                onPressed: _starting ? null : _continueAndOpenRunner, // ✅ no spend
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
                   disabledBackgroundColor: cs.primary.withOpacity(0.35),
@@ -367,7 +472,7 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _starting ? null : () => _startAndOpenRunner(startNew: true),
+                onPressed: _starting ? null : _startPaidNew,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
                   disabledBackgroundColor: cs.primary.withOpacity(0.35),
@@ -383,9 +488,33 @@ class _MockTestStartPageState extends State<MockTestStartPage> {
                     color: cs.onPrimary,
                   ),
                 )
-                    : Text(
-                  loc.mock_start_new,
-                  style: TextStyle(fontWeight: FontWeight.w900, color: cs.onPrimary),
+                    : Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: loc.mock_start_new),
+                      const TextSpan(text: '  '),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Icon(
+                          Icons.eco_rounded,
+                          size: 16,
+                          color: leafColor, // already darker in dark mode
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' $cost',
+                        style: TextStyle(
+                          color: leafColor,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: cs.onPrimary,
+                  ),
                 ),
               ),
             ),

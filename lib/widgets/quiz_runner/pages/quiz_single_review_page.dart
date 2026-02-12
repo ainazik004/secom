@@ -5,6 +5,10 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../../currency/currency_gate.dart';
 
 import '../models/question.dart';
 import '../widgets/comparison_value_card.dart';
@@ -26,7 +30,124 @@ class QuizSingleReviewPage extends StatefulWidget {
   State<QuizSingleReviewPage> createState() => _QuizSingleReviewPageState();
 }
 
+// -------------------- AI explain pricing config models/helpers --------------------
+
+class AiExplainCfg {
+  final bool enabled;
+  final int cost;
+  final String title;
+  const AiExplainCfg({
+    required this.enabled,
+    required this.cost,
+    required this.title,
+  });
+}
+
 class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
+  bool _aiBusy = false;
+  // Firestore action key (must match pricing doc: actions.ai_explain)
+  static const String _kActionAiExplain = 'ai_explain';
+
+  String _aiIdempotencyKey(String qid) =>
+      'ai_${qid}_${DateTime.now().microsecondsSinceEpoch}';
+
+  Future<void> _runAiExplainNoConfirm({
+    required BuildContext context,
+    required CurrencyGate gate,
+    required String questionId,
+    required Future<void> Function() onAllowed,
+  }) async {
+    // ✅ immediate local check (if pricing+wallet already loaded)
+    if (!gate.canAffordNow(_kActionAiExplain)) {
+      await gate.showNotEnoughPaywall(
+        context,
+        actionKey: _kActionAiExplain,
+      );
+      return;
+    }
+
+    try {
+      // ✅ server authoritative spend
+      await gate.spend(
+        actionKey: _kActionAiExplain,
+        ref: 'ai_explain:$questionId',
+        idempotencyKey: _aiIdempotencyKey(questionId),
+      );
+
+      await onAllowed();
+    } on FirebaseFunctionsException catch (e) {
+      if (e.code == 'failed-precondition' && e.message == 'NOT_ENOUGH_ZHALBYRAKS') {
+        await gate.showNotEnoughPaywall(
+          context,
+          actionKey: _kActionAiExplain,
+        );
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  // -------------------- AI explain pricing config (Firestore: config/pricing) --------------------
+
+  static const String _kPricingCol = 'config';
+  static const String _kPricingDoc = 'pricing';
+
+  Future<Map<String, dynamic>?> _fetchPricingDoc() async {
+    final snap = await FirebaseFirestore.instance
+        .collection(_kPricingCol)
+        .doc(_kPricingDoc)
+        .get();
+    return snap.data();
+  }
+
+  String _pickLocalizedFromMap(dynamic v, String langCode) {
+    if (v is Map) {
+      final exact = v[langCode];
+      if (exact != null && exact.toString().trim().isNotEmpty) {
+        return exact.toString().trim();
+      }
+
+      final ru = v['ru'];
+      if (ru != null && ru.toString().trim().isNotEmpty) return ru.toString().trim();
+
+      final ky = v['ky'];
+      if (ky != null && ky.toString().trim().isNotEmpty) return ky.toString().trim();
+
+      final en = v['en'];
+      if (en != null && en.toString().trim().isNotEmpty) return en.toString().trim();
+
+      for (final e in v.entries) {
+        final s = e.value?.toString() ?? '';
+        if (s.trim().isNotEmpty) return s.trim();
+      }
+    }
+    return '';
+  }
+
+  Future<AiExplainCfg> _loadAiExplainCfg(AppLocalizations loc) async {
+    final lang = Localizations.localeOf(context).languageCode.toLowerCase();
+
+    final data = await _fetchPricingDoc();
+
+    final actions = (data?['actions'] is Map) ? (data!['actions'] as Map) : const {};
+    final ai = (actions['ai_explain'] is Map) ? (actions['ai_explain'] as Map) : const {};
+
+    final enabledRaw = ai['enabled'];
+    final costRaw = ai['cost'];
+    final titleRaw = ai['title'];
+
+    final enabled = enabledRaw is bool ? enabledRaw : true;
+
+    int cost = 0;
+    if (costRaw is int) cost = costRaw;
+    if (costRaw is num) cost = costRaw.toInt();
+
+    final pickedTitle = _pickLocalizedFromMap(titleRaw, lang);
+    final title = pickedTitle.isNotEmpty ? pickedTitle : loc.quiz_ai_explain;
+
+    return AiExplainCfg(enabled: enabled, cost: cost, title: title);
+  }
+
   late int _i;
 
   // Cache Jinny explanation per question+language+endpoint to reduce API load.
@@ -383,6 +504,48 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     const ok = Color(0xFF22C55E);
     const bad = Color(0xFFEF4444);
     final status = pickedCorrect ? ok : bad;
+    // Firestore action key
+    const String kActionAiExplain = 'ai_explain';
+
+    String _aiIdempotencyKey(String qid) =>
+        'ai_${qid}_${DateTime.now().microsecondsSinceEpoch}';
+
+    Future<void> _runAiExplainNoConfirm({
+      required BuildContext context,
+      required CurrencyGate gate,
+      required String questionId,
+      required Future<void> Function() onAllowed,
+    }) async {
+      // ✅ immediate local check (if data is loaded)
+      if (!gate.canAffordNow(kActionAiExplain)) {
+        await gate.showNotEnoughPaywall(
+          context,
+          actionKey: kActionAiExplain,
+        );
+        return;
+      }
+
+      try {
+        // ✅ spend (server authoritative)
+        await gate.spend(
+          actionKey: kActionAiExplain,
+          ref: 'ai_explain:$questionId',
+          idempotencyKey: _aiIdempotencyKey(questionId),
+        );
+
+        await onAllowed();
+      } on FirebaseFunctionsException catch (e) {
+        if (e.code == 'failed-precondition' &&
+            e.message == 'NOT_ENOUGH_ZHALBYRAKS') {
+          await gate.showNotEnoughPaywall(
+            context,
+            actionKey: kActionAiExplain,
+          );
+          return;
+        }
+        rethrow;
+      }
+    }
 
     final shadow = BoxShadow(
       color: cs.shadow.withOpacity(isDark ? 0.35 : 0.12),
@@ -599,27 +762,129 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
             const SizedBox(height: 10),
           ],
 
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => _openJinnyChat(context),
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                side: BorderSide(color: cs.primary.withOpacity(0.25)),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset('assets/icon/quokka_large.png', width: 18, height: 18, fit: BoxFit.contain),
-                  const SizedBox(width: 10),
-                  Text(
-                    loc.quiz_ai_explain,
-                    style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface),
+          FutureBuilder<AiExplainCfg>(
+            future: _loadAiExplainCfg(loc),
+            builder: (context, snap) {
+              final theme = Theme.of(context);
+              final cs = theme.colorScheme;
+              final isDark = theme.brightness == Brightness.dark;
+
+              final cfg = snap.data;
+              final enabled = (cfg?.enabled ?? true);
+              final cost = (cfg?.cost ?? 0);
+
+              final green = isDark ? const Color(0xFF2FBF71) : const Color(0xFF1E9E55);
+              final costText = NumberFormat.decimalPattern(loc.localeName).format(cost);
+
+              // Match answer-choice feel: small shadow, rounded, no "button" style
+              final tileShadow = [
+                BoxShadow(
+                  color: cs.shadow.withOpacity(isDark ? 0.14 : 0.10),
+                  blurRadius: 14,
+                  offset: const Offset(0, 10),
+                ),
+              ];
+
+              return InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: (!enabled || _aiBusy)
+                    ? null
+                    : () async {
+                  setState(() => _aiBusy = true);
+                  try {
+                    final gate = context.read<CurrencyGate>();
+                    final q = widget.questions[_i];
+
+                    await _runAiExplainNoConfirm(
+                      context: context,
+                      gate: gate,
+                      questionId: q.id,
+                      onAllowed: () async => _openJinnyChat(context),
+                    );
+                  } finally {
+                    if (mounted) setState(() => _aiBusy = false);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: tileShadow,
+                    border: Border.all(
+                      color: cs.outline.withOpacity(isDark ? 0.28 : 0.22),
+                    ),
                   ),
-                ],
-              ),
-            ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Jinny avatar (always visible)
+                        Image.asset(
+                          'assets/icon/quokka_large.png',
+                          width: 22,
+                          height: 22,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Text
+                        Text(
+                          loc.quiz_ai_explain,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: cs.onSurface.withOpacity(enabled ? 1.0 : 0.55),
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        // RIGHT SIDE: cost OR spinner
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          switchInCurve: Curves.easeOut,
+                          switchOutCurve: Curves.easeIn,
+                          transitionBuilder: (child, anim) =>
+                              ScaleTransition(scale: anim, child: child),
+                          child: _aiBusy
+                              ? SizedBox(
+                            key: const ValueKey('spinner'),
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              valueColor: AlwaysStoppedAnimation<Color>(green),
+                            ),
+                          )
+                              : Row(
+                            key: const ValueKey('cost'),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                costText,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: green,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.eco_rounded,
+                                size: 16,
+                                color: green,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 10),

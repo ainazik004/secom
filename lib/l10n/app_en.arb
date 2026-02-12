@@ -326,5 +326,25 @@
   "exit": "Exit",
   "test_paused_exit_confirm": "The test is paused. Do you want to exit?",
   "test_paused_title": "Paused",
-  "test_paused_subtitle": "The timer is stopped. Tap Resume to continue."
+  "test_paused_subtitle": "The timer is stopped. Tap Resume to continue.",
+
+  "paywall_notEnoughTitle": "Not enough {currency}",
+  "paywall_notEnoughMessage": "This feature costs {cost} {currency}.",
+  "paywall_premiumTitle": "Premium feature",
+  "paywall_premiumMessage": "This feature requires a subscription.",
+  "paywall_subscribe": "Subscribe",
+  "paywall_donate": "Donate / Buy currency",
+  "paywall_cancel": "Cancel",
+
+  "confirmActionTitle": "Confirm action",
+  "confirmActionBodyPrefix": "You are about to use ",
+  "confirmActionCost": "This will cost",
+  "proceed": "Proceed",
+
+  "currencyUnit": "{count, plural, one{LEAF} few{LEAVES} many{LEAVES} other{LEAVES}}",
+
+  "paidActionTitle": "Paid action",
+  "paidActionMessage": "This action costs",
+  "paidActionProceed": "Proceed",
+  "paidActionCancel": "Cancel"
 }

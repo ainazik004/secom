@@ -1521,6 +1521,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The timer is stopped. Tap Resume to continue.'**
   String get test_paused_subtitle;
+
+  /// No description provided for @paywall_notEnoughTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough {currency}'**
+  String paywall_notEnoughTitle(Object currency);
+
+  /// No description provided for @paywall_notEnoughMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature costs {cost} {currency}.'**
+  String paywall_notEnoughMessage(Object cost, Object currency);
+
+  /// No description provided for @paywall_premiumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium feature'**
+  String get paywall_premiumTitle;
+
+  /// No description provided for @paywall_premiumMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature requires a subscription.'**
+  String get paywall_premiumMessage;
+
+  /// No description provided for @paywall_subscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe'**
+  String get paywall_subscribe;
+
+  /// No description provided for @paywall_donate.
+  ///
+  /// In en, this message translates to:
+  /// **'Donate / Buy currency'**
+  String get paywall_donate;
+
+  /// No description provided for @paywall_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get paywall_cancel;
+
+  /// No description provided for @confirmActionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm action'**
+  String get confirmActionTitle;
+
+  /// No description provided for @confirmActionBodyPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to use '**
+  String get confirmActionBodyPrefix;
+
+  /// No description provided for @confirmActionCost.
+  ///
+  /// In en, this message translates to:
+  /// **'This will cost'**
+  String get confirmActionCost;
+
+  /// No description provided for @proceed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed'**
+  String get proceed;
+
+  /// No description provided for @currencyUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{LEAF} few{LEAVES} many{LEAVES} other{LEAVES}}'**
+  String currencyUnit(num count);
+
+  /// No description provided for @paidActionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid action'**
+  String get paidActionTitle;
+
+  /// No description provided for @paidActionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This action costs'**
+  String get paidActionMessage;
+
+  /// No description provided for @paidActionProceed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed'**
+  String get paidActionProceed;
+
+  /// No description provided for @paidActionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get paidActionCancel;
 }
 
 class _AppLocalizationsDelegate

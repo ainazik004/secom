@@ -51,6 +51,8 @@ flutter:
   assets:
     - assets/secom_logo.png
     - assets/icon/
+    - assets/hungry_jinny.png
+    - assets/confused_jinny.png
 
 flutter_launcher_icons:
   android: true

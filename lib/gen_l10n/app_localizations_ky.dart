@@ -770,4 +770,66 @@ class AppLocalizationsKy extends AppLocalizations {
   @override
   String get test_paused_subtitle =>
       'Таймер токтотулду. Улантуу үчүн «Улантуу» баскычын басыңыз.';
+
+  @override
+  String paywall_notEnoughTitle(Object currency) {
+    return '$currency жетишсиз';
+  }
+
+  @override
+  String paywall_notEnoughMessage(Object cost, Object currency) {
+    return 'Бул функция $cost $currency турат.';
+  }
+
+  @override
+  String get paywall_premiumTitle => 'Премиум функция';
+
+  @override
+  String get paywall_premiumMessage => 'Бул функция үчүн жазылуу керек.';
+
+  @override
+  String get paywall_subscribe => 'Жазылуу';
+
+  @override
+  String get paywall_donate => 'Колдоо / валюта сатып алуу';
+
+  @override
+  String get paywall_cancel => 'Жокко чыгаруу';
+
+  @override
+  String get confirmActionTitle => 'Аракетти ырастоо';
+
+  @override
+  String get confirmActionBodyPrefix => 'Сиз колдонуп жатасыз ';
+
+  @override
+  String get confirmActionCost => 'Баасы';
+
+  @override
+  String get proceed => 'Улантуу';
+
+  @override
+  String currencyUnit(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ЖАЛБЫРАК',
+      many: 'ЖАЛБЫРАК',
+      few: 'ЖАЛБЫРАК',
+      one: 'ЖАЛБЫРАК',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get paidActionTitle => 'Акы төлөнүүчү аракет';
+
+  @override
+  String get paidActionMessage => 'Бул аракеттин баасы';
+
+  @override
+  String get paidActionProceed => 'Улантуу';
+
+  @override
+  String get paidActionCancel => 'Жокко чыгаруу';
 }

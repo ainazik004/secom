@@ -326,5 +326,25 @@
   "exit": "Выйти",
   "test_paused_exit_confirm": "Тест поставлен на паузу. Выйти?",
   "test_paused_title": "Пауза",
-  "test_paused_subtitle": "Таймер остановлен. Нажмите «Продолжить», чтобы продолжить."
+  "test_paused_subtitle": "Таймер остановлен. Нажмите «Продолжить», чтобы продолжить.",
+
+  "paywall_notEnoughTitle": "Недостаточно {currency}",
+  "paywall_notEnoughMessage": "Эта функция стоит {cost} {currency}.",
+  "paywall_premiumTitle": "Премиум-функция",
+  "paywall_premiumMessage": "Для этой функции требуется подписка.",
+  "paywall_subscribe": "Оформить подписку",
+  "paywall_donate": "Поддержать / купить валюту",
+  "paywall_cancel": "Отмена",
+
+  "confirmActionTitle": "Подтверждение действия",
+  "confirmActionBodyPrefix": "Вы собираетесь использовать ",
+  "confirmActionCost": "Стоимость",
+  "proceed": "Продолжить",
+
+  "currencyUnit": "{count, plural, one{ЖАЛБЫРАК} few{ЖАЛБЫРАКА} many{ЖАЛБЫРАКОВ} other{ЖАЛБЫРАК}}",
+
+  "paidActionTitle": "Платное действие",
+  "paidActionMessage": "Стоимость действия",
+  "paidActionProceed": "Продолжить",
+  "paidActionCancel": "Отмена"
 }

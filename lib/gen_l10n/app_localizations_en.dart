@@ -770,4 +770,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get test_paused_subtitle =>
       'The timer is stopped. Tap Resume to continue.';
+
+  @override
+  String paywall_notEnoughTitle(Object currency) {
+    return 'Not enough $currency';
+  }
+
+  @override
+  String paywall_notEnoughMessage(Object cost, Object currency) {
+    return 'This feature costs $cost $currency.';
+  }
+
+  @override
+  String get paywall_premiumTitle => 'Premium feature';
+
+  @override
+  String get paywall_premiumMessage => 'This feature requires a subscription.';
+
+  @override
+  String get paywall_subscribe => 'Subscribe';
+
+  @override
+  String get paywall_donate => 'Donate / Buy currency';
+
+  @override
+  String get paywall_cancel => 'Cancel';
+
+  @override
+  String get confirmActionTitle => 'Confirm action';
+
+  @override
+  String get confirmActionBodyPrefix => 'You are about to use ';
+
+  @override
+  String get confirmActionCost => 'This will cost';
+
+  @override
+  String get proceed => 'Proceed';
+
+  @override
+  String currencyUnit(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'LEAVES',
+      many: 'LEAVES',
+      few: 'LEAVES',
+      one: 'LEAF',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get paidActionTitle => 'Paid action';
+
+  @override
+  String get paidActionMessage => 'This action costs';
+
+  @override
+  String get paidActionProceed => 'Proceed';
+
+  @override
+  String get paidActionCancel => 'Cancel';
 }

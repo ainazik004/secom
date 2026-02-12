@@ -19,6 +19,7 @@ exports.aiExplainAnalogy = explain.aiExplainAnalogy;
 exports.aiExplainLanguage = explain.aiExplainLanguage;
 exports.aiExplainComparison = explain.aiExplainComparison;
 exports.spendZhalbyraks = require("./spend_wallet").spendZhalbyraks;
+exports.refundZhalbyraks = require("./refund_wallet").refundZhalbyraks;
 
 // Wallet init (new users)
 exports.initWalletOnUserCreate = require("./wallet").initWalletOnUserCreate;

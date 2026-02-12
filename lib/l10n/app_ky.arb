@@ -326,5 +326,25 @@
   "exit": "Чыгуу",
   "test_paused_exit_confirm": "Тест тыныгууга коюлду. Чыгасызбы?",
   "test_paused_title": "Тыныгуу",
-  "test_paused_subtitle": "Таймер токтотулду. Улантуу үчүн «Улантуу» баскычын басыңыз."
+  "test_paused_subtitle": "Таймер токтотулду. Улантуу үчүн «Улантуу» баскычын басыңыз.",
+
+  "paywall_notEnoughTitle": "{currency} жетишсиз",
+  "paywall_notEnoughMessage": "Бул функция {cost} {currency} турат.",
+  "paywall_premiumTitle": "Премиум функция",
+  "paywall_premiumMessage": "Бул функция үчүн жазылуу керек.",
+  "paywall_subscribe": "Жазылуу",
+  "paywall_donate": "Колдоо / валюта сатып алуу",
+  "paywall_cancel": "Жокко чыгаруу",
+
+  "confirmActionTitle": "Аракетти ырастоо",
+  "confirmActionBodyPrefix": "Сиз колдонуп жатасыз ",
+  "confirmActionCost": "Баасы",
+  "proceed": "Улантуу",
+
+  "currencyUnit": "{count, plural, one{ЖАЛБЫРАК} few{ЖАЛБЫРАК} many{ЖАЛБЫРАК} other{ЖАЛБЫРАК}}",
+
+  "paidActionTitle": "Акы төлөнүүчү аракет",
+  "paidActionMessage": "Бул аракеттин баасы",
+  "paidActionProceed": "Улантуу",
+  "paidActionCancel": "Жокко чыгаруу"
 }

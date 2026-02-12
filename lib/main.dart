@@ -78,7 +78,7 @@ void main() async {
           update: (_, pricing, wallet, __) => CurrencyGate(
             pricing: pricing,
             wallet: wallet,
-            region: 'europe-west1', // MUST match your deployed functions region
+            region: 'europe-west1',
           ),
         ),
       ],
@@ -140,6 +140,14 @@ class SecomApp extends StatelessWidget {
 class Root extends StatelessWidget {
   const Root({super.key});
 
+  void _startWalletAfterFrame(BuildContext context, User user) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      // Start wallet AFTER build completes
+      context.read<WalletService>().start(user.uid);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -154,18 +162,12 @@ class Root extends StatelessWidget {
 
         final user = s.data;
 
-        // ✅ Keep wallet service aligned with auth state
-        final wallet = context.read<WalletService>();
-
-        if (user == null) {
-          wallet.stop();
-          return const WelcomePage();
-        }
-
-        // ✅ start wallet listener once per uid
-        wallet.start(user.uid);
-
+        if (user == null) return const WelcomePage();
         if (!user.emailVerified) return const VerifyEmailPage();
+
+        // ✅ IMPORTANT: start wallet AFTER frame, not during build
+        _startWalletAfterFrame(context, user);
+
         return const MainPage();
       },
     );

@@ -772,4 +772,66 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get test_paused_subtitle =>
       'Таймер остановлен. Нажмите «Продолжить», чтобы продолжить.';
+
+  @override
+  String paywall_notEnoughTitle(Object currency) {
+    return 'Недостаточно $currency';
+  }
+
+  @override
+  String paywall_notEnoughMessage(Object cost, Object currency) {
+    return 'Эта функция стоит $cost $currency.';
+  }
+
+  @override
+  String get paywall_premiumTitle => 'Премиум-функция';
+
+  @override
+  String get paywall_premiumMessage => 'Для этой функции требуется подписка.';
+
+  @override
+  String get paywall_subscribe => 'Оформить подписку';
+
+  @override
+  String get paywall_donate => 'Поддержать / купить валюту';
+
+  @override
+  String get paywall_cancel => 'Отмена';
+
+  @override
+  String get confirmActionTitle => 'Подтверждение действия';
+
+  @override
+  String get confirmActionBodyPrefix => 'Вы собираетесь использовать ';
+
+  @override
+  String get confirmActionCost => 'Стоимость';
+
+  @override
+  String get proceed => 'Продолжить';
+
+  @override
+  String currencyUnit(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ЖАЛБЫРАК',
+      many: 'ЖАЛБЫРАКОВ',
+      few: 'ЖАЛБЫРАКА',
+      one: 'ЖАЛБЫРАК',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get paidActionTitle => 'Платное действие';
+
+  @override
+  String get paidActionMessage => 'Стоимость действия';
+
+  @override
+  String get paidActionProceed => 'Продолжить';
+
+  @override
+  String get paidActionCancel => 'Отмена';
 }
