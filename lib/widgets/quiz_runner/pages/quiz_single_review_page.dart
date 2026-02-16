@@ -44,43 +44,49 @@ class AiExplainCfg {
 }
 
 class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
+  String _jinnyCacheKey({
+    required String language,
+    required Question q,
+    required String picked,
+  }) {
+    final fn = _callableNameForQuestion(q);
+    return '${q.id}|$language|$fn|${q.topic ?? ''}|$picked';
+  }
+
   bool _aiBusy = false;
   // Firestore action key (must match pricing doc: actions.ai_explain)
   static const String _kActionAiExplain = 'ai_explain';
 
-  String _aiIdempotencyKey(String qid) =>
-      'ai_${qid}_${DateTime.now().microsecondsSinceEpoch}';
+  String _aiIdempotencyKey({
+    required String qid,
+    required String language,
+  }) =>
+      'ai_explain_${language}_$qid';
 
   Future<void> _runAiExplainNoConfirm({
     required BuildContext context,
     required CurrencyGate gate,
     required String questionId,
+    required String language,
     required Future<void> Function() onAllowed,
   }) async {
-    // ✅ immediate local check (if pricing+wallet already loaded)
+
     if (!gate.canAffordNow(_kActionAiExplain)) {
-      await gate.showNotEnoughPaywall(
-        context,
-        actionKey: _kActionAiExplain,
-      );
+      await gate.showNotEnoughPaywall(context, actionKey: _kActionAiExplain);
       return;
     }
 
     try {
-      // ✅ server authoritative spend
       await gate.spend(
         actionKey: _kActionAiExplain,
         ref: 'ai_explain:$questionId',
-        idempotencyKey: _aiIdempotencyKey(questionId),
+        idempotencyKey: _aiIdempotencyKey(qid: questionId, language: language),
       );
 
       await onAllowed();
     } on FirebaseFunctionsException catch (e) {
       if (e.code == 'failed-precondition' && e.message == 'NOT_ENOUGH_ZHALBYRAKS') {
-        await gate.showNotEnoughPaywall(
-          context,
-          actionKey: _kActionAiExplain,
-        );
+        await gate.showNotEnoughPaywall(context, actionKey: _kActionAiExplain);
         return;
       }
       rethrow;
@@ -412,7 +418,7 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     final fn = _callableNameForQuestion(q);
 
     // Your backend cache key uses picked; keep stable and short here too.
-    final cacheKey = '${q.id}|$language|$fn|${q.topic ?? ''}|$picked';
+    final cacheKey = _jinnyCacheKey(language: language, q: q, picked: picked);
     final cached = _jinnyCache[cacheKey];
     if (cached != null && cached.trim().isNotEmpty) return cached;
 
@@ -458,6 +464,9 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     final lang = Localizations.localeOf(context).languageCode.toLowerCase();
     final language = lang.startsWith('ky') ? 'ky' : 'ru';
 
+    final cacheKey = _jinnyCacheKey(language: language, q: q, picked: picked);
+    final prefilled = _jinnyCache[cacheKey];
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -473,6 +482,9 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
             question: q,
             picked: picked,
             callOnce: _callJinnyOnce,
+            prefilledText: (prefilled != null && prefilled.trim().isNotEmpty)
+                ? prefilled
+                : null,
           ),
         );
       },
@@ -504,48 +516,6 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
     const ok = Color(0xFF22C55E);
     const bad = Color(0xFFEF4444);
     final status = pickedCorrect ? ok : bad;
-    // Firestore action key
-    const String kActionAiExplain = 'ai_explain';
-
-    String _aiIdempotencyKey(String qid) =>
-        'ai_${qid}_${DateTime.now().microsecondsSinceEpoch}';
-
-    Future<void> _runAiExplainNoConfirm({
-      required BuildContext context,
-      required CurrencyGate gate,
-      required String questionId,
-      required Future<void> Function() onAllowed,
-    }) async {
-      // ✅ immediate local check (if data is loaded)
-      if (!gate.canAffordNow(kActionAiExplain)) {
-        await gate.showNotEnoughPaywall(
-          context,
-          actionKey: kActionAiExplain,
-        );
-        return;
-      }
-
-      try {
-        // ✅ spend (server authoritative)
-        await gate.spend(
-          actionKey: kActionAiExplain,
-          ref: 'ai_explain:$questionId',
-          idempotencyKey: _aiIdempotencyKey(questionId),
-        );
-
-        await onAllowed();
-      } on FirebaseFunctionsException catch (e) {
-        if (e.code == 'failed-precondition' &&
-            e.message == 'NOT_ENOUGH_ZHALBYRAKS') {
-          await gate.showNotEnoughPaywall(
-            context,
-            actionKey: kActionAiExplain,
-          );
-          return;
-        }
-        rethrow;
-      }
-    }
 
     final shadow = BoxShadow(
       color: cs.shadow.withOpacity(isDark ? 0.35 : 0.12),
@@ -776,6 +746,14 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
               final green = isDark ? const Color(0xFF2FBF71) : const Color(0xFF1E9E55);
               final costText = NumberFormat.decimalPattern(loc.localeName).format(cost);
 
+              final q = widget.questions[_i];
+              final picked = widget.answers[_i] ?? '';
+              final lang = Localizations.localeOf(context).languageCode.toLowerCase();
+              final language = lang.startsWith('ky') ? 'ky' : 'ru';
+
+              final cacheKey = _jinnyCacheKey(language: language, q: q, picked: picked);
+              final hasCached = _jinnyCache[cacheKey]?.trim().isNotEmpty == true;
+
               // Match answer-choice feel: small shadow, rounded, no "button" style
               final tileShadow = [
                 BoxShadow(
@@ -790,15 +768,22 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                 onTap: (!enabled || _aiBusy)
                     ? null
                     : () async {
+                  if (hasCached) {
+                    // ✅ instant reopen, no charge, no busy state
+                    await _openJinnyChat(context);
+                    return;
+                  }
+
+                  if (_aiBusy) return;
                   setState(() => _aiBusy = true);
                   try {
                     final gate = context.read<CurrencyGate>();
-                    final q = widget.questions[_i];
 
                     await _runAiExplainNoConfirm(
                       context: context,
                       gate: gate,
                       questionId: q.id,
+                      language: language,
                       onAllowed: () async => _openJinnyChat(context),
                     );
                   } finally {
@@ -858,6 +843,13 @@ class _QuizSingleReviewPageState extends State<QuizSingleReviewPage> {
                               strokeWidth: 2.2,
                               valueColor: AlwaysStoppedAnimation<Color>(green),
                             ),
+                          )
+                              : hasCached
+                              ? Icon(
+                            Icons.check_rounded,
+                            key: const ValueKey('cached'),
+                            size: 18,
+                            color: green,
                           )
                               : Row(
                             key: const ValueKey('cost'),
@@ -971,6 +963,7 @@ class _JinnyExplainSheet extends StatefulWidget {
   final String language;
   final Question question;
   final String picked;
+  final String? prefilledText;
 
   final Future<String> Function({
   required String language,
@@ -984,6 +977,7 @@ class _JinnyExplainSheet extends StatefulWidget {
     required this.question,
     required this.picked,
     required this.callOnce,
+    this.prefilledText,
   });
 
   @override
@@ -1010,6 +1004,33 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
   @override
   void initState() {
     super.initState();
+
+    final pre = widget.prefilledText;
+    if (pre != null && pre.trim().isNotEmpty) {
+      // ✅ Instant render (no fetch, no typing delay)
+      final cleaned = _sanitize(pre);
+      var formatted = _formatForReading(cleaned);
+
+      final isKy = widget.language.toLowerCase().startsWith('ky');
+      final a = isKy ? 'А Колонкасы' : 'Колонка А';
+      final b = isKy ? 'Б Колонкасы' : 'Колонка Б';
+
+      formatted = formatted
+          .replaceAll('value1', a)
+          .replaceAll('Value1', a)
+          .replaceAll('VALUE1', a)
+          .replaceAll('value2', b)
+          .replaceAll('Value2', b)
+          .replaceAll('VALUE2', b);
+
+      _fullText = formatted;
+      _units = _tokenizeToUnits(_fullText);
+      _shownUnits = _units.length;
+      _loading = false;
+      return;
+    }
+
+    // Normal first-time flow (fetch from server)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await _fetchOnce();

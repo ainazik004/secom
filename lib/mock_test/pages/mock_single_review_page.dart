@@ -1,11 +1,15 @@
 // lib/mock_test/pages/mock_single_review_page.dart
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:zhalbyrak/gen_l10n/app_localizations.dart';
 
+import '../../currency/currency_gate.dart';
 import '../mock_question_loader.dart';
 import '../../widgets/quiz_runner/widgets/comparison_value_card.dart';
 import '../../widgets/quiz_runner/widgets/round_x_button.dart';
@@ -26,10 +30,37 @@ class MockSingleReviewPage extends StatefulWidget {
   State<MockSingleReviewPage> createState() => _MockSingleReviewPageState();
 }
 
+// -------------------- AI explain pricing config models/helpers --------------------
+
+class AiExplainCfg {
+  final bool enabled;
+  final int cost;
+  final String title;
+
+  /// Optional: if true, show confirm popup before spending.
+  final bool confirm;
+
+  const AiExplainCfg({
+    required this.enabled,
+    required this.cost,
+    required this.title,
+    required this.confirm,
+  });
+}
+
 class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
   late int _i;
 
-  // Cache Jinny explanation per question+language+endpoint to reduce API load.
+  bool _aiBusy = false;
+
+  // Firestore action key (must match pricing doc: actions.ai_explain)
+  static const String _kActionAiExplain = 'ai_explain';
+
+  // Pricing doc location: config/pricing
+  static const String _kPricingCol = 'config';
+  static const String _kPricingDoc = 'pricing';
+
+  // Cache Jinny explanation per question+language+endpoint+picked to reduce API load.
   final Map<String, String> _jinnyCache = {};
 
   @override
@@ -80,7 +111,179 @@ class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
     return s;
   }
 
-  // ---------- UI ----------
+  // -------------------- Pricing (Firestore: config/pricing) --------------------
+
+  Future<Map<String, dynamic>?> _fetchPricingDoc() async {
+    final snap = await FirebaseFirestore.instance.collection(_kPricingCol).doc(_kPricingDoc).get();
+    return snap.data();
+  }
+
+  String _pickLocalizedFromMap(dynamic v, String langCode) {
+    if (v is Map) {
+      final exact = v[langCode];
+      if (exact != null && exact.toString().trim().isNotEmpty) {
+        return exact.toString().trim();
+      }
+
+      final ru = v['ru'];
+      if (ru != null && ru.toString().trim().isNotEmpty) return ru.toString().trim();
+
+      final ky = v['ky'];
+      if (ky != null && ky.toString().trim().isNotEmpty) return ky.toString().trim();
+
+      final en = v['en'];
+      if (en != null && en.toString().trim().isNotEmpty) return en.toString().trim();
+
+      for (final e in v.entries) {
+        final s = e.value?.toString() ?? '';
+        if (s.trim().isNotEmpty) return s.trim();
+      }
+    }
+    return '';
+  }
+
+  Future<AiExplainCfg> _loadAiExplainCfg(AppLocalizations loc) async {
+    final lang = Localizations.localeOf(context).languageCode.toLowerCase();
+    final data = await _fetchPricingDoc();
+
+    final actions = (data?['actions'] is Map) ? (data!['actions'] as Map) : const {};
+    final ai = (actions['ai_explain'] is Map) ? (actions['ai_explain'] as Map) : const {};
+
+    final enabledRaw = ai['enabled'];
+    final costRaw = ai['cost'];
+    final titleRaw = ai['title'];
+    final confirmRaw = ai['confirm'];
+
+    final enabled = enabledRaw is bool ? enabledRaw : true;
+
+    int cost = 0;
+    if (costRaw is int) cost = costRaw;
+    if (costRaw is num) cost = costRaw.toInt();
+
+    final pickedTitle = _pickLocalizedFromMap(titleRaw, lang);
+    final title = pickedTitle.isNotEmpty ? pickedTitle : loc.quiz_ai_explain;
+
+    final confirm = confirmRaw is bool ? confirmRaw : false;
+
+    return AiExplainCfg(enabled: enabled, cost: cost, title: title, confirm: confirm);
+  }
+
+  // -------------------- CurrencyGate spend helpers --------------------
+
+  String _aiIdempotencyKey({
+    required String qid,
+    required String language,
+  }) =>
+      'mock_ai_explain_${language}_$qid';
+
+  Future<bool> _confirmSpendIfNeeded({
+    required BuildContext context,
+    required AiExplainCfg cfg,
+  }) async {
+    if (!cfg.confirm) return true;
+    if (cfg.cost <= 0) return true;
+
+    final lang = Localizations.localeOf(context).languageCode.toLowerCase();
+    final isKy = lang.startsWith('ky');
+    final isRu = lang.startsWith('ru');
+    final title = isKy
+        ? 'Тастыктоо'
+        : isRu
+        ? 'Подтверждение'
+        : 'Confirm';
+
+    final msg = isKy
+        ? '${cfg.cost} жалбырак коротобуз. Улантасызбы?'
+        : isRu
+        ? 'Будет списано ${cfg.cost} жалбыраков. Продолжить?'
+        : 'Spend ${cfg.cost} leaves to continue?';
+
+    final cancel = isKy
+        ? 'Жок'
+        : isRu
+        ? 'Нет'
+        : 'Cancel';
+
+    final ok = isKy
+        ? 'Ооба'
+        : isRu
+        ? 'Да'
+        : 'OK';
+
+    final res = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        return AlertDialog(
+          title: Text(title, style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface)),
+          content: Text(msg, style: TextStyle(color: cs.onSurface.withOpacity(0.90))),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(cancel),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(ok),
+            ),
+          ],
+        );
+      },
+    );
+
+    return res == true;
+  }
+
+  Future<void> _runAiExplainNoConfirm({
+    required BuildContext context,
+    required CurrencyGate gate,
+    required String questionId,
+    required String language,
+    required Future<void> Function() onAllowed,
+  }) async {
+    if (!gate.canAffordNow(_kActionAiExplain)) {
+      await gate.showNotEnoughPaywall(context, actionKey: _kActionAiExplain);
+      return;
+    }
+
+    try {
+      await gate.spend(
+        actionKey: _kActionAiExplain,
+        ref: 'mock_ai_explain:$questionId',
+        idempotencyKey: _aiIdempotencyKey(qid: questionId, language: language),
+      );
+
+      await onAllowed();
+    } on FirebaseFunctionsException catch (e) {
+      if (e.code == 'failed-precondition' && e.message == 'NOT_ENOUGH_ZHALBYRAKS') {
+        await gate.showNotEnoughPaywall(context, actionKey: _kActionAiExplain);
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  // -------------------- Jinny call + cache key --------------------
+
+  String _callableNameForQuestion(MockQuestion q) {
+    if (_looksComparison(q)) return 'aiExplainComparison';
+
+    final s = _s(q.section).toLowerCase();
+    if (s.contains('math')) return 'aiExplainMath';
+    if (s.contains('analogy')) return 'aiExplainAnalogy';
+    return 'aiExplainLanguage';
+  }
+
+  String _jinnyCacheKey({
+    required String language,
+    required MockQuestion q,
+    required String picked,
+  }) {
+    final fn = _callableNameForQuestion(q);
+    return '${_s(q.id)}|$language|$fn|${_s(q.topic)}|$picked';
+  }
+
+  // -------------------- UI --------------------
 
   @override
   Widget build(BuildContext context) {
@@ -192,17 +395,49 @@ class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
               children: [
                 Row(
                   children: [
-                    Expanded(child: _ComparisonAnswerTile(letter: 'A', picked: picked, correct: _s(q.answer), cs: cs, onTap: null)),
+                    Expanded(
+                      child: _ComparisonAnswerTile(
+                        letter: 'A',
+                        picked: picked,
+                        correct: _s(q.answer),
+                        cs: cs,
+                        onTap: null,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _ComparisonAnswerTile(letter: 'B', picked: picked, correct: _s(q.answer), cs: cs, onTap: null)),
+                    Expanded(
+                      child: _ComparisonAnswerTile(
+                        letter: 'B',
+                        picked: picked,
+                        correct: _s(q.answer),
+                        cs: cs,
+                        onTap: null,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _ComparisonAnswerTile(letter: 'C', picked: picked, correct: _s(q.answer), cs: cs, onTap: null)),
+                    Expanded(
+                      child: _ComparisonAnswerTile(
+                        letter: 'C',
+                        picked: picked,
+                        correct: _s(q.answer),
+                        cs: cs,
+                        onTap: null,
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _ComparisonAnswerTile(letter: 'D', picked: picked, correct: _s(q.answer), cs: cs, onTap: null)),
+                    Expanded(
+                      child: _ComparisonAnswerTile(
+                        letter: 'D',
+                        picked: picked,
+                        correct: _s(q.answer),
+                        cs: cs,
+                        onTap: null,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -287,24 +522,155 @@ class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
             const SizedBox(height: 10),
           ],
 
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => _openJinnyChat(context),
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                side: BorderSide(color: cs.primary.withOpacity(0.25)),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset('assets/icon/quokka_large.png', width: 18, height: 18, fit: BoxFit.contain),
-                  const SizedBox(width: 10),
-                  Text(loc.quiz_ai_explain, style: TextStyle(fontWeight: FontWeight.w900, color: cs.onSurface)),
-                ],
-              ),
-            ),
+          // -------------------- AI explain tile (currency + paywall + caching) --------------------
+          FutureBuilder<AiExplainCfg>(
+            future: _loadAiExplainCfg(loc),
+            builder: (context, snap) {
+              final theme = Theme.of(context);
+              final cs = theme.colorScheme;
+              final isDark = theme.brightness == Brightness.dark;
+
+              final cfg = snap.data;
+              final enabled = (cfg?.enabled ?? true);
+              final cost = (cfg?.cost ?? 0);
+              final confirm = (cfg?.confirm ?? false);
+
+              final green = isDark ? const Color(0xFF2FBF71) : const Color(0xFF1E9E55);
+              final costText = NumberFormat.decimalPattern(loc.localeName).format(cost);
+
+              final q = widget.questions[_i];
+              final picked = widget.answers[_i] ?? '';
+
+              final lang = Localizations.localeOf(context).languageCode.toLowerCase();
+              final language = lang.startsWith('ky') ? 'ky' : 'ru';
+
+              final questionId = _s(q.id).isEmpty ? 'q$_i' : _s(q.id);
+
+              final cacheKey = _jinnyCacheKey(language: language, q: q, picked: picked);
+              final hasCached = _jinnyCache[cacheKey]?.trim().isNotEmpty == true;
+
+              final tileShadow = [
+                BoxShadow(
+                  color: cs.shadow.withOpacity(isDark ? 0.14 : 0.10),
+                  blurRadius: 14,
+                  offset: const Offset(0, 10),
+                ),
+              ];
+
+              return InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: (!enabled || _aiBusy)
+                    ? null
+                    : () async {
+                  if (hasCached) {
+                    // reopen instantly without charge
+                    await _openJinnyChat(context);
+                    return;
+                  }
+
+                  if (_aiBusy) return;
+
+                  // optional confirm
+                  if (confirm) {
+                    final ok = await _confirmSpendIfNeeded(context: context, cfg: cfg ?? const AiExplainCfg(enabled: true, cost: 0, title: '', confirm: false));
+                    if (!ok) return;
+                  }
+
+                  setState(() => _aiBusy = true);
+                  try {
+                    final gate = context.read<CurrencyGate>();
+
+                    await _runAiExplainNoConfirm(
+                      context: context,
+                      gate: gate,
+                      questionId: questionId,
+                      language: language,
+                      onAllowed: () async => _openJinnyChat(context),
+                    );
+                  } finally {
+                    if (mounted) setState(() => _aiBusy = false);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: tileShadow,
+                    border: Border.all(
+                      color: cs.outline.withOpacity(isDark ? 0.28 : 0.22),
+                    ),
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/icon/quokka_large.png',
+                          width: 22,
+                          height: 22,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          loc.quiz_ai_explain,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: cs.onSurface.withOpacity(enabled ? 1.0 : 0.55),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          switchInCurve: Curves.easeOut,
+                          switchOutCurve: Curves.easeIn,
+                          transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                          child: _aiBusy
+                              ? SizedBox(
+                            key: const ValueKey('spinner'),
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              valueColor: AlwaysStoppedAnimation<Color>(green),
+                            ),
+                          )
+                              : hasCached
+                              ? Icon(
+                            Icons.check_rounded,
+                            key: const ValueKey('cached'),
+                            size: 18,
+                            color: green,
+                          )
+                              : Row(
+                            key: const ValueKey('cost'),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                costText,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: green,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.eco_rounded,
+                                size: 16,
+                                color: green,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 10),
@@ -537,15 +903,6 @@ class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
   }
 
   // -------------------- Jinny (make backend receive EVERYTHING) --------------------
-  //
-  // The backend can be strict (e.g., expects question OR value1/value2 at top-level).
-  // This call sends:
-  // - question (full object)
-  // - questionData / problem (aliases)
-  // - left/right + value1/value2 both inside question and at top-level
-  // - stem/answer/options also at top-level (aliases)
-  //
-  // This prevents “Missing question” and prevents Jinny from asking you to type fractions.
 
   Future<String> _callJinny({
     required String language,
@@ -553,19 +910,12 @@ class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
     required String picked,
     required String userMessage,
   }) async {
-    final section = _s(q.section).toLowerCase();
-    final isComp = _looksComparison(q);
-
-    final callableName = isComp
-        ? 'aiExplainComparison'
-        : (section.contains('math')
-        ? 'aiExplainMath'
-        : (section.contains('analogy') ? 'aiExplainAnalogy' : 'aiExplainLanguage'));
-
+    final callableName = _callableNameForQuestion(q);
     final callable = FirebaseFunctions.instanceFor(region: 'europe-west1').httpsCallable(callableName);
 
     final left = _s(q.left).trim();
     final right = _s(q.right).trim();
+    final isComp = _looksComparison(q);
 
     final questionPayload = <String, dynamic>{
       'id': _s(q.id),
@@ -584,18 +934,15 @@ class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
     };
 
     final payload = <String, dynamic>{
-      // Original keys (what your functions likely expect)
       'language': language,
       'picked': picked,
       'userMessage': userMessage,
       'history': const [],
       'question': questionPayload,
 
-      // Aliases (for any older/newer backend variants)
       'questionData': questionPayload,
       'problem': questionPayload,
 
-      // Top-level fallbacks (some backends validate these instead of question.*)
       'id': _s(q.id),
       'stem': _s(q.stem),
       'answer': _s(q.answer),
@@ -636,10 +983,7 @@ class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
     final lang = Localizations.localeOf(context).languageCode.toLowerCase();
     final language = lang.startsWith('ky') ? 'ky' : 'ru';
 
-    final isComp = _looksComparison(q);
-    final endpoint = isComp ? 'comparison' : _s(q.section);
-
-    final cacheKey = '${_s(q.id)}|$language|$endpoint|${_s(q.topic)}';
+    final cacheKey = _jinnyCacheKey(language: language, q: q, picked: picked);
     final cached = _jinnyCache[cacheKey];
 
     final hiddenInitial = _buildHiddenInitialForJinny(
@@ -734,6 +1078,10 @@ class _MockSingleReviewPageState extends State<MockSingleReviewPage> {
     ].join('\n');
   }
 }
+
+// ───────────────────────────────────────────────────────────────
+// Bottom sheet + "typing" UI (unchanged)
+// ───────────────────────────────────────────────────────────────
 
 class _BottomSheetSurface extends StatelessWidget {
   final Widget child;
@@ -1343,7 +1691,6 @@ class _JinnyExplainSheetState extends State<_JinnyExplainSheet> {
     );
 
     final baseStyle = TextStyle(height: 1.38, fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurface);
-
     final headerStyle = baseStyle.copyWith(fontSize: 16, fontWeight: FontWeight.w900, height: 1.18);
 
     return DraggableScrollableSheet(
