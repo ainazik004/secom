@@ -1,14 +1,85 @@
-# 📚 Mobile Test Preparation App
+🌿 ZHALBYRAK (Жалбырак)
+
+An AI-Driven, Gamified ORT Preparation Ecosystem for Kyrgyzstan
+Zhalbyrak is a modern, cross-platform mobile application developed as a diploma thesis at Ala-Too International University. It is specifically engineered to address educational disparities in the Kyrgyz Republic by providing students with an accessible, high-performance, and bilingual environment for the National Admission Test (ORT).
 
 A modern cross-platform educational application built with **Flutter**.  
 This app helps students prepare effectively for standardized exams through structured practice, analytics, and real-time performance tracking.  
 Designed with a clean UI, smooth animations, and a seamless learning flow.
 
----
 
-## 🚀 Features
 
-### 🧠 Practice Categories
+✨ Key Innovation: The "Jinny" AI Tutor
+Unlike traditional test apps, Zhalbyrak features "Jinny", an AI-powered pedagogical module.
+
+Real-time Scaffolding: Instead of just providing the correct answer, Jinny breaks down the logic of mistakes.
+
+Pedagogical Constraints: Engineered to act as a tutor, guiding students through mathematical and verbal reasoning step-by-step.
+
+Bilingual Intelligence: Capable of explaining complex academic concepts in both Kyrgyz and Russian.
+
+
+
+
+ Core Features
+ Practice Categories
+Comprehensive preparation across all mandatory ORT sections:
+
+Mathematics: Arithmetic, Algebra, and Geometry logic.
+
+Analogy & Logic: Verbal reasoning and relational patterns.
+
+Reading Comprehension: Text analysis in a bilingual environment.
+
+Grammar: Linguistic accuracy for both target languages.
+
+Performance Analytics
+Statistics Dashboard: Real-time tracking of accuracy, tasks completed, and time spent.
+
+Gap Analysis: Visual radar charts identifying cognitive strengths and weaknesses.
+
+ Gamification & Engagement
+Leaderboard: Compete with peers across the country.
+
+XP & Streaks: Earn experience points and maintain daily learning streaks to prevent academic burnout.
+
+Virtual Currency: Rewards system to incentivize consistent practice.
+
+Localization
+Bilingual Support: Full integration of Kyrgyz and Russian languages.
+
+Cultural Context: Questions and AI logic tailored specifically to the Kyrgyz educational standards.
+
+
+
+Technical Stack
+Frontend: Flutter (Dart) - Cross-platform high-performance UI.
+
+Backend: Firebase - Real-time NoSQL Firestore & Secure Authentication.
+
+AI Engine: LLM API Integration with custom prompt engineering.
+
+State Management: Provider.
+
+Localization: intl & flutter_localizations.
+
+System Architecture
+The project follows a Client-Server Architecture:
+
+Mobile Client: Handles UI rendering and local data persistence.
+
+API Layer: Manages communication between the app and AI services.
+
+Cloud Layer: Firebase handles secure user data, statistics, and global question banks.
+
+
+
+
+
+
+## Features
+
+### Practice Categories
 
 Improve skills across multiple sections, including:
 
@@ -19,9 +90,8 @@ Improve skills across multiple sections, including:
 
 Each category includes curated questions, detailed explanations, and adaptive difficulty.
 
----
 
-### 📊 Statistics Dashboard
+### Statistics Dashboard
 
 Track progress in real time:
 
@@ -30,15 +100,15 @@ Track progress in real time:
 - Time spent studying
 - Visual radar chart for strengths & weaknesses
 
----
 
-### 🏆 Leaderboard
+
+###  Leaderboard
 
 See how you rank among other learners and stay motivated with competitive, yet healthy, progress tracking.
 
----
 
-### 🔐 Secure Authentication
+
+###  Secure Authentication
 
 Includes:
 
@@ -49,9 +119,8 @@ Includes:
 
 All authentication is powered by **Firebase**, ensuring secure and reliable access.
 
----
 
-### 👤 User Profile
+### User Profile
 
 Manage your learning experience:
 
@@ -59,34 +128,25 @@ Manage your learning experience:
 - Track achievements
 - Manage preferences and settings
 
----
 
-### 🔔 Notifications
-
-Receive personalized updates and reminders to keep your preparation consistent and on track.
-
----
-
-### 🌍 Multilingual Support
+###  Multilingual Support
 
 Available in:
 
-- English
 - Russian
 - Kyrgyz
 
 Fully integrated with Flutter’s localization system (`intl` & `flutter_localizations`).
 
----
 
-### ☁️ Cloud-Synced Data
+###  Cloud-Synced Data
 
 All progress, statistics, and profile information are stored securely in **Firebase**,  
 allowing you to continue learning seamlessly across devices.
 
 ---
 
-## 🧩 Tech Stack
+## Tech Stack
 
 - **Flutter** (Dart)
 - **Firebase Authentication**
@@ -99,7 +159,7 @@ allowing you to continue learning seamlessly across devices.
 
 ---
 
-## 🛠️ Roadmap
+## Roadmap
 
 Planned enhancements include:
 
@@ -111,21 +171,21 @@ Planned enhancements include:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions, ideas, and feedback are welcome.  
 Feel free to open an issue or submit a pull request to help improve the project.
 
 ---
 
-## 📄 License
+## License
 
 This project is released under the **MIT License**.  
 You are free to use, modify, and distribute the app within the license terms.
 
 ---
 
-## ⭐ Acknowledgements
+## Acknowledgements
 
 Special thanks to:
 
@@ -133,6 +193,5 @@ Special thanks to:
 - The open-source community
 - Everyone who contributes to improving the learning experience
 
----
 
 If you find this project useful, consider giving it a **star** ⭐ on GitHub — it helps the project grow!
