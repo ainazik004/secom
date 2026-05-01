@@ -1,4 +1,4 @@
-🌿 ZHALBYRAK (Жалбырак)
+### 🌿 ZHALBYRAK (Жалбырак)
 
 An AI-Driven, Gamified ORT Preparation Ecosystem for Kyrgyzstan
 Zhalbyrak is a modern, cross-platform mobile application developed as a diploma thesis at Ala-Too International University. It is specifically engineered to address educational disparities in the Kyrgyz Republic by providing students with an accessible, high-performance, and bilingual environment for the National Admission Test (ORT).
@@ -9,7 +9,7 @@ Designed with a clean UI, smooth animations, and a seamless learning flow.
 
 
 
-✨ Key Innovation: The "Jinny" AI Tutor
+## ✨ Key Innovation: The "Jinny" AI Tutor
 Unlike traditional test apps, Zhalbyrak features "Jinny", an AI-powered pedagogical module.
 
 Real-time Scaffolding: Instead of just providing the correct answer, Jinny breaks down the logic of mistakes.
@@ -21,8 +21,8 @@ Bilingual Intelligence: Capable of explaining complex academic concepts in both 
 
 
 
- Core Features
- Practice Categories
+ ## Core Features
+ ## Practice Categories
 Comprehensive preparation across all mandatory ORT sections:
 
 Mathematics: Arithmetic, Algebra, and Geometry logic.
